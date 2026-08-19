@@ -15,8 +15,8 @@ concurrency:
 
 env:
   NODE_VERSION: '22.22.0'
-  PROJECT_DIR: blog
-  OUTPUT_DIR: blog/dist
+  PROJECT_DIR: /
+  OUTPUT_DIR: /dist
 
 jobs:
   build-and-deploy:
@@ -29,14 +29,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: blog/package-lock.json
 
       - name: Install dependencies
         working-directory: ${{ env.PROJECT_DIR }}
