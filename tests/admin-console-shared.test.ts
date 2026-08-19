@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canonicalizeAdminThemeSettings,
   createAdminThemeSettingsCanonicalMismatchIssues,
+  createAdminWritableThemeSettingsGroups,
   fillAdminThemeSettingsCompatibilityDefaults,
   getAdminNavOrderIssues,
   getAdminSocialOrderIssues,
@@ -28,16 +29,34 @@ describe('admin-console/shared', () => {
   it('reports duplicate and range issues for social orders', () => {
     expect(
       getAdminSocialOrderIssues(
-        { github: 1, x: 1, email: 99 },
+        { github: 1, qq: 1, email: 99 },
         [{ key: 'custom-1', order: 2 }, { key: 'custom-2', order: 2 }]
       )
     ).toEqual([
       { type: 'duplicate', scope: 'preset', key: 'github', order: 1 },
-      { type: 'duplicate', scope: 'preset', key: 'x', order: 1 },
+      { type: 'duplicate', scope: 'preset', key: 'qq', order: 1 },
       { type: 'range', scope: 'preset', key: 'email', order: 99 },
       { type: 'duplicate', scope: 'custom', key: 'custom-1', order: 2 },
       { type: 'duplicate', scope: 'custom', key: 'custom-2', order: 2 }
     ]);
+  });
+
+  it('only accepts QQ short links for the fixed QQ preset', () => {
+    const settings = getEditableThemeSettingsPayload().settings;
+
+    settings.site.socialLinks.qq = 'https://example.com/qq';
+    expect(validateAdminThemeSettings(settings)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'site.socialLinks.qq' })
+      ])
+    );
+
+    settings.site.socialLinks.qq = 'https://qm.qq.com/q/igxLKlzUvC';
+    expect(validateAdminThemeSettings(settings)).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'site.socialLinks.qq' })
+      ])
+    );
   });
 
   it('reports duplicate and range issues for nav orders', () => {
@@ -52,6 +71,28 @@ describe('admin-console/shared', () => {
       { type: 'duplicate', key: 'bits', order: 1 },
       { type: 'range', key: 'memo', order: 0 }
     ]);
+  });
+
+  it('canonicalizes and serializes the fixed links navigation and page settings', () => {
+    const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+    const linksNav = raw.shell.nav.find((item: { id: string }) => item.id === 'links');
+    linksNav.label = '  友情链接  ';
+    linksNav.order = '6';
+    raw.page.links = { title: '  链接  ', subtitle: '  我的朋友  ' };
+
+    const canonical = canonicalizeAdminThemeSettings(raw);
+    const writable = createAdminWritableThemeSettingsGroups(canonical);
+
+    expect(canonical.shell.nav).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'links', label: '友情链接', order: 6, visible: true })
+      ])
+    );
+    expect(canonical.page.links).toEqual({ title: '链接', subtitle: '我的朋友' });
+    expect(writable.shell.nav).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'links', label: '友情链接', order: 6 })])
+    );
+    expect(writable.page.links).toEqual({ title: '链接', subtitle: '我的朋友' });
   });
 
   it('normalizes valid hero image sources and rejects invalid local paths', () => {

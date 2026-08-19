@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     pool: 'threads',
+    testTimeout: 10_000,
     include: ['tests/**/*.test.ts']
   }
 });

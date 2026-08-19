@@ -51,7 +51,19 @@ const nav = settings.shell.nav
       href,
       isActive: activeNavId
         ? item.id === activeNavId
-        : pathname === href || (href !== homeHref && pathname.startsWith(href))
+        : pathname === href || (href !== homeHref && pathname.startsWith(href)),
+      children: item.children
+        .filter((child) => child.visible)
+        .sort((a, b) => a.order - b.order)
+        .map((child) => {
+          const childHref = withBase(child.href);
+          return {
+            id: child.id,
+            label: child.label,
+            href: childHref,
+            isActive: pathname === childHref
+          };
+        })
     };
   });
 const hidePublicSidebarActionsInDevAdmin = isAdminContext && isDev;

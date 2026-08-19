@@ -11,7 +11,7 @@ import {
 import { site, hasSiteUrl } from './site.config.mjs';
 
 const isProductionBuild = process.env.NODE_ENV === 'production';
-const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'essay', 'memo']);
+const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'essay', 'links', 'memo']);
 const rawDeploymentBase = process.env.ASTRO_WHONO_BASE_PATH ?? '/';
 const trimmedDeploymentBase = String(rawDeploymentBase).trim();
 

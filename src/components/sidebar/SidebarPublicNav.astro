@@ -1,11 +1,20 @@
 ---
 import { ADMIN_NAV_ORNAMENT_DEFAULT } from '../../lib/admin-console/theme-shared';
 
+type SidebarPublicNavChild = {
+  id: string;
+  label: string;
+  href: string;
+  isActive: boolean;
+};
+
 type SidebarPublicNavItem = {
+  id: string;
   href: string;
   label: string;
   ornament?: string | null;
   isActive: boolean;
+  children: readonly SidebarPublicNavChild[];
 };
 
 const { items, isAdminNavPanel = false } = Astro.props as {
@@ -15,16 +24,50 @@ const { items, isAdminNavPanel = false } = Astro.props as {
 ---
 
 <ul class="nav sidebar-public-nav" data-admin-nav-panel={isAdminNavPanel ? 'public' : undefined}>
-  {items.map((item) => (
-    <li>
-      <a href={item.href} aria-current={item.isActive ? 'page' : undefined}>
-        <span>{item.label}</span>
-        {item.ornament === ADMIN_NAV_ORNAMENT_DEFAULT ? (
-          <span class="dot" aria-hidden="true"></span>
-        ) : item.ornament ? (
-          <span class="nav-ornament" aria-hidden="true">{item.ornament}</span>
+  {items.map((item) => {
+    const hasChildren = item.children.length > 0;
+    const isExpanded = item.children.some((child) => child.isActive);
+    const submenuId = `sidebar-submenu-${isAdminNavPanel ? 'admin' : 'site'}-${item.id}`;
+
+    return (
+      <li class:list={['sidebar-public-nav__item', { 'sidebar-public-nav__item--parent': hasChildren }]}>
+        {hasChildren ? (
+          <button
+            class="sidebar-public-nav__toggle"
+            type="button"
+            aria-expanded={isExpanded ? 'true' : 'false'}
+            aria-controls={submenuId}
+            data-sidebar-submenu-toggle
+          >
+            <span class="sidebar-public-nav__disclosure" aria-hidden="true"></span>
+            <span>{item.label}</span>
+            {item.ornament === ADMIN_NAV_ORNAMENT_DEFAULT ? (
+              <span class="dot" aria-hidden="true"></span>
+            ) : item.ornament ? (
+              <span class="nav-ornament" aria-hidden="true">{item.ornament}</span>
+            ) : null}
+          </button>
+        ) : (
+          <a href={item.href} aria-current={item.isActive ? 'page' : undefined}>
+            <span>{item.label}</span>
+            {item.ornament === ADMIN_NAV_ORNAMENT_DEFAULT ? (
+              <span class="dot" aria-hidden="true"></span>
+            ) : item.ornament ? (
+              <span class="nav-ornament" aria-hidden="true">{item.ornament}</span>
+            ) : null}
+          </a>
+        )}
+
+        {hasChildren ? (
+          <ul id={submenuId} class="sidebar-public-nav__submenu" data-sidebar-submenu hidden={!isExpanded}>
+            {item.children.map((child) => (
+              <li>
+                <a href={child.href} aria-current={child.isActive ? 'page' : undefined}>{child.label}</a>
+              </li>
+            ))}
+          </ul>
         ) : null}
-      </a>
-    </li>
-  ))}
+      </li>
+    );
+  })}
 </ul>

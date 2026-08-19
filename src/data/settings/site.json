@@ -1,11 +1,11 @@
 {
-  "title": "Astro Themes by Whono",
-  "description": "一个极简双栏 Astro 主题的展示站",
+  "title": "喵洛阁",
+  "description": "克喵的小站，在这里记录我的生活日常、踩坑经验和资源分享",
   "defaultLocale": "zh-CN",
   "footer": {
-    "startYear": 2025,
+    "startYear": 2024,
     "showCurrentYear": true,
-    "copyright": "Whono · Theme Demo · by cxro"
+    "copyright": "Welcome To KeMiao's Blog!"
   },
   "adminOverview": {
     "publicVisible": true,
@@ -13,16 +13,16 @@
   },
   "favicon": {
     "svg": null,
-    "png": null,
-    "appleTouchIcon": null
+    "png": "/images/site/favicon-256x256-0cda5eeb.png",
+    "appleTouchIcon": "/images/site/apple-touch-icon-256x256-0cda5eeb.png"
   },
   "socialLinks": {
-    "github": "https://github.com/cxro/astro-whono",
-    "x": "https://twitter.com/yourname",
-    "email": "Astro@Whono.me",
+    "github": "https://github.com/kmoretti",
+    "qq": "https://qm.qq.com/q/igxLKlzUvC",
+    "email": "mcy@kemiaosw.top",
     "presetOrder": {
       "github": 1,
-      "x": 2,
+      "qq": 2,
       "email": 3
     },
     "custom": []

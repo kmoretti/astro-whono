@@ -173,6 +173,33 @@ const {
         />
       </span>
     </label>
+    <label class="admin-field">
+      <span class="admin-label">
+        <span class="admin-label__main">
+          <code>/links/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
+        </span>
+      </span>
+      <span class="admin-title-pair" role="group" aria-label="/links/ 页面主标题与副标题">
+        <input
+          id="page-links-title"
+          class="admin-title-pair__input admin-title-pair__input--title"
+          type="text"
+          maxlength={pageTitleMaxLength}
+          autocomplete="off"
+          placeholder="友链"
+          aria-label="/links/ 页面主标题"
+        />
+        <span class="admin-title-pair__sep" aria-hidden="true">|</span>
+        <input
+          id="page-links-subtitle"
+          class="admin-title-pair__input admin-title-pair__input--subtitle"
+          type="text"
+          maxlength={pageSubtitleMaxLength}
+          autocomplete="off"
+          aria-label="/links/ 页面副标题"
+        />
+      </span>
+    </label>
   </div>
 
   <div class="admin-subgroup">

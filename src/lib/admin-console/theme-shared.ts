@@ -45,8 +45,8 @@ export const ADMIN_SITE_FAVICON_SLOT_LABELS: Record<SiteFaviconSlot, string> = {
   appleTouchIcon: '触摸图标（PNG）'
 };
 
-export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
-export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about'] as const satisfies readonly PageId[];
+export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about', 'links'] as const satisfies readonly SidebarNavId[];
+export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about', 'links'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
 export const ADMIN_HERO_PRESETS = ['default', 'none'] as const satisfies readonly HeroPresetId[];
@@ -101,10 +101,10 @@ export const ADMIN_HOME_INTRO_LINK_OPTIONS = [
   href: string;
 }[];
 
-export const ADMIN_SOCIAL_PRESET_IDS = ['github', 'x', 'email'] as const satisfies readonly SiteSocialPresetId[];
+export const ADMIN_SOCIAL_PRESET_IDS = ['github', 'qq', 'email'] as const satisfies readonly SiteSocialPresetId[];
 export const ADMIN_SOCIAL_PRESET_ORDER_DEFAULT: Record<SiteSocialPresetId, number> = {
   github: 1,
-  x: 2,
+  qq: 2,
   email: 3
 };
 export const ADMIN_SOCIAL_ORDER_MIN = 1;
@@ -136,7 +136,7 @@ export type AdminNavOrderIssue = {
 
 export const ADMIN_SOCIAL_ICON_KEYS = [
   'github',
-  'x',
+  'qq',
   'email',
   'weibo',
   'facebook',
@@ -151,7 +151,7 @@ export const ADMIN_SOCIAL_ICON_KEYS = [
 export const ADMIN_SOCIAL_ICON_KEY_SET: ReadonlySet<SiteSocialIconKey> = new Set(ADMIN_SOCIAL_ICON_KEYS);
 
 export const ADMIN_GITHUB_HOSTS = ['github.com'] as const;
-export const ADMIN_X_HOSTS = ['x.com', 'twitter.com'] as const;
+export const ADMIN_QQ_HOSTS = ['qm.qq.com'] as const;
 
 export const ADMIN_HOME_INTRO_MAX_LENGTH = 240;
 export const ADMIN_PAGE_TITLE_MAX_LENGTH = 60;
@@ -363,7 +363,7 @@ const cloneCustomItems = (
 const cloneNavItems = (
   items: ReadonlyArray<EditableThemeSettings['shell']['nav'][number]>
 ): EditableThemeSettings['shell']['nav'] =>
-  items.map((item) => ({ ...item }));
+  items.map((item) => ({ ...item, children: item.children.map((child) => ({ ...child })) }));
 
 const normalizeHomeIntroLinks = (value: unknown): HomeIntroLinkKey[] => {
   const defaultHomeIntroLinks = [...ADMIN_HOME_INTRO_LINK_DEFAULT] as HomeIntroLinkKey[];
@@ -450,12 +450,29 @@ export const canonicalizeAdminThemeSettings = (
       if (!record) return null;
       const id = normalizeTrimmed(record.id);
       if (!isAdminNavId(id)) return null;
+      const children = (Array.isArray(record.children) ? record.children : [])
+        .flatMap((child, index) => {
+          if (!isRecord(child)) return [];
+          const childId = normalizeSingleLine(child.id, '');
+          const label = normalizeSingleLine(child.label, '');
+          const href = normalizeTrimmed(child.href);
+          if (!childId || !label || !/^\/(?!\/)/.test(href)) return [];
+          return [{
+            id: childId,
+            label,
+            href,
+            visible: Boolean(child.visible),
+            order: parseOrder(child.order as string | number | null | undefined, index + 1)
+          }];
+        })
+        .sort((a, b) => a.order - b.order);
       return {
         id,
         label: normalizeTrimmed(record.label),
         ornament: normalizeNavOrnament(record.ornament),
         order: parseOrder(record.order as string | number | null | undefined, ADMIN_NAV_IDS.indexOf(id) + 1),
-        visible: Boolean(record.visible)
+        visible: Boolean(record.visible),
+        children
       };
     })
     .filter((item): item is EditableThemeSettings['shell']['nav'][number] => item !== null)
@@ -519,14 +536,18 @@ export const canonicalizeAdminThemeSettings = (
       },
       socialLinks: {
         github: normalizeTrimmed(socialLinks.github) || null,
-        x: normalizeTrimmed(socialLinks.x) || null,
+        qq: normalizeTrimmed(socialLinks.qq ?? socialLinks.x) || null,
         email: normalizeEmail(normalizeTrimmed(socialLinks.email)) || null,
         presetOrder: {
           github: parseOrder(
             rawPresetOrder.github as string | number | null | undefined,
             ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.github
           ),
-          x: parseOrder(rawPresetOrder.x as string | number | null | undefined, ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.x),
+          qq: parseOrder(
+            rawPresetOrder.qq as string | number | null | undefined
+              ?? rawPresetOrder.x as string | number | null | undefined,
+            ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.qq
+          ),
           email: parseOrder(
             rawPresetOrder.email as string | number | null | undefined,
             ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.email
@@ -574,6 +595,10 @@ export const canonicalizeAdminThemeSettings = (
       about: {
         title: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.title ?? '' : '')),
         subtitle: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.subtitle ?? '' : ''))
+      },
+      links: {
+        title: normalizeOptionalSingleLine(String(isRecord(page.links) ? page.links.title ?? '' : '')),
+        subtitle: normalizeOptionalSingleLine(String(isRecord(page.links) ? page.links.subtitle ?? '' : ''))
       }
     },
     ui: {
@@ -635,7 +660,7 @@ export const createAdminWritableThemeSettingsGroups = (
     },
     socialLinks: {
       github: settings.site.socialLinks.github,
-      x: settings.site.socialLinks.x,
+      qq: settings.site.socialLinks.qq,
       email: settings.site.socialLinks.email,
       presetOrder: {
         ...settings.site.socialLinks.presetOrder
@@ -663,7 +688,8 @@ export const createAdminWritableThemeSettingsGroups = (
       }
     },
     memo: { ...settings.page.memo },
-    about: { ...settings.page.about }
+    about: { ...settings.page.about },
+    links: { ...settings.page.links }
   },
   ui: {
     codeBlock: { ...settings.ui.codeBlock },
@@ -767,10 +793,10 @@ export const validateAdminThemeSettings = (
     pushIssue('site.socialLinks.github', 'GitHub 链接只允许 https://github.com/... ');
   }
   if (
-    settings.site.socialLinks?.x &&
-    !isAdminAllowedHttpsUrl(settings.site.socialLinks.x, ADMIN_X_HOSTS)
+    settings.site.socialLinks?.qq &&
+    !isAdminAllowedHttpsUrl(settings.site.socialLinks.qq, ADMIN_QQ_HOSTS)
   ) {
-    pushIssue('site.socialLinks.x', 'X / Twitter 链接只允许 https://x.com/... 或 https://twitter.com/... ');
+    pushIssue('site.socialLinks.qq', 'QQ 链接只允许 https://qm.qq.com/q/... ');
   }
   if (
     settings.site.socialLinks?.email &&
@@ -806,7 +832,7 @@ export const validateAdminThemeSettings = (
   });
 
   ADMIN_SOCIAL_PRESET_IDS.forEach((id) => {
-    const rowLabel = id === 'github' ? 'GitHub' : id === 'x' ? 'X / Twitter' : 'Email';
+    const rowLabel = id === 'github' ? 'GitHub' : id === 'qq' ? 'QQ' : 'Email';
     const orderIssue = presetOrderIssues.get(id);
     if (orderIssue === 'range') {
       pushIssue(
@@ -945,7 +971,8 @@ export const validateAdminThemeSettings = (
     [settings.page.archive?.title, '/archive/ 页面主标题', 'page.archive.title'],
     [settings.page.bits?.title, '/bits/ 页面主标题', 'page.bits.title'],
     [settings.page.memo?.title, '/memo/ 页面主标题', 'page.memo.title'],
-    [settings.page.about?.title, '/about/ 页面主标题', 'page.about.title']
+    [settings.page.about?.title, '/about/ 页面主标题', 'page.about.title'],
+    [settings.page.links?.title, '/links/ 页面主标题', 'page.links.title']
   ];
 
   pageTitleMap.forEach(([title, label, path]) => {
@@ -967,7 +994,8 @@ export const validateAdminThemeSettings = (
     [settings.page.archive?.subtitle, '/archive/ 页面副标题', 'page.archive.subtitle'],
     [settings.page.bits?.subtitle, '/bits/ 页面副标题', 'page.bits.subtitle'],
     [settings.page.memo?.subtitle, '/memo/ 页面副标题', 'page.memo.subtitle'],
-    [settings.page.about?.subtitle, '/about/ 页面副标题', 'page.about.subtitle']
+    [settings.page.about?.subtitle, '/about/ 页面副标题', 'page.about.subtitle'],
+    [settings.page.links?.subtitle, '/links/ 页面副标题', 'page.links.subtitle']
   ];
 
   pageSubtitleMap.forEach(([subtitle, label, path]) => {
@@ -1261,6 +1289,32 @@ const fillAdminThemeSettingsSiteCompatibilityDefaults = (
     }
   }
 
+  const canonicalSocialLinks = canonicalSite.socialLinks;
+  if (isRecord(canonicalSocialLinks) && isRecord(next.socialLinks)) {
+    const rawSocialLinks = next.socialLinks;
+    const rawPresetOrder = isRecord(rawSocialLinks.presetOrder) ? rawSocialLinks.presetOrder : undefined;
+    const canonicalPresetOrder = isRecord(canonicalSocialLinks.presetOrder)
+      ? canonicalSocialLinks.presetOrder
+      : undefined;
+    const normalizedSocialLinks = { ...rawSocialLinks };
+
+    if (normalizedSocialLinks.qq === undefined && normalizedSocialLinks.x !== undefined) {
+      normalizedSocialLinks.qq = normalizedSocialLinks.x;
+    }
+    delete normalizedSocialLinks.x;
+
+    if (canonicalPresetOrder && rawPresetOrder) {
+      const normalizedPresetOrder = { ...rawPresetOrder };
+      if (normalizedPresetOrder.qq === undefined && normalizedPresetOrder.x !== undefined) {
+        normalizedPresetOrder.qq = normalizedPresetOrder.x;
+      }
+      delete normalizedPresetOrder.x;
+      normalizedSocialLinks.presetOrder = normalizedPresetOrder;
+    }
+
+    next = { ...next, socialLinks: normalizedSocialLinks };
+  }
+
   return next;
 };
 
@@ -1292,6 +1346,37 @@ const fillAdminThemeSettingsUiCompatibilityDefaults = (
   return next;
 };
 
+const fillAdminThemeSettingsShellCompatibilityDefaults = (
+  rawShell: LooseRecord,
+  canonicalShell: LooseRecord
+): LooseRecord => {
+  if (!Array.isArray(canonicalShell.nav) || !Array.isArray(rawShell.nav)) return rawShell;
+  const rawNav = new Map(
+    rawShell.nav.filter(isRecord).map((item) => [String(item.id), item])
+  );
+  return {
+    ...rawShell,
+    nav: canonicalShell.nav.map((item) => {
+      if (!isRecord(item)) return item;
+      const rawItem = rawNav.get(String(item.id));
+      return rawItem ? { ...item, ...rawItem } : item;
+    })
+  };
+};
+
+const fillAdminThemeSettingsPageCompatibilityDefaults = (
+  rawPage: LooseRecord,
+  canonicalPage: LooseRecord
+): LooseRecord => {
+  const links = canonicalPage.links;
+  if (!isRecord(links)) return rawPage;
+  const rawLinks = rawPage.links;
+  return {
+    ...rawPage,
+    links: isRecord(rawLinks) ? { ...links, ...rawLinks } : links
+  };
+};
+
 export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
   group: ThemeSettingsFileGroup,
   rawGroup: unknown,
@@ -1299,6 +1384,8 @@ export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
 ): unknown => {
   if (!isRecord(rawGroup) || !isRecord(canonicalGroup)) return rawGroup;
   if (group === 'site') return fillAdminThemeSettingsSiteCompatibilityDefaults(rawGroup, canonicalGroup);
+  if (group === 'shell') return fillAdminThemeSettingsShellCompatibilityDefaults(rawGroup, canonicalGroup);
+  if (group === 'page') return fillAdminThemeSettingsPageCompatibilityDefaults(rawGroup, canonicalGroup);
   if (group === 'ui') return fillAdminThemeSettingsUiCompatibilityDefaults(rawGroup, canonicalGroup);
   return rawGroup;
 };
@@ -1316,6 +1403,22 @@ export const fillAdminThemeSettingsCompatibilityDefaults = (
           site: fillAdminThemeSettingsSiteCompatibilityDefaults(
             settings.site,
             canonicalSettings.site as unknown as LooseRecord
+          )
+        }
+      : {}),
+    ...(isRecord(settings.shell)
+      ? {
+          shell: fillAdminThemeSettingsShellCompatibilityDefaults(
+            settings.shell,
+            canonicalSettings.shell as unknown as LooseRecord
+          )
+        }
+      : {}),
+    ...(isRecord(settings.page)
+      ? {
+          page: fillAdminThemeSettingsPageCompatibilityDefaults(
+            settings.page,
+            canonicalSettings.page as unknown as LooseRecord
           )
         }
       : {}),

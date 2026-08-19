@@ -1,5 +1,5 @@
 {
-  "introLead": "这是一个开源写作主题与示例内容库:包含 随笔/essay、小记/memo、归档/archive 与 絮语/bits，使用与配置请见 README 。",
+  "introLead": "欢迎来到克喵的博客，这里有着我的一些文字，部分会引用网络文章等，如果有什么问题，请邮箱联系我来解决。",
   "introMore": "更多文章请访问",
   "introMoreLinks": [
     "archive",
@@ -8,6 +8,6 @@
   "showIntroLead": true,
   "showIntroMore": true,
   "heroPresetId": "default",
-  "heroImageSrc": null,
-  "heroImageAlt": "Whono theme preview"
+  "heroImageSrc": "https://jsd.268682.xyz/gh/Kemeow0815/img@main/img/bg.webp",
+  "heroImageAlt": "blog hero"
 }

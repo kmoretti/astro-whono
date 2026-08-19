@@ -1,6 +1,6 @@
 {
   "codeBlock": {
-    "showLineNumbers": true
+    "showLineNumbers": false
   },
   "readingMode": {
     "showEntry": true
@@ -8,7 +8,7 @@
   "sidebarActions": {
     "showRssLink": true,
     "showThemeToggle": true,
-    "showAdminEntry": false
+    "showAdminEntry": true
   },
   "articleMeta": {
     "showDate": true,

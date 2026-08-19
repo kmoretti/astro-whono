@@ -19,7 +19,7 @@ type SocialLinksContext = {
   socialCustomAddBtn: HTMLButtonElement;
   socialCustomTemplate: HTMLTemplateElement;
   inputSiteSocialGithubOrder: HTMLInputElement;
-  inputSiteSocialXOrder: HTMLInputElement;
+  inputSiteSocialQqOrder: HTMLInputElement;
   inputSiteSocialEmailOrder: HTMLInputElement;
 };
 
@@ -44,7 +44,7 @@ export const createSocialLinks = ({
   socialCustomAddBtn,
   socialCustomTemplate,
   inputSiteSocialGithubOrder,
-  inputSiteSocialXOrder,
+  inputSiteSocialQqOrder,
   inputSiteSocialEmailOrder
 }: SocialLinksContext) => {
   const getPresetRows = (): HTMLElement[] => queryAll<HTMLElement>(socialCustomList, '[data-social-preset-row]');
@@ -92,7 +92,7 @@ export const createSocialLinks = ({
 
   const getPresetOrderInputs = (): Record<SiteSocialPresetId, HTMLInputElement> => ({
     github: inputSiteSocialGithubOrder,
-    x: inputSiteSocialXOrder,
+    qq: inputSiteSocialQqOrder,
     email: inputSiteSocialEmailOrder
   });
 
@@ -100,7 +100,7 @@ export const createSocialLinks = ({
     const inputs = getPresetOrderInputs();
     return {
       github: parseOrder(inputs.github.value, ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.github),
-      x: parseOrder(inputs.x.value, ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.x),
+      qq: parseOrder(inputs.qq.value, ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.qq),
       email: parseOrder(inputs.email.value, ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.email)
     };
   };
@@ -157,7 +157,7 @@ export const createSocialLinks = ({
     if (!(toggleBtn instanceof HTMLButtonElement)) return;
 
     const presetId = getPresetRowId(row);
-    const label = presetId === 'x' ? 'X' : presetId === 'email' ? 'Email' : 'GitHub';
+    const label = presetId === 'qq' ? 'QQ' : presetId === 'email' ? 'Email' : 'GitHub';
     const visible = isPresetRowVisible(row);
     toggleBtn.dataset.state = visible ? 'visible' : 'hidden';
     toggleBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');

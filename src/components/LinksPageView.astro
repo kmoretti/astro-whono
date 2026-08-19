@@ -1,0 +1,47 @@
+---
+import Lightbox from './Lightbox.astro';
+
+interface Props {
+  title: string;
+  subtitle: string | null;
+  recoveryEmail: string | null;
+}
+
+const { title, subtitle, recoveryEmail } = Astro.props;
+---
+
+<section class="links-page__view" data-links-root aria-labelledby="links-page-title">
+  <header class="links-page__header">
+    <div>
+      <h1 id="links-page-title" class="page-title">{title}</h1>
+      {subtitle ? <p class="page-subtitle">{subtitle}</p> : null}
+    </div>
+    <p class="links-page__summary" data-links-summary aria-live="polite" hidden></p>
+  </header>
+
+  <div class="links-page__status" data-links-status role="status" aria-live="polite">正在加载友链…</div>
+  <nav class="links-page__filters" data-links-filters hidden aria-label="友链标签筛选"></nav>
+  <div class="links-page__groups" data-links-groups></div>
+  <section class="links-page__tombstones" data-links-tombstones hidden aria-labelledby="links-tombstones-title">
+    <h2 id="links-tombstones-title" class="links-page__tombstones-title">🪦 友链墓碑 · 相逢何必曾相识</h2>
+    <div class="links-page__tombstones-note">
+      💡 <strong>说明：</strong>此处记录的友链因长期无法访问、站点关闭、或友链反链丢失，长期未更新（一年）等原因，由站长慎重考虑后，手动下线。若因技术问题导致下线，欢迎站长修复后随时
+      {
+        recoveryEmail ? (
+          <a data-links-tombstone-recovery href={`mailto:${recoveryEmail}`}>联系恢复</a>
+        ) : (
+          <span>联系恢复</span>
+        )
+      }。若站点已停止维护，则可能不再接受恢复请求。如有特殊情况，可联系站长详询。
+    </div>
+    <div class="links-page__tombstones-list" data-links-tombstones-list></div>
+  </section>
+  <div class="links-page__empty" data-links-empty hidden></div>
+  <button class="links-page__retry" data-links-retry type="button" hidden>重新加载</button>
+
+  <Lightbox id="links-lightbox" label="友链截图预览" enableZoom={true} enablePan={true} />
+</section>
+
+<script>
+  import '../scripts/links-page';
+</script>

@@ -1,0 +1,101 @@
+---
+const conditions = [
+  '本站内容健康、可正常访问，并已稳定运行一段时间。',
+  '已在站点友链页面添加本站链接，并确保后续持续保留。',
+  '站点具有独立内容，不收录纯导航页、聚合页或镜像站。',
+  '申请信息真实有效，头像、描述与站点内容相符。',
+  '友链基于项目自动更新，没有成功添加可以继续测试，不行的话就邮箱联系我。'
+];
+---
+
+<section class="exchange-page" data-exchange-root aria-labelledby="exchange-page-title">
+  <header class="exchange-page__header">
+    <p class="exchange-page__eyebrow">友链</p>
+    <h1 id="exchange-page-title" class="page-title">交换友链</h1>
+    <p class="exchange-page__subtitle">确认申请说明后，提交新申请或更新已有友链信息。</p>
+  </header>
+
+  <section class="exchange-page__conditions" aria-labelledby="exchange-conditions-title">
+    <h2 id="exchange-conditions-title">申请前确认</h2>
+    <div class="exchange-page__condition-list">
+      {conditions.map((condition, index) => (
+        <label class="exchange-page__condition">
+          <input type="checkbox" data-exchange-condition value={String(index)} />
+          <span>{condition}</span>
+        </label>
+      ))}
+    </div>
+    <p class="exchange-page__condition-status" data-exchange-condition-status aria-live="polite">请确认全部条件后继续。</p>
+  </section>
+
+  <section class="exchange-page__workspace" data-exchange-workspace hidden aria-label="友链申请操作">
+    <div class="exchange-page__mode-actions" role="group" aria-label="申请类型">
+      <button class="exchange-page__mode-button" type="button" data-exchange-mode="apply" aria-pressed="true">申请友链</button>
+      <button class="exchange-page__mode-button" type="button" data-exchange-mode="update" aria-pressed="false">更新友链</button>
+    </div>
+
+    <form class="exchange-form" data-exchange-form="apply">
+      <div class="exchange-form__grid">
+        <label>站点名称<input name="name" required maxlength="80" autocomplete="organization" /></label>
+        <label>站点地址<input name="url" type="url" required placeholder="https://example.com/" inputmode="url" /></label>
+        <label>头像地址<input name="avatar" type="url" required placeholder="https://example.com/avatar.png" inputmode="url" /></label>
+        <label>友链页面<input name="friendslink" type="url" required placeholder="https://example.com/links/" inputmode="url" /></label>
+        <label>站点描述<textarea name="description" maxlength="240" rows="3"></textarea></label>
+        <label>站点截图<input name="siteshot" type="url" placeholder="https://example.com/shot.png" inputmode="url" /></label>
+        <label>RSS 地址<input name="feeds" type="url" placeholder="https://example.com/feed.xml" inputmode="url" /></label>
+        <label>邮箱<input name="email" type="email" placeholder="you@example.com" autocomplete="email" /></label>
+      </div>
+      <div class="exchange-form__footer">
+        <p class="exchange-form__status" data-exchange-form-status role="status" aria-live="polite"></p>
+        <button type="submit" data-exchange-submit>提交申请</button>
+      </div>
+    </form>
+
+    <form class="exchange-form" data-exchange-form="update" hidden>
+      <div class="exchange-form__grid">
+        <label>原站点地址<input name="originalUrl" type="url" required placeholder="https://example.com/" inputmode="url" /></label>
+        <label>新站点名称<input name="name" required maxlength="80" autocomplete="organization" /></label>
+        <label>新站点地址<input name="url" type="url" required placeholder="https://example.com/" inputmode="url" /></label>
+        <label>新头像地址<input name="avatar" type="url" required placeholder="https://example.com/avatar.png" inputmode="url" /></label>
+        <label>新友链页面<input name="friendslink" type="url" required placeholder="https://example.com/links/" inputmode="url" /></label>
+        <label>新站点描述<textarea name="description" maxlength="240" rows="3"></textarea></label>
+        <label>新站点截图<input name="siteshot" type="url" placeholder="https://example.com/shot.png" inputmode="url" /></label>
+        <label>RSS 地址<input name="feeds" type="url" placeholder="https://example.com/feed.xml" inputmode="url" /></label>
+        <label>邮箱<input name="email" type="email" placeholder="you@example.com" autocomplete="email" /></label>
+      </div>
+      <div class="exchange-form__footer">
+        <p class="exchange-form__status" data-exchange-form-status role="status" aria-live="polite"></p>
+        <button type="submit" data-exchange-submit>提交更新</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="exchange-page__submissions" aria-labelledby="exchange-submissions-title">
+    <header class="exchange-page__section-header">
+      <div>
+        <p class="exchange-page__eyebrow">公开记录</p>
+        <h2 id="exchange-submissions-title">申请状态</h2>
+      </div>
+      <p data-exchange-list-status role="status" aria-live="polite">正在加载…</p>
+    </header>
+    <div class="exchange-page__filters">
+      <label>状态
+        <select data-exchange-status-filter>
+          <option value="">全部</option>
+          <option value="pending">待审核</option>
+          <option value="approved">已通过</option>
+          <option value="rejected">未通过</option>
+        </select>
+      </label>
+      <label>搜索
+        <input data-exchange-search type="search" placeholder="搜索站点名称或描述" />
+      </label>
+    </div>
+    <div class="exchange-page__submission-list" data-exchange-list></div>
+    <nav class="exchange-page__pagination" data-exchange-pagination aria-label="申请记录分页"></nav>
+  </section>
+</section>
+
+<script>
+  import '../scripts/exchange-links-page';
+</script>

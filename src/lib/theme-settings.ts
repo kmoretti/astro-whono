@@ -50,19 +50,19 @@ import {
 
 export type SettingSource = 'new' | 'legacy' | 'default';
 
-export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about';
-export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about';
+export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about' | 'links';
+export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about' | 'links';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
 // ThemeFontId 从字体注册表条目 id 派生：添加字体只需在 registry.ts 增加条目，无需改这里。
 export type { ThemeFontId } from './fonts/registry';
 export type TypographyRole = 'readable' | 'copy' | 'mono' | 'brand';
 export type HomeIntroLinkKey = 'archive' | 'essay' | 'bits' | 'memo' | 'about' | 'tag';
-export type SiteSocialPresetId = 'github' | 'x' | 'email';
+export type SiteSocialPresetId = 'github' | 'qq' | 'email';
 export type SiteSocialKind = 'preset' | 'custom';
 export type SiteSocialIconKey =
   | 'github'
-  | 'x'
+  | 'qq'
   | 'email'
   | 'weibo'
   | 'facebook'
@@ -78,6 +78,15 @@ export interface SidebarNavItem {
   id: SidebarNavId;
   label: string;
   ornament: string | null;
+  visible: boolean;
+  order: number;
+  children: SidebarNavChild[];
+}
+
+export interface SidebarNavChild {
+  id: string;
+  label: string;
+  href: string;
   visible: boolean;
   order: number;
 }
@@ -99,7 +108,7 @@ export interface SiteSocialCustomItem {
 
 export interface SiteSocialPresetOrder {
   github: number;
-  x: number;
+  qq: number;
   email: number;
 }
 
@@ -115,7 +124,7 @@ export interface ResolvedSocialItem {
 
 export interface SiteSocialLinks {
   github: string | null;
-  x: string | null;
+  qq: string | null;
   email: string | null;
   presetOrder: SiteSocialPresetOrder;
   custom: SiteSocialCustomItem[];
@@ -191,6 +200,7 @@ export interface PageSettings {
   bits: BitsPageSettings;
   memo: MemoPageSettings;
   about: PageHeadingSettings;
+  links: PageHeadingSettings;
 }
 
 export interface ArticleMetaSettings {
@@ -253,10 +263,10 @@ export interface ThemeSettingsSources {
     faviconPng: SettingSource;
     faviconAppleTouchIcon: SettingSource;
     socialLinksGithub: SettingSource;
-    socialLinksX: SettingSource;
+    socialLinksQq: SettingSource;
     socialLinksEmail: SettingSource;
     socialLinksGithubOrder: SettingSource;
-    socialLinksXOrder: SettingSource;
+    socialLinksQqOrder: SettingSource;
     socialLinksEmailOrder: SettingSource;
     socialLinksCustom: SettingSource;
   };
@@ -288,6 +298,8 @@ export interface ThemeSettingsSources {
     memoSubtitle: SettingSource;
     aboutTitle: SettingSource;
     aboutSubtitle: SettingSource;
+    linksTitle: SettingSource;
+    linksSubtitle: SettingSource;
   };
   ui: {
     codeBlockShowLineNumbers: SettingSource;
@@ -321,7 +333,7 @@ export interface ThemeSettingsResolved {
 
 export interface EditableSiteSocialLinks {
   github: string | null;
-  x: string | null;
+  qq: string | null;
   email: string | null;
   presetOrder: SiteSocialPresetOrder;
   custom: SiteSocialCustomItem[];
@@ -416,28 +428,39 @@ const LEGACY_FOOTER_SHOW_CURRENT_YEAR = true;
 const LEGACY_FOOTER_COPYRIGHT = 'Whono · Theme Demo · by cxro';
 const DEFAULT_PRESET_SOCIAL_ORDER: SiteSocialPresetOrder = {
   github: 1,
-  x: 2,
+  qq: 2,
   email: 3
 };
 const LEGACY_SOCIAL_LINKS: SiteSocialLinks = {
   github: 'https://github.com/cxro/astro-whono',
-  x: 'https://twitter.com/yourname',
+  qq: 'https://qm.qq.com/q/igxLKlzUvC',
   email: 'Whono@linux.do',
   presetOrder: { ...DEFAULT_PRESET_SOCIAL_ORDER },
   custom: [],
   resolvedSocialItems: []
 };
 const LEGACY_NAV: SidebarNavItem[] = [
-  { id: 'essay', label: '随笔', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 1 },
-  { id: 'bits', label: '絮语', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 2 },
-  { id: 'memo', label: '小记', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
-  { id: 'archive', label: '归档', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 4 },
-  { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 }
+  { id: 'essay', label: '随笔', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 1, children: [] },
+  { id: 'bits', label: '絮语', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 2, children: [] },
+  { id: 'memo', label: '小记', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3, children: [] },
+  { id: 'archive', label: '归档', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 4, children: [] },
+  { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5, children: [] },
+  {
+    id: 'links',
+    label: '友链',
+    ornament: ADMIN_NAV_ORNAMENT_DEFAULT,
+    visible: true,
+    order: 6,
+    children: [
+      { id: 'index', label: '友链列表', href: '/links/', visible: true, order: 1 },
+      { id: 'exchange', label: '交换友链', href: '/links/exchange/', visible: true, order: 2 }
+    ]
+  }
 ];
 const LEGACY_NAV_ORDER = new Map<SidebarNavId, number>(LEGACY_NAV.map((item) => [item.id, item.order]));
 
 const cloneNavItems = (items: readonly SidebarNavItem[]): SidebarNavItem[] =>
-  items.map((item) => ({ ...item }));
+  items.map((item) => ({ ...item, children: item.children.map((child) => ({ ...child })) }));
 
 const cloneSocialCustomItems = (items: readonly SiteSocialCustomItem[]): SiteSocialCustomItem[] =>
   items.map((item) => ({ ...item }));
@@ -483,7 +506,7 @@ const DEFAULT_SITE: SiteSettings = {
   },
   socialLinks: {
     github: null,
-    x: null,
+    qq: null,
     email: null,
     presetOrder: clonePresetSocialOrder(DEFAULT_PRESET_SOCIAL_ORDER),
     custom: [],
@@ -532,6 +555,10 @@ const DEFAULT_PAGE: PageSettings = {
   about: {
     title: LEGACY_ABOUT_TITLE,
     subtitle: null
+  },
+  links: {
+    title: '友链',
+    subtitle: null
   }
 };
 
@@ -562,10 +589,10 @@ const DEFAULT_UI: UiSettings = {
   }
 };
 
-const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['essay', 'bits', 'memo', 'archive', 'about']);
+const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['essay', 'bits', 'memo', 'archive', 'about', 'links']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_HOSTS = ['github.com'];
-const X_HOSTS = ['x.com', 'twitter.com'];
+const QQ_HOSTS = ['qm.qq.com'];
 const SOCIAL_CUSTOM_LIMIT = 8;
 const PRESET_SOCIAL_ITEMS: readonly {
   id: SiteSocialPresetId;
@@ -573,7 +600,7 @@ const PRESET_SOCIAL_ITEMS: readonly {
   iconKey: SiteSocialIconKey;
 }[] = [
   { id: 'github', label: 'GitHub', iconKey: 'github' },
-  { id: 'x', label: 'X', iconKey: 'x' },
+  { id: 'qq', label: 'QQ', iconKey: 'qq' },
   { id: 'email', label: 'Email', iconKey: 'email' }
 ];
 
@@ -582,7 +609,8 @@ const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
   bits: '/bits/',
   memo: '/memo/',
   archive: '/archive/',
-  about: '/about/'
+  about: '/about/',
+  links: '/links/'
 };
 
 let cachedSettings: ThemeSettingsResolved | null = null;
@@ -1037,13 +1065,30 @@ const parseSidebarNav = (value: unknown): SidebarNavItem[] | undefined => {
     const visible = asBoolean(row.visible) ?? current.visible;
     const rawOrder = asInteger(row.order);
     const order = rawOrder !== undefined && isAdminNavOrderValue(rawOrder) ? rawOrder : current.order;
+    const children = Array.isArray(row.children)
+      ? row.children.flatMap((child, index) => {
+        if (!isRecord(child)) return [];
+        const childId = asSingleLineString(child.id, 64);
+        const childLabel = asSingleLineString(child.label, 80);
+        const href = asString(child.href);
+        if (!childId || !childLabel || !href || !/^\/(?!\/)/.test(href)) return [];
+        return [{
+          id: childId,
+          label: childLabel,
+          href,
+          visible: asBoolean(child.visible) ?? true,
+          order: asInteger(child.order) ?? index + 1
+        }];
+      }).sort((a, b) => a.order - b.order)
+      : current.children;
 
     merged.set(id, {
       id,
       label,
       ornament: ornament === undefined ? current.ornament : ornament,
       visible,
-      order
+      order,
+      children
     });
     hasOverride = true;
   }
@@ -1109,7 +1154,7 @@ const parseHomeIntroLinks = (value: unknown): HomeIntroLinkKey[] | undefined => 
 };
 
 const buildResolvedSocialItems = (
-  socialLinks: Pick<SiteSocialLinks, 'github' | 'x' | 'email' | 'presetOrder'>,
+  socialLinks: Pick<SiteSocialLinks, 'github' | 'qq' | 'email' | 'presetOrder'>,
   customItems: readonly SiteSocialCustomItem[]
 ): ResolvedSocialItem[] => {
   const presetItems = PRESET_SOCIAL_ITEMS.flatMap((item, index) => {
@@ -1167,6 +1212,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const pageBitsDefaultAuthorJson = isRecord(pageBitsJson?.defaultAuthor) ? pageBitsJson.defaultAuthor : undefined;
   const pageMemoJson = isRecord(pageJson?.memo) ? pageJson.memo : undefined;
   const pageAboutJson = isRecord(pageJson?.about) ? pageJson.about : undefined;
+  const pageLinksJson = isRecord(pageJson?.links) ? pageJson.links : undefined;
 
   const title = resolveValue(
     asNonEmptyString(siteJson?.title),
@@ -1228,10 +1274,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     LEGACY_SOCIAL_LINKS.github,
     DEFAULT_SITE.socialLinks.github
   );
-  const socialLinksX = resolveValue(
-    asHttpsUrl(siteSocialLinksJson?.x, X_HOSTS),
-    LEGACY_SOCIAL_LINKS.x,
-    DEFAULT_SITE.socialLinks.x
+  const rawSocialLinksQq = siteSocialLinksJson?.qq ?? siteSocialLinksJson?.x;
+  const socialLinksQq = resolveValue(
+    asHttpsUrl(rawSocialLinksQq, QQ_HOSTS),
+    LEGACY_SOCIAL_LINKS.qq,
+    DEFAULT_SITE.socialLinks.qq
   );
   const socialLinksEmail = resolveValue(
     asEmailAddress(siteSocialLinksJson?.email),
@@ -1243,10 +1290,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     LEGACY_SOCIAL_LINKS.presetOrder.github,
     DEFAULT_SITE.socialLinks.presetOrder.github
   );
-  const socialLinksXOrder = resolveValue(
-    asPresetSocialOrderValue(siteSocialPresetOrderJson?.x),
-    LEGACY_SOCIAL_LINKS.presetOrder.x,
-    DEFAULT_SITE.socialLinks.presetOrder.x
+  const rawSocialLinksQqOrder = siteSocialPresetOrderJson?.qq ?? siteSocialPresetOrderJson?.x;
+  const socialLinksQqOrder = resolveValue(
+    asPresetSocialOrderValue(rawSocialLinksQqOrder),
+    LEGACY_SOCIAL_LINKS.presetOrder.qq,
+    DEFAULT_SITE.socialLinks.presetOrder.qq
   );
   const socialLinksEmailOrder = resolveValue(
     asPresetSocialOrderValue(siteSocialPresetOrderJson?.email),
@@ -1376,6 +1424,16 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     undefined,
     DEFAULT_PAGE.about.subtitle
   );
+  const linksTitle = resolveValue(
+    asNullableString(pageLinksJson?.title),
+    undefined,
+    DEFAULT_PAGE.links.title
+  );
+  const linksSubtitle = resolveValue<string | null>(
+    asNullableString(pageLinksJson?.subtitle),
+    undefined,
+    DEFAULT_PAGE.links.subtitle
+  );
 
   const uiCodeBlock = isRecord(uiJson?.codeBlock) ? uiJson.codeBlock : undefined;
   const uiReadingMode = isRecord(uiJson?.readingMode) ? uiJson.readingMode : undefined;
@@ -1464,7 +1522,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const normalizedSocialOrderState = normalizeSocialOrderState(
     {
       github: socialLinksGithubOrder.value,
-      x: socialLinksXOrder.value,
+      qq: socialLinksQqOrder.value,
       email: socialLinksEmailOrder.value
     },
     socialLinksCustom.value
@@ -1474,7 +1532,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const resolvedSocialItems = buildResolvedSocialItems(
     {
       github: socialLinksGithub.value,
-      x: socialLinksX.value,
+      qq: socialLinksQq.value,
       email: socialLinksEmail.value,
       presetOrder: presetSocialOrder
     },
@@ -1503,7 +1561,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         },
         socialLinks: {
           github: socialLinksGithub.value,
-          x: socialLinksX.value,
+          qq: socialLinksQq.value,
           email: socialLinksEmail.value,
           presetOrder: clonePresetSocialOrder(presetSocialOrder),
           custom: cloneSocialCustomItems(customSocialItems),
@@ -1549,6 +1607,10 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         about: {
           title: aboutTitle.value,
           subtitle: aboutSubtitle.value
+        },
+        links: {
+          title: linksTitle.value,
+          subtitle: linksSubtitle.value
         }
       },
       ui: {
@@ -1595,10 +1657,10 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         faviconPng: faviconPng.source,
         faviconAppleTouchIcon: faviconAppleTouchIcon.source,
         socialLinksGithub: socialLinksGithub.source,
-        socialLinksX: socialLinksX.source,
+        socialLinksQq: socialLinksQq.source,
         socialLinksEmail: socialLinksEmail.source,
         socialLinksGithubOrder: socialLinksGithubOrder.source,
-        socialLinksXOrder: socialLinksXOrder.source,
+        socialLinksQqOrder: socialLinksQqOrder.source,
         socialLinksEmailOrder: socialLinksEmailOrder.source,
         socialLinksCustom: socialLinksCustom.source
       },
@@ -1629,7 +1691,9 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         memoTitle: memoTitle.source,
         memoSubtitle: memoSubtitle.source,
         aboutTitle: aboutTitle.source,
-        aboutSubtitle: aboutSubtitle.source
+        aboutSubtitle: aboutSubtitle.source,
+        linksTitle: linksTitle.source,
+        linksSubtitle: linksSubtitle.source
       },
       ui: {
         codeBlockShowLineNumbers: showLineNumbers.source,
@@ -1696,7 +1760,7 @@ const buildEditableThemeSettingsSnapshot = (
       },
       socialLinks: {
         github: resolved.settings.site.socialLinks.github,
-        x: resolved.settings.site.socialLinks.x,
+        qq: resolved.settings.site.socialLinks.qq,
         email: resolved.settings.site.socialLinks.email,
         presetOrder: clonePresetSocialOrder(resolved.settings.site.socialLinks.presetOrder),
         custom: cloneSocialCustomItems(resolved.settings.site.socialLinks.custom)
@@ -1722,7 +1786,8 @@ const buildEditableThemeSettingsSnapshot = (
         }
       },
       memo: { ...resolved.settings.page.memo },
-      about: { ...resolved.settings.page.about }
+      about: { ...resolved.settings.page.about },
+      links: { ...resolved.settings.page.links }
     },
     ui: {
       codeBlock: { ...resolved.settings.ui.codeBlock },

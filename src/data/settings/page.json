@@ -11,8 +11,8 @@
     "title": "絮语",
     "subtitle": "生活不只是长篇",
     "defaultAuthor": {
-      "name": "Whono",
-      "avatar": "author/avatar.webp"
+      "name": "克喵Moretti",
+      "avatar": "author/avatar.png"
     }
   },
   "memo": {
@@ -21,6 +21,10 @@
   },
   "about": {
     "title": "关于",
+    "subtitle": null
+  },
+  "links": {
+    "title": "友链",
     "subtitle": null
   }
 }

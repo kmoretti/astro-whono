@@ -26,7 +26,7 @@ type ValidationContext = {
   inputSiteAdminOverviewPublicVisible: HTMLInputElement;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement;
   inputSiteSocialGithub: HTMLInputElement;
-  inputSiteSocialX: HTMLInputElement;
+  inputSiteSocialQq: HTMLInputElement;
   inputSiteSocialEmail: HTMLInputElement;
   inputShellBrandTitle: HTMLInputElement;
   inputShellQuote: HTMLTextAreaElement;
@@ -43,11 +43,13 @@ type ValidationContext = {
   inputPageBitsTitle: HTMLInputElement;
   inputPageMemoTitle: HTMLInputElement;
   inputPageAboutTitle: HTMLInputElement;
+  inputPageLinksTitle: HTMLInputElement;
   inputPageEssaySubtitle: HTMLInputElement;
   inputPageArchiveSubtitle: HTMLInputElement;
   inputPageBitsSubtitle: HTMLInputElement;
   inputPageMemoSubtitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
+  inputPageLinksSubtitle: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
   inputArticleMetaShowTags: HTMLInputElement;
@@ -78,7 +80,7 @@ type ValidationContext = {
 
 const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|iconKey|order|visible))?$/;
 const NAV_PATH_RE = /^shell\.nav(?:(?:\.([a-z]+))|\[(\d+)\])(?:\.(id|label|ornament|order|visible))?$/;
-const PAGE_TITLE_INPUT_KEYS = ['essay', 'archive', 'bits', 'memo', 'about'] as const;
+const PAGE_TITLE_INPUT_KEYS = ['essay', 'archive', 'bits', 'memo', 'about', 'links'] as const;
 
 export const createValidation = ({
   form,
@@ -94,7 +96,7 @@ export const createValidation = ({
   inputSiteAdminOverviewPublicVisible,
   inputSiteAdminOverviewHiddenMessage,
   inputSiteSocialGithub,
-  inputSiteSocialX,
+  inputSiteSocialQq,
   inputSiteSocialEmail,
   inputShellBrandTitle,
   inputShellQuote,
@@ -111,11 +113,13 @@ export const createValidation = ({
   inputPageBitsTitle,
   inputPageMemoTitle,
   inputPageAboutTitle,
+  inputPageLinksTitle,
   inputPageEssaySubtitle,
   inputPageArchiveSubtitle,
   inputPageBitsSubtitle,
   inputPageMemoSubtitle,
   inputPageAboutSubtitle,
+  inputPageLinksSubtitle,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
   inputArticleMetaShowTags,
@@ -165,14 +169,16 @@ export const createValidation = ({
     archive: () => inputPageArchiveTitle,
     bits: () => inputPageBitsTitle,
     memo: () => inputPageMemoTitle,
-    about: () => inputPageAboutTitle
+    about: () => inputPageAboutTitle,
+    links: () => inputPageLinksTitle
   };
   const pageSubtitleTargets: Record<(typeof PAGE_TITLE_INPUT_KEYS)[number], () => HTMLElement | null> = {
     essay: () => inputPageEssaySubtitle,
     archive: () => inputPageArchiveSubtitle,
     bits: () => inputPageBitsSubtitle,
     memo: () => inputPageMemoSubtitle,
-    about: () => inputPageAboutSubtitle
+    about: () => inputPageAboutSubtitle,
+    links: () => inputPageLinksSubtitle
   };
 
   /* 字体卡片组本身不可聚焦，聚焦目标退到组内选中（或首个）radio。 */
@@ -208,8 +214,8 @@ export const createValidation = ({
         return () => form.querySelector<HTMLElement>('[data-favicon-clear="appleTouchIcon"]');
       case 'site.socialLinks.github':
         return () => inputSiteSocialGithub;
-      case 'site.socialLinks.x':
-        return () => inputSiteSocialX;
+      case 'site.socialLinks.qq':
+        return () => inputSiteSocialQq;
       case 'site.socialLinks.email':
         return () => inputSiteSocialEmail;
       case 'site.socialLinks.custom':

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   getEditableThemeSettingsPayload,
   getEditableThemeSettingsState,
+  getSidebarHref,
   getSiteFaviconLinks,
   getThemeSettings,
   getThemeSettingsReadDiagnostics,
@@ -49,6 +50,59 @@ describe('theme-settings revision semantics', () => {
     await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })));
   });
 
+  it('normalizes legacy X settings into the QQ preset snapshot', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    const sitePath = path.join(settingsDir, 'site.json');
+    const siteJson = JSON.parse(await readFile(sitePath, 'utf8')) as Record<string, any>;
+    siteJson.socialLinks.qq = undefined;
+    delete siteJson.socialLinks.qq;
+    siteJson.socialLinks.x = 'https://qm.qq.com/q/legacy';
+    siteJson.socialLinks.presetOrder.qq = undefined;
+    delete siteJson.socialLinks.presetOrder.qq;
+    siteJson.socialLinks.presetOrder.x = 2;
+    await writeFile(sitePath, `${JSON.stringify(siteJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const snapshot = getEditableThemeSettingsPayload(resolved).settings;
+
+    expect(resolved.settings.site.socialLinks.qq).toBe('https://qm.qq.com/q/legacy');
+    expect(resolved.settings.site.socialLinks.presetOrder.qq).toBe(2);
+    expect(snapshot.site.socialLinks.qq).toBe('https://qm.qq.com/q/legacy');
+    expect(snapshot.site.socialLinks).not.toHaveProperty('x');
+    expect(snapshot.site.socialLinks.presetOrder).not.toHaveProperty('x');
+  });
+
+  it('resolves the fixed links navigation and page defaults', () => {
+    const resolved = getThemeSettings();
+
+    expect(resolved.settings.shell.nav).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'links',
+          label: '友链',
+          visible: true,
+          order: 6,
+          children: expect.arrayContaining([
+            expect.objectContaining({ id: 'index', href: '/links/' }),
+            expect.objectContaining({ id: 'exchange', href: '/links/exchange/' })
+          ])
+        })
+      ])
+    );
+    expect(getSidebarHref('links')).toBe('/links/');
+    expect(resolved.settings.page.links).toEqual({ title: '友链', subtitle: null });
+  });
+
+  it('keeps configured nested navigation children in the editable payload', () => {
+    const payload = getEditableThemeSettingsPayload().settings;
+    const links = payload.shell.nav.find((item) => item.id === 'links');
+
+    expect(links?.children).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'index', href: '/links/' }),
+      expect.objectContaining({ id: 'exchange', href: '/links/exchange/' })
+    ]));
+  });
+
   it('builds an editable payload whose revision matches the revision helper', () => {
     const resolved = getThemeSettings();
     const payload = getEditableThemeSettingsPayload(resolved);
@@ -73,6 +127,47 @@ describe('theme-settings revision semantics', () => {
 
     expect(getThemeSettingsRevision(mutated)).not.toBe(getThemeSettingsRevision(resolved));
     expect(toEditableThemeSettingsPayload(mutated).settings.site.title).toBe(mutated.settings.site.title);
+  });
+
+  it('keeps default children when a legacy links item has no children field', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    const shellPath = path.join(settingsDir, 'shell.json');
+    const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
+    const links = shellJson.nav.find((item: { id: string }) => item.id === 'links');
+    delete links.children;
+    await writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    expect(resolved.settings.shell.nav.find((item) => item.id === 'links')?.children).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'exchange', href: '/links/exchange/' })])
+    );
+  });
+
+  it('keeps legacy shell and page settings without links compatible', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    const shellPath = path.join(settingsDir, 'shell.json');
+    const pagePath = path.join(settingsDir, 'page.json');
+    const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
+    const pageJson = JSON.parse(await readFile(pagePath, 'utf8')) as Record<string, any>;
+    shellJson.nav = shellJson.nav.filter((item: { id: string }) => item.id !== 'links');
+    delete pageJson.links;
+    await Promise.all([
+      writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8'),
+      writeFile(pagePath, `${JSON.stringify(pageJson, null, 2)}\n`, 'utf8')
+    ]);
+
+    const resolved = getThemeSettings();
+    const payload = getEditableThemeSettingsPayload(resolved);
+
+    expect(resolved.settings.shell.nav).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'links', label: '友链', visible: true })])
+    );
+    expect(resolved.settings.page.links).toEqual({ title: '友链', subtitle: null });
+    expect(payload.settings.shell.nav).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'links', order: 6 })])
+    );
+    expect(payload.settings.page.links).toEqual({ title: '友链', subtitle: null });
+    expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);
   });
 
   it('allows missing settings files to keep falling back without locking the console', async () => {
@@ -162,16 +257,18 @@ describe('theme-settings revision semantics', () => {
     expect(getThemeSettingsRevision(mutated)).not.toBe(getThemeSettingsRevision(resolved));
   });
 
-  it('resolves favicon slots to null defaults and emits the default three-link set', () => {
+  it('resolves configured favicon slots and emits their public links', () => {
     const resolved = getThemeSettings();
 
-    expect(resolved.settings.site.favicon).toEqual({ svg: null, png: null, appleTouchIcon: null });
-    // demo site.json 显式写了三个 null 槽位，来源应标记为 new（显式配置的默认态）。
+    expect(resolved.settings.site.favicon).toEqual({
+      svg: null,
+      png: '/images/site/favicon-256x256-0cda5eeb.png',
+      appleTouchIcon: '/images/site/apple-touch-icon-256x256-0cda5eeb.png'
+    });
     expect(resolved.sources.site.faviconPng).toBe('new');
     expect(getSiteFaviconLinks(resolved.settings.site.favicon)).toEqual([
-      { rel: 'icon', type: 'image/svg+xml', sizes: 'any', href: 'favicon.svg' },
-      { rel: 'icon', type: 'image/png', sizes: '32x32', href: 'favicon-32x32.png' },
-      { rel: 'apple-touch-icon', sizes: '180x180', href: 'apple-touch-icon.png' }
+      { rel: 'icon', type: 'image/png', sizes: '256x256', href: '/images/site/favicon-256x256-0cda5eeb.png' },
+      { rel: 'apple-touch-icon', sizes: '256x256', href: '/images/site/apple-touch-icon-256x256-0cda5eeb.png' }
     ]);
   });
 

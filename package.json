@@ -44,7 +44,8 @@
     "@aws-sdk/client-s3": "^3.1106.0",
     "@lucide/astro": "^1.28.0",
     "astro": "^7.1.6",
-    "github-slugger": "^2.0.0"
+    "github-slugger": "^2.0.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
@@ -60,10 +61,12 @@
     "@lezer/highlight": "^1.2.3",
     "@lucide/svelte": "^1.8.0",
     "@shikijs/rehype": "^4.0.2",
+    "@types/hast": "^3.0.5",
     "@types/node": "^22.0.0",
     "emoji-picker-element": "^1.29.1",
     "emoji-picker-element-data": "^1.8.0",
     "fflate": "^0.8.3",
+    "hast": "^1.0.0",
     "katex": "^0.16.47",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",
@@ -75,10 +78,12 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "remark-smartypants": "^3.0.2",
+    "sharp": "^0.35.3",
     "svelte": "^5.55.5",
     "typescript": "^5.9.3",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
+    "vfile": "^6.0.3",
     "vitest": "^4.1.2"
   },
   "overrides": {

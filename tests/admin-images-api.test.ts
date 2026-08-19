@@ -788,9 +788,16 @@ describe('admin images api', () => {
   });
 
   it('aborts a cloud upload at the operation deadline', async () => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     configureS3TestEnv();
-    s3SdkMock.send.mockReturnValueOnce(new Promise(() => undefined));
+    let signalUploadStarted!: () => void;
+    const uploadStarted = new Promise<void>((resolve) => {
+      signalUploadStarted = resolve;
+    });
+    s3SdkMock.send.mockImplementationOnce(() => {
+      signalUploadStarted();
+      return new Promise(() => undefined);
+    });
 
     const { POST } = await import('../src/pages/api/admin/images/upload');
     const formData = new FormData();
@@ -802,6 +809,7 @@ describe('admin images api', () => {
       url: new URL('http://127.0.0.1:4321/api/admin/images/upload')
     } as never);
 
+    await uploadStarted;
     await vi.advanceTimersByTimeAsync(60_000);
     const response = await responsePromise;
     const payload = JSON.parse(await response.text());

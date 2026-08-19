@@ -64,8 +64,8 @@ type FormCodecContext = {
   inputSiteFaviconAppleTouchIcon: HTMLInputElement;
   inputSiteSocialGithubOrder: HTMLInputElement;
   inputSiteSocialGithub: HTMLInputElement;
-  inputSiteSocialXOrder: HTMLInputElement;
-  inputSiteSocialX: HTMLInputElement;
+  inputSiteSocialQqOrder: HTMLInputElement;
+  inputSiteSocialQq: HTMLInputElement;
   inputSiteSocialEmailOrder: HTMLInputElement;
   inputSiteSocialEmail: HTMLInputElement;
   inputShellBrandTitle: HTMLInputElement;
@@ -87,6 +87,8 @@ type FormCodecContext = {
   inputPageMemoSubtitle: HTMLInputElement;
   inputPageAboutTitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
+  inputPageLinksTitle: HTMLInputElement;
+  inputPageLinksSubtitle: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
   inputArticleMetaShowTags: HTMLInputElement;
@@ -184,8 +186,8 @@ export const createFormCodec = ({
   inputSiteFaviconAppleTouchIcon,
   inputSiteSocialGithubOrder,
   inputSiteSocialGithub,
-  inputSiteSocialXOrder,
-  inputSiteSocialX,
+  inputSiteSocialQqOrder,
+  inputSiteSocialQq,
   inputSiteSocialEmailOrder,
   inputSiteSocialEmail,
   inputShellBrandTitle,
@@ -207,6 +209,8 @@ export const createFormCodec = ({
   inputPageMemoSubtitle,
   inputPageAboutTitle,
   inputPageAboutSubtitle,
+  inputPageLinksTitle,
+  inputPageLinksSubtitle,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
   inputArticleMetaShowTags,
@@ -435,6 +439,8 @@ export const createFormCodec = ({
       normalizeCustomSocialLabel
     });
 
+  let preservedNavChildren = new Map<SidebarNavId, EditableNavItem['children']>();
+
   const collectSettings = (): EditableSettings => {
     const nav = getNavRows().map((row, index): EditableNavItem => {
       const idRaw = row.getAttribute('data-nav-id')?.trim() ?? '';
@@ -449,7 +455,8 @@ export const createFormCodec = ({
         label: labelInput?.value.trim() || '',
         ornament: ornamentInput ? normalizeOptionalSingleLine(ornamentInput.value) : ADMIN_NAV_ORNAMENT_DEFAULT,
         order: parseOrder(orderInput?.value || '', fallbackOrder),
-        visible: Boolean(visibleInput?.checked)
+        visible: Boolean(visibleInput?.checked),
+        children: (preservedNavChildren.get(id) ?? []).map((child) => ({ ...child }))
       };
     });
 
@@ -497,7 +504,7 @@ export const createFormCodec = ({
         },
         socialLinks: {
           github: inputSiteSocialGithub.value.trim() || null,
-          x: inputSiteSocialX.value.trim() || null,
+          qq: inputSiteSocialQq.value.trim() || null,
           email: normalizeEmail(inputSiteSocialEmail.value.trim()) || null,
           presetOrder: getPresetSocialOrder(),
           custom
@@ -542,6 +549,10 @@ export const createFormCodec = ({
         about: {
           title: normalizeOptionalSingleLine(inputPageAboutTitle.value),
           subtitle: normalizeOptionalSingleLine(inputPageAboutSubtitle.value)
+        },
+        links: {
+          title: normalizeOptionalSingleLine(inputPageLinksTitle.value),
+          subtitle: normalizeOptionalSingleLine(inputPageLinksSubtitle.value)
         }
       },
       ui: {
@@ -594,10 +605,10 @@ export const createFormCodec = ({
       settings.site.socialLinks?.presetOrder?.github ?? ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.github
     );
     inputSiteSocialGithub.value = settings.site.socialLinks?.github || '';
-    inputSiteSocialXOrder.value = String(
-      settings.site.socialLinks?.presetOrder?.x ?? ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.x
+    inputSiteSocialQqOrder.value = String(
+      settings.site.socialLinks?.presetOrder?.qq ?? ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.qq
     );
-    inputSiteSocialX.value = settings.site.socialLinks?.x || '';
+    inputSiteSocialQq.value = settings.site.socialLinks?.qq || '';
     inputSiteSocialEmailOrder.value = String(
       settings.site.socialLinks?.presetOrder?.email ?? ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.email
     );
@@ -628,6 +639,8 @@ export const createFormCodec = ({
     inputPageMemoSubtitle.value = settings.page.memo?.subtitle || '';
     inputPageAboutTitle.value = settings.page.about?.title || '';
     inputPageAboutSubtitle.value = settings.page.about?.subtitle || '';
+    inputPageLinksTitle.value = settings.page.links?.title || '';
+    inputPageLinksSubtitle.value = settings.page.links?.subtitle || '';
     inputPageBitsAuthorName.value = settings.page.bits?.defaultAuthor?.name || '';
     inputPageBitsAuthorAvatar.value = settings.page.bits?.defaultAuthor?.avatar || '';
     inputHomeShowHero.checked = (settings.home.heroPresetId || 'default') !== 'none';
@@ -652,6 +665,9 @@ export const createFormCodec = ({
     refreshArticleMetaPreview();
 
     const navMap = new Map<SidebarNavId, EditableNavItem>(settings.shell.nav.map((item) => [item.id, item]));
+    preservedNavChildren = new Map(
+      settings.shell.nav.map((item) => [item.id, item.children.map((child) => ({ ...child }))])
+    );
     getNavRows().forEach((row, index) => {
       const rawId = row.getAttribute('data-nav-id')?.trim() ?? '';
       const id = isAdminNavId(rawId) ? rawId : ADMIN_NAV_IDS[index] ?? 'essay';

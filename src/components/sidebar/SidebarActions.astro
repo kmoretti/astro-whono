@@ -7,6 +7,12 @@ type SidebarActionNavItem = {
   href: string;
   label: string;
   isActive: boolean;
+  children: readonly {
+    id: string;
+    href: string;
+    label: string;
+    isActive: boolean;
+  }[];
 };
 
 const {
@@ -69,11 +75,27 @@ const publicNavItems = navItems.map((item) => ({
       <div class="public-nav-group__popover">
         <ul class="public-nav-group__list">
           {publicNavItems.map((item) => (
-            <li>
-              <a class="public-nav-group__link" href={item.href} aria-current={item.isActive ? 'page' : undefined}>
-                <span class="public-nav-group__label">{item.label}</span>
-                <span class="public-nav-group__badge">{item.pathBadge}</span>
-              </a>
+            <li class:list={{ 'public-nav-group__item--parent': item.children.length > 0 }}>
+              {item.children.length > 0 ? (
+                <>
+                  <span class="public-nav-group__label">{item.label}</span>
+                  <ul class="public-nav-group__children">
+                    {item.children.map((child) => (
+                      <li>
+                        <a class="public-nav-group__link" href={child.href} aria-current={child.isActive ? 'page' : undefined}>
+                          <span class="public-nav-group__label">{child.label}</span>
+                          <span class="public-nav-group__badge">{getPublicNavPathBadge(child.href)}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <a class="public-nav-group__link" href={item.href} aria-current={item.isActive ? 'page' : undefined}>
+                  <span class="public-nav-group__label">{item.label}</span>
+                  <span class="public-nav-group__badge">{item.pathBadge}</span>
+                </a>
+              )}
             </li>
           ))}
         </ul>

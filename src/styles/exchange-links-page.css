@@ -1,0 +1,250 @@
+.exchange-page {
+  min-width: 0;
+}
+
+.exchange-page__header,
+.exchange-page__section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.exchange-page__header {
+  display: block;
+}
+
+.exchange-page__eyebrow {
+  margin: 0 0 5px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.exchange-page .page-title,
+.exchange-page h2 {
+  margin: 0;
+}
+
+.exchange-page h2 {
+  font-family: var(--font-readable);
+  font-size: 19px;
+}
+
+.exchange-page__subtitle,
+.exchange-page__condition-status,
+.exchange-page__section-header > p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.exchange-page__conditions,
+.exchange-page__workspace,
+.exchange-page__submissions {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.exchange-page__condition-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.exchange-page__condition {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.exchange-page__condition input {
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  accent-color: var(--accent);
+}
+
+.exchange-page__mode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.exchange-page__mode-button,
+.exchange-form button[type="submit"],
+.exchange-page__pagination button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+}
+
+.exchange-page__mode-button[aria-pressed="true"],
+.exchange-form button[type="submit"] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
+.exchange-page__mode-button:hover,
+.exchange-page__mode-button:focus-visible,
+.exchange-form button[type="submit"]:hover,
+.exchange-form button[type="submit"]:focus-visible,
+.exchange-page__pagination button:hover,
+.exchange-page__pagination button:focus-visible {
+  border-color: var(--text);
+}
+
+.exchange-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.exchange-form label,
+.exchange-page__filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+}
+
+.exchange-form label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+.exchange-form input,
+.exchange-form textarea,
+.exchange-page__filters input,
+.exchange-page__filters select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.exchange-form textarea {
+  resize: vertical;
+}
+
+.exchange-form input:focus-visible,
+.exchange-form textarea:focus-visible,
+.exchange-page__filters input:focus-visible,
+.exchange-page__filters select:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.exchange-form__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.exchange-form__status {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.exchange-page__filters {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.exchange-page__submission-list {
+  display: grid;
+  gap: 10px;
+}
+
+.exchange-submission {
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-content-bg);
+}
+
+.exchange-submission > a {
+  color: var(--text);
+  font-family: var(--font-readable);
+  font-weight: 600;
+}
+
+.exchange-submission__meta,
+.exchange-submission > p:last-child {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exchange-submission__meta {
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.exchange-page__pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.exchange-page__pagination button {
+  min-width: 36px;
+  padding-inline: 8px;
+}
+
+.exchange-page__pagination button[aria-current="page"] {
+  border-color: var(--text);
+  background: var(--panel);
+}
+
+@media (max-width: 640px) {
+  .exchange-page__section-header,
+  .exchange-form__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .exchange-form__grid,
+  .exchange-page__filters {
+    grid-template-columns: 1fr;
+  }
+
+  .exchange-form__footer button {
+    width: 100%;
+  }
+}

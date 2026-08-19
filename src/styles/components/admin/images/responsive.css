@@ -4,10 +4,12 @@
 
 @container admin-images-console (max-width: 660px) {
   .admin-images-browser__detail-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .admin-images-browser__detail-media {
+    width: 100%;
+    flex-basis: auto;
     aspect-ratio: auto;
     min-height: 200px;
     max-height: 300px;

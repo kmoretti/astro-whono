@@ -55,8 +55,8 @@ export type AdminThemeControls = RequiredElements<{
   inputSiteFaviconAppleTouchIcon: HTMLInputElement | null;
   inputSiteSocialGithubOrder: HTMLInputElement | null;
   inputSiteSocialGithub: HTMLInputElement | null;
-  inputSiteSocialXOrder: HTMLInputElement | null;
-  inputSiteSocialX: HTMLInputElement | null;
+    inputSiteSocialQqOrder: HTMLInputElement | null;
+    inputSiteSocialQq: HTMLInputElement | null;
   inputSiteSocialEmailOrder: HTMLInputElement | null;
   inputSiteSocialEmail: HTMLInputElement | null;
   inputShellBrandTitle: HTMLInputElement | null;
@@ -80,6 +80,8 @@ export type AdminThemeControls = RequiredElements<{
   inputPageMemoSubtitle: HTMLInputElement | null;
   inputPageAboutTitle: HTMLInputElement | null;
   inputPageAboutSubtitle: HTMLInputElement | null;
+  inputPageLinksTitle: HTMLInputElement | null;
+  inputPageLinksSubtitle: HTMLInputElement | null;
   inputArticleMetaShowDate: HTMLInputElement | null;
   inputArticleMetaDateLabel: HTMLInputElement | null;
   inputArticleMetaShowTags: HTMLInputElement | null;
@@ -145,8 +147,8 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputSiteFaviconAppleTouchIcon: byId<HTMLInputElement>('site-favicon-apple-touch-icon'),
     inputSiteSocialGithubOrder: byId<HTMLInputElement>('site-social-github-order'),
     inputSiteSocialGithub: byId<HTMLInputElement>('site-social-github'),
-    inputSiteSocialXOrder: byId<HTMLInputElement>('site-social-x-order'),
-    inputSiteSocialX: byId<HTMLInputElement>('site-social-x'),
+    inputSiteSocialQqOrder: byId<HTMLInputElement>('site-social-qq-order'),
+    inputSiteSocialQq: byId<HTMLInputElement>('site-social-qq'),
     inputSiteSocialEmailOrder: byId<HTMLInputElement>('site-social-email-order'),
     inputSiteSocialEmail: byId<HTMLInputElement>('site-social-email'),
     inputShellBrandTitle: byId<HTMLInputElement>('shell-brand-title'),
@@ -170,6 +172,8 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputPageMemoSubtitle: byId<HTMLInputElement>('page-memo-subtitle'),
     inputPageAboutTitle: byId<HTMLInputElement>('page-about-title'),
     inputPageAboutSubtitle: byId<HTMLInputElement>('page-about-subtitle'),
+    inputPageLinksTitle: byId<HTMLInputElement>('page-links-title'),
+    inputPageLinksSubtitle: byId<HTMLInputElement>('page-links-subtitle'),
     inputArticleMetaShowDate: byId<HTMLInputElement>('ui-article-meta-show-date'),
     inputArticleMetaDateLabel: byId<HTMLInputElement>('ui-article-meta-date-label'),
     inputArticleMetaShowTags: byId<HTMLInputElement>('ui-article-meta-show-tags'),

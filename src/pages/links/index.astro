@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LinksPageView from '../../components/LinksPageView.astro';
+import '../../styles/links-page.css';
+import '../../styles/components/lightbox.css';
+import { getThemeSettings } from '../../lib/theme-settings';
+
+const { settings } = getThemeSettings();
+const title = settings.page.links.title || '友链';
+const subtitle = settings.page.links.subtitle;
+---
+
+<BaseLayout title={title} description={subtitle ?? undefined} bodyClass="links-page" activeNavId="links">
+  <LinksPageView title={title} subtitle={subtitle} recoveryEmail={settings.site.socialLinks.email} />
+</BaseLayout>

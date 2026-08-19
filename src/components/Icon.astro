@@ -39,6 +39,7 @@ type LegacyIconName =
   | 'github'
   | 'x'
   | 'x-twitter'
+  | 'qq'
   | 'email'
   | 'mail'
   | 'weibo'
@@ -78,8 +79,11 @@ const role = ariaLabel ? 'img' : undefined;
 const normalizeLegacyBrandIconName = (value: LegacyIconName): LegacyBrandIconName | null => {
   switch (value) {
     case 'github':
+      return 'github';
     case 'x':
     case 'x-twitter':
+    case 'qq':
+      return 'qq';
     case 'email':
     case 'mail':
     case 'weibo':

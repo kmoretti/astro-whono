@@ -28,7 +28,7 @@ type SocialPresetRow = {
 
 const socialIconOptions: readonly SocialIconOption[] = [
   { value: 'github', optionLabel: 'GitHub', defaultLabel: 'GitHub' },
-  { value: 'x', optionLabel: 'X', defaultLabel: 'X' },
+  { value: 'qq', optionLabel: 'QQ', defaultLabel: 'QQ' },
   { value: 'email', optionLabel: 'Email', defaultLabel: 'Email' },
   { value: 'weibo', optionLabel: '微博', defaultLabel: '微博' },
   { value: 'facebook', optionLabel: 'Facebook', defaultLabel: 'Facebook' },
@@ -41,7 +41,7 @@ const socialIconOptions: readonly SocialIconOption[] = [
   { value: 'website', optionLabel: '网站', defaultLabel: '网站' }
 ];
 const customSocialIconOptions = socialIconOptions.filter(
-  (option) => option.value !== 'github' && option.value !== 'x' && option.value !== 'email'
+  (option) => option.value !== 'github' && option.value !== 'qq' && option.value !== 'email'
 );
 const defaultCustomSocialIconKey: SiteSocialIconKey = customSocialIconOptions[0]?.value ?? 'website';
 const socialPresetRows: readonly SocialPresetRow[] = [
@@ -56,14 +56,14 @@ const socialPresetRows: readonly SocialPresetRow[] = [
     placeholder: 'https://github.com/username'
   },
   {
-    id: 'x',
-    label: 'X',
-    orderInputId: 'site-social-x-order',
-    inputId: 'site-social-x',
+    id: 'qq',
+    label: 'QQ',
+    orderInputId: 'site-social-qq-order',
+    inputId: 'site-social-qq',
     inputType: 'url',
     inputMode: 'url',
     autoComplete: 'url',
-    placeholder: 'https://x.com/username'
+    placeholder: 'https://qm.qq.com/q/xxxxxxxx'
   },
   {
     id: 'email',

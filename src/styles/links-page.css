@@ -1,0 +1,503 @@
+/* Compact friend-link page. */
+.links-page__view {
+  min-width: 0;
+}
+
+.links-page__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.links-page__header .page-title {
+  margin: 0;
+}
+
+.links-page__header .page-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+}
+
+.links-page__summary,
+.links-page__status,
+.links-page__empty {
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.links-page__summary {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.links-page__status {
+  min-height: 1.6em;
+  margin: 20px 0 10px;
+}
+
+.links-page__status[data-state="error"] {
+  color: var(--admin-status-danger-text, var(--muted));
+}
+
+.links-page__status[data-state="stale"] {
+  color: var(--muted);
+}
+
+.links-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 26px;
+}
+
+.links-page__filter {
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.links-page__filter:hover,
+.links-page__filter:focus-visible {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.links-page__filter[aria-pressed="true"] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
+.links-page__group {
+  margin: 32px 0 0;
+}
+
+.links-page__group:first-child {
+  margin-top: 20px;
+}
+
+.links-page__group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.links-page__group-title {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-readable);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.links-page__group-description,
+.links-page__group-count {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 13px;
+}
+
+.links-page__group-description {
+  margin-top: 3px;
+}
+
+.links-page__group-count {
+  white-space: nowrap;
+}
+
+.links-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.links-page__card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: 102px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-content-bg);
+  color: var(--text);
+  isolation: isolate;
+}
+
+.links-page__card:hover,
+.links-page__card:focus-within {
+  border-color: color-mix(in srgb, var(--border) 55%, var(--text) 45%);
+}
+
+.links-page__card-shot {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  transform: scale(1.03);
+  transition: opacity 180ms ease, transform 240ms ease;
+}
+
+.links-page__card:hover .links-page__card-shot,
+.links-page__card:focus-within .links-page__card-shot {
+  opacity: 0.12;
+  transform: scale(1);
+}
+
+.links-page__card-body {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 9px;
+  min-width: 0;
+  padding: 11px;
+  padding-right: 80px;
+}
+
+.links-page__avatar {
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-family: var(--font-readable);
+  font-size: 13px;
+}
+
+.links-page__avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.links-page__content {
+  min-width: 0;
+  padding-right: 42px;
+}
+
+.links-page__name,
+.links-page__hostname,
+.links-page__description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.links-page__name {
+  display: block;
+  max-width: 100%;
+}
+
+.links-page__meta-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 3px;
+}
+
+.links-page__name {
+  color: var(--text);
+  font-family: var(--font-readable);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.links-page__hostname {
+  min-width: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.links-page__latency {
+  flex: 0 0 auto;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.links-page__latency::before {
+  content: "·";
+  margin-right: 7px;
+  color: var(--border);
+}
+
+.links-page__latency[data-state="unreachable"],
+.links-page__latency[data-tier="unreachable"] {
+  color: var(--muted);
+}
+
+.links-page__latency[data-tier="fast"] {
+  color: #5f9b68;
+}
+
+.links-page__latency[data-tier="medium"] {
+  color: #b08a43;
+}
+
+.links-page__latency[data-tier="slow"] {
+  color: #b5655f;
+}
+
+:root[data-theme="dark"] .links-page__latency[data-tier="fast"] {
+  color: #8fc798;
+}
+
+:root[data-theme="dark"] .links-page__latency[data-tier="medium"] {
+  color: #d6b46b;
+}
+
+:root[data-theme="dark"] .links-page__latency[data-tier="slow"] {
+  color: #e0938c;
+}
+
+.links-page__description {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.links-page__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.links-page__tag {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+.links-page__tag:hover,
+.links-page__tag:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.links-page__actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.links-page__action {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.links-page__action:hover,
+.links-page__action:focus-visible {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.links-page__action svg {
+  width: 14px;
+  height: 14px;
+}
+
+.links-page__action--mobile-preview {
+  display: none;
+}
+
+.links-page__tombstones {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.links-page__tombstones-title {
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 78%, var(--muted) 22%);
+  font-family: var(--font-readable);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.links-page__tombstones-note {
+  margin-top: 14px;
+  padding: 13px 16px;
+  border: 2px dashed color-mix(in srgb, var(--border) 76%, var(--muted) 24%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--code-content-bg) 84%, var(--panel) 16%);
+  color: var(--muted);
+  font-family: var(--font-copy);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.links-page__tombstones-note strong {
+  color: var(--text);
+}
+
+.links-page__tombstones-note a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+}
+
+.links-page__tombstones-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 22px;
+}
+
+.links-page__tombstone-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  color: color-mix(in srgb, var(--muted) 72%, var(--faint) 28%);
+  font-family: var(--font-copy);
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 0.78;
+}
+
+.links-page__tombstone-avatar {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  filter: grayscale(1);
+  font-family: var(--font-readable);
+  font-size: 10px;
+}
+
+.links-page__tombstone-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.links-page__tombstone-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-bottom: 1px dashed color-mix(in srgb, var(--muted) 54%, transparent);
+}
+
+:root[data-theme="dark"] .links-page__tombstones-note {
+  background: color-mix(in srgb, var(--panel) 82%, var(--bg) 18%);
+}
+
+.links-page__empty {
+  margin: 36px 0;
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.links-page__retry {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.links-page__retry:hover,
+.links-page__retry:focus-visible {
+  border-color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .links-page__header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .links-page__summary {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 620px) {
+  .links-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .links-page__action--mobile-preview {
+    display: grid;
+  }
+
+  .links-page__card-shot {
+    display: none;
+  }
+
+  .links-page__tombstones {
+    margin-top: 38px;
+  }
+
+  .links-page__tombstones-note {
+    padding: 12px 13px;
+    font-size: 13px;
+  }
+
+  .links-page__tombstones-list {
+    gap: 9px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .links-page__card-shot {
+    transition: none;
+  }
+}
