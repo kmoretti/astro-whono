@@ -22,23 +22,32 @@ jobs:
       name: production
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version-file: .nvmrc
+          node-version-file: ${{ github.workspace }}/.nvmrc
           cache: npm
+          cache-dependency-path: ${{ github.workspace }}/package-lock.json
+
+      - name: Verify workspace
+        working-directory: ${{ github.workspace }}
+        run: |
+          test -f package.json
+          test -f package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        working-directory: ${{ github.workspace }}
+        run: npm ci --prefix "$GITHUB_WORKSPACE"
 
       - name: Build site
-        run: npm run build
+        working-directory: ${{ github.workspace }}
+        run: npm run --prefix "$GITHUB_WORKSPACE" build
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=main
+          command: pages deploy ${{ github.workspace }}/dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=main
