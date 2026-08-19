@@ -24,26 +24,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+          run_install: false
+
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version-file: ${{ github.workspace }}/.nvmrc
-          cache: npm
-          cache-dependency-path: ${{ github.workspace }}/package-lock.json
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Verify workspace
         working-directory: ${{ github.workspace }}
         run: |
           test -f package.json
-          test -f package-lock.json
+          test -f pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
-        run: npm ci --prefix "$GITHUB_WORKSPACE"
+        run: pnpm install --frozen-lockfile
 
       - name: Build site
         working-directory: ${{ github.workspace }}
-        run: npm run --prefix "$GITHUB_WORKSPACE" build
+        run: pnpm build
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
