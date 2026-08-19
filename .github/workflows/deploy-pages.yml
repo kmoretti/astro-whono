@@ -60,7 +60,7 @@ jobs:
           if pnpm dlx wrangler@latest pages project list | grep -Eq "^[[:space:]]*${CLOUDFLARE_PAGES_PROJECT_NAME}[[:space:]]"; then
             echo "Cloudflare Pages project already exists"
           else
-            pnpm dlx wrangler@latest pages project create "${CLOUDFLARE_PAGES_PROJECT_NAME}"
+            pnpm dlx wrangler@latest pages project create "${CLOUDFLARE_PAGES_PROJECT_NAME}" --production-branch main
           fi
 
       - name: Deploy to Cloudflare Pages
