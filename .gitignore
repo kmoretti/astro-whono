@@ -18,6 +18,12 @@ pnpm-debug.log*
 *.log
 logs/
 
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
 # OS / Editor
 .DS_Store
 Thumbs.db

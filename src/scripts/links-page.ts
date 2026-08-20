@@ -406,6 +406,7 @@ if (!root) {
     activeTag = target.dataset.linksTag || '';
     renderFilters();
     renderGroups();
+    if (latencyPayload !== null) applyLatency(latencyPayload);
   };
   filtersEl?.addEventListener('click', handleTagClick);
   groupsEl?.addEventListener('click', handleTagClick);

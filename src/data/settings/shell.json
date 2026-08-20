@@ -57,6 +57,13 @@
           "href": "/links/exchange/",
           "visible": true,
           "order": 2
+        },
+        {
+          "id": "fcircle",
+          "label": "朋友圈",
+          "href": "/fcircle/",
+          "visible": true,
+          "order": 3
         }
       ]
     }

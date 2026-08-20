@@ -35,11 +35,13 @@
 .prose h2 {
   font-size: 18px;
   margin: 42px 0 12px;
+  scroll-margin-top: 28px;
 }
 
 .prose h3 {
   font-size: 16px;
   margin: 28px 0 10px;
+  scroll-margin-top: 28px;
 }
 
 .prose p {

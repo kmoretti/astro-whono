@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/fcircle-page.css';
+---
+
+<BaseLayout title="朋友圈" description="站点友邻的最新文章聚合" bodyClass="fcircle-page" activeNavId="links">
+  <section class="fcircle-page__view" data-fcircle-root aria-labelledby="fcircle-page-title">
+    <header class="fcircle-page__header">
+      <p class="fcircle-page__eyebrow">FRIEND CIRCLE</p>
+      <h1 id="fcircle-page-title" class="page-title">朋友圈</h1>
+      <p class="fcircle-page__subtitle">来自友邻站点的最新文章，保持连接，也保持更新。</p>
+    </header>
+
+    <dl class="fcircle-page__summary" data-fcircle-summary>
+      <div class="fcircle-page__summary-item">
+        <dt class="fcircle-page__summary-label">友邻数</dt>
+        <dd class="fcircle-page__summary-value" data-fcircle-stat>--</dd>
+      </div>
+      <div class="fcircle-page__summary-item">
+        <dt class="fcircle-page__summary-label">活跃友邻数</dt>
+        <dd class="fcircle-page__summary-value" data-fcircle-stat>--</dd>
+      </div>
+      <div class="fcircle-page__summary-item">
+        <dt class="fcircle-page__summary-label">收录文章数</dt>
+        <dd class="fcircle-page__summary-value" data-fcircle-stat>--</dd>
+      </div>
+    </dl>
+    <p class="fcircle-page__summary-updated" data-fcircle-updated>正在读取更新时间…</p>
+
+    <section class="fcircle-page__stream-section" aria-labelledby="fcircle-stream-title">
+      <div class="fcircle-page__stream-header">
+        <h2 id="fcircle-stream-title" class="fcircle-page__section-title">最新文章</h2>
+        <p class="fcircle-page__status" data-fcircle-status role="status" aria-live="polite">正在加载朋友圈…</p>
+      </div>
+      <div class="fcircle-page__stream" data-fcircle-stream></div>
+      <p class="fcircle-page__empty" data-fcircle-empty hidden>暂无收录文章。</p>
+      <button class="fcircle-page__retry" data-fcircle-retry type="button" hidden>重新加载</button>
+      <noscript>
+        <p class="fcircle-page__empty">此页面需要启用 JavaScript 才能加载实时朋友圈数据。</p>
+      </noscript>
+    </section>
+  </section>
+
+  <script>
+    import '../../scripts/fcircle-page';
+  </script>
+</BaseLayout>
