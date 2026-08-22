@@ -116,6 +116,29 @@ describe('admin-console/shared', () => {
     );
   });
 
+  it('canonicalizes and validates the about-page umami settings', () => {
+    const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+
+    raw.page.about.umami = {
+      baseUrl: ' https://stats.example.com ',
+      shareId: 'https://stats.example.com/share/abCd1234'
+    };
+    let canonical = canonicalizeAdminThemeSettings(raw);
+    expect(canonical.page.about.umami).toEqual({
+      baseUrl: 'https://stats.example.com',
+      shareId: 'abCd1234'
+    });
+    expect(validateAdminThemeSettings(canonical)).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: 'page.about.umami.baseUrl' })])
+    );
+
+    raw.page.about.umami = { baseUrl: 'http://stats.example.com', shareId: 'short' };
+    canonical = canonicalizeAdminThemeSettings(raw);
+    const paths = validateAdminThemeSettings(canonical).map((issue) => issue.path);
+    expect(paths).toContain('page.about.umami.baseUrl');
+    expect(paths).toContain('page.about.umami.shareId');
+  });
+
   it('canonicalizes and serializes the fixed links navigation and page settings', () => {
     const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
     const linksNav = raw.shell.nav.find((item: { id: string }) => item.id === 'links');

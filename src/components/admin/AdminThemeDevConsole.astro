@@ -13,6 +13,7 @@ interface Props {
   footerStartYearMin: number;
   footerStartYearMax: number;
   homeIntroMaxLength: number;
+  aboutUmamiBaseUrl: string;
   memoSubtitlePlaceholder: string;
   memoTitlePlaceholder: string;
   navIdOrder: readonly SidebarNavId[];
@@ -27,6 +28,7 @@ const {
   footerStartYearMin,
   footerStartYearMax,
   homeIntroMaxLength,
+  aboutUmamiBaseUrl,
   memoSubtitlePlaceholder,
   memoTitlePlaceholder,
   navIdOrder,
@@ -68,6 +70,7 @@ const {
     <AdminPageSection
       pageTitleMaxLength={pageTitleMaxLength}
       pageSubtitleMaxLength={pageSubtitleMaxLength}
+      aboutUmamiBaseUrl={aboutUmamiBaseUrl}
       memoTitlePlaceholder={memoTitlePlaceholder}
       memoSubtitlePlaceholder={memoSubtitlePlaceholder}
     />

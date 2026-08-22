@@ -43,7 +43,7 @@ const { Content } = await render(entryWithContactLinks);
     <article class="about-card"><AdminIcon name="activity" class="about-card__decor" size={72} /><h2>{profile.personality} <span>{profile.personalityType}</span></h2>{profile.personalityUrl ? <a class="about-card__link" href={profile.personalityUrl} rel="noreferrer">了解我的性格</a> : null}</article>
     <article class="about-card about-card--specialties"><AdminIcon name="waypoints" class="about-card__decor" size={72} /><h2>特长</h2><p>{profile.specialties}</p><strong>{profile.specialtyHighlight}</strong></article>
     <article class="about-card about-card--contact"><AdminIcon name="admin-site" class="about-card__decor" size={72} /><h2>联系</h2><div class="about-contact-links">{resolvedSocialItems.map((item) => <a href={item.href} aria-label={item.label} title={item.label}><BrandIcon name={item.iconKey} class="icon" /></a>)}</div></article>
-    <article class="about-card about-card--stats" data-umami-stats aria-live="polite"><AdminIcon name="activity" class="about-card__decor" size={72} /><h2>网站统计</h2><p data-stats-status>正在加载统计数据…</p><dl data-stats-values hidden><div><dt>页面浏览</dt><dd data-stat="pageviews">—</dd></div><div><dt>访客</dt><dd data-stat="visitors">—</dd></div><div><dt>访问</dt><dd data-stat="visits">—</dd></div><div><dt>跳出</dt><dd data-stat="bounces">—</dd></div><div><dt>停留时间</dt><dd data-stat="totaltime">—</dd></div></dl></article>
+    <article class="about-card about-card--stats" data-umami-stats data-umami-base-url={settings.page.about.umami.baseUrl} data-umami-share-id={settings.page.about.umami.shareId} aria-live="polite"><AdminIcon name="activity" class="about-card__decor" size={72} /><h2>网站统计</h2><p data-stats-status>正在加载统计数据…</p><dl data-stats-values hidden><div><dt>页面浏览</dt><dd data-stat="pageviews">—</dd></div><div><dt>访客</dt><dd data-stat="visitors">—</dd></div><div><dt>访问</dt><dd data-stat="visits">—</dd></div><div><dt>跳出</dt><dd data-stat="bounces">—</dd></div><div><dt>停留时间</dt><dd data-stat="totaltime">—</dd></div></dl></article>
   </section>
 
   <div class="about-body prose"><Content /></div>
@@ -55,8 +55,7 @@ const { Content } = await render(entryWithContactLinks);
 
     // umami 分享链接方式：先用 /api/share/{id} 换取 websiteId + token，
     // 再携带 x-umami-share-token / x-umami-share-context 请求头查询统计。
-    const UMAMI_BASE_URL = 'https://um.081531.xyz';
-    const UMAMI_SHARE_ID = 'x5gImy5VXsdslFK5';
+    // 地址与分享 ID 来自 Theme Console 的 /about/ 页统计设置（data-* 注入）。
     const UMAMI_STATS_RANGE_MS = 30 * 24 * 60 * 60 * 1000;
     const UMAMI_STAT_KEYS = ['pageviews', 'visitors', 'visits', 'bounces', 'totaltime'] as const;
 
@@ -90,7 +89,9 @@ const { Content } = await render(entryWithContactLinks);
     if (statsRoot) {
       const status = statsRoot.querySelector<HTMLElement>('[data-stats-status]');
       const values = statsRoot.querySelector<HTMLElement>('[data-stats-values]');
-      fetch(`${UMAMI_BASE_URL}/api/share/${UMAMI_SHARE_ID}`, { headers: { Accept: 'application/json' } })
+      const umamiBaseUrl = (statsRoot.dataset.umamiBaseUrl || '').replace(/\/+$/, '');
+      const umamiShareId = statsRoot.dataset.umamiShareId || '';
+      fetch(`${umamiBaseUrl}/api/share/${umamiShareId}`, { headers: { Accept: 'application/json' } })
         .then((response) => response.ok ? response.json() : Promise.reject(new Error('share unavailable')))
         .then((share: UmamiShareInfo) => {
           const websiteId = typeof share.websiteId === 'string' ? share.websiteId : '';
@@ -99,7 +100,7 @@ const { Content } = await render(entryWithContactLinks);
           const endAt = Date.now();
           const startAt = endAt - UMAMI_STATS_RANGE_MS;
           return fetch(
-            `${UMAMI_BASE_URL}/api/websites/${encodeURIComponent(websiteId)}/stats?startAt=${startAt}&endAt=${endAt}`,
+            `${umamiBaseUrl}/api/websites/${encodeURIComponent(websiteId)}/stats?startAt=${startAt}&endAt=${endAt}`,
             {
               headers: {
                 Accept: 'application/json',

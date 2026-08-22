@@ -91,6 +91,8 @@ describe('theme-settings revision semantics', () => {
     );
     expect(getSidebarHref('links')).toBe('/links/');
     expect(resolved.settings.page.links).toEqual({ title: '友链', subtitle: null });
+    expect(resolved.settings.page.about.umami.baseUrl).toMatch(/^https:\/\//);
+    expect(resolved.settings.page.about.umami.shareId).toMatch(/^[a-zA-Z0-9]{8,50}$/);
     expect(resolved.settings.links.linksSourceUrl).toMatch(/^https:\/\//);
     expect(resolved.settings.links.latencySourceUrl).toMatch(/^https:\/\//);
     expect(resolved.settings.links.tombstoneSourceUrl).toMatch(/^https:\/\//);

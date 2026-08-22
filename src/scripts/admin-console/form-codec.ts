@@ -108,6 +108,8 @@ type FormCodecContext = {
   inputPageAboutProfilePersonalityUrl: HTMLInputElement;
   inputPageAboutProfileSpecialties: HTMLInputElement;
   inputPageAboutProfileSpecialtyHighlight: HTMLInputElement;
+  inputPageAboutUmamiBaseUrl: HTMLInputElement;
+  inputPageAboutUmamiShareId: HTMLInputElement;
   inputPageLinksTitle: HTMLInputElement;
   inputPageLinksSubtitle: HTMLInputElement;
   inputLinksSourceUrl: HTMLInputElement;
@@ -261,6 +263,8 @@ export const createFormCodec = ({
   inputPageAboutProfilePersonalityUrl,
   inputPageAboutProfileSpecialties,
   inputPageAboutProfileSpecialtyHighlight,
+  inputPageAboutUmamiBaseUrl,
+  inputPageAboutUmamiShareId,
   inputPageLinksTitle,
   inputPageLinksSubtitle,
   inputLinksSourceUrl,
@@ -635,6 +639,10 @@ export const createFormCodec = ({
             personalityUrl: inputPageAboutProfilePersonalityUrl.value.trim() || null,
             specialties: inputPageAboutProfileSpecialties.value.trim(),
             specialtyHighlight: inputPageAboutProfileSpecialtyHighlight.value.trim()
+          },
+          umami: {
+            baseUrl: inputPageAboutUmamiBaseUrl.value.trim(),
+            shareId: inputPageAboutUmamiShareId.value.trim()
           }
         },
         links: {
@@ -757,6 +765,8 @@ export const createFormCodec = ({
     inputPageAboutProfilePersonalityUrl.value = settings.page.about?.profile?.personalityUrl || '';
     inputPageAboutProfileSpecialties.value = settings.page.about?.profile?.specialties || '';
     inputPageAboutProfileSpecialtyHighlight.value = settings.page.about?.profile?.specialtyHighlight || '';
+    inputPageAboutUmamiBaseUrl.value = settings.page.about?.umami?.baseUrl || '';
+    inputPageAboutUmamiShareId.value = settings.page.about?.umami?.shareId || '';
     inputPageLinksTitle.value = settings.page.links?.title || '';
     inputPageLinksSubtitle.value = settings.page.links?.subtitle || '';
     inputLinksSourceUrl.value = settings.links?.linksSourceUrl || '';

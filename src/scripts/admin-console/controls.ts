@@ -97,6 +97,8 @@ export type AdminThemeControls = RequiredElements<{
   inputPageAboutProfilePersonalityUrl: HTMLInputElement | null;
   inputPageAboutProfileSpecialties: HTMLInputElement | null;
   inputPageAboutProfileSpecialtyHighlight: HTMLInputElement | null;
+  inputPageAboutUmamiBaseUrl: HTMLInputElement | null;
+  inputPageAboutUmamiShareId: HTMLInputElement | null;
   inputPageLinksTitle: HTMLInputElement | null;
   inputPageLinksSubtitle: HTMLInputElement | null;
   inputLinksSourceUrl: HTMLInputElement | null;
@@ -218,6 +220,8 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputPageAboutProfilePersonalityUrl: byId<HTMLInputElement>('page-about-profile-personality-url'),
     inputPageAboutProfileSpecialties: byId<HTMLInputElement>('page-about-profile-specialties'),
     inputPageAboutProfileSpecialtyHighlight: byId<HTMLInputElement>('page-about-profile-specialty-highlight'),
+    inputPageAboutUmamiBaseUrl: byId<HTMLInputElement>('page-about-umami-base-url'),
+    inputPageAboutUmamiShareId: byId<HTMLInputElement>('page-about-umami-share-id'),
     inputPageLinksTitle: byId<HTMLInputElement>('page-links-title'),
 
     inputPageLinksSubtitle: byId<HTMLInputElement>('page-links-subtitle'),

@@ -12,6 +12,7 @@ import type {
   TypographySettings
 } from '../theme-settings';
 import { DEFAULT_LINKS_SETTINGS } from '../links-settings';
+import { DEFAULT_ABOUT_UMAMI_SETTINGS, UMAMI_SHARE_ID_RE } from '../about-umami-settings';
 import {
   THEME_TYPOGRAPHY_DEFAULT,
   asThemeFontIdForRole,
@@ -338,6 +339,15 @@ const canonicalizeAdminLinksUrl = (value: unknown, fallback: string): string => 
   return normalizeAdminLinksUrl(raw) || raw;
 };
 
+/* 允许直接粘贴完整分享链接（https://…/share/xxxx），提取其中的分享 ID。 */
+const canonicalizeAdminUmamiShareId = (value: unknown, fallback: string): string => {
+  const raw = normalizeTrimmed(value);
+  if (!raw) return fallback;
+  if (UMAMI_SHARE_ID_RE.test(raw)) return raw;
+  const match = raw.match(/\/share\/([a-zA-Z0-9]{8,50})/);
+  return match?.[1] ?? raw;
+};
+
 export type AdminThemeSettingsValidationIssue = {
   path: string;
   message: string;
@@ -478,6 +488,7 @@ export const canonicalizeAdminThemeSettings = (
   const bitsPage = isRecord(page.bits) ? page.bits : {};
   const aboutPage = isRecord(page.about) ? page.about : {};
   const aboutProfile = isRecord(aboutPage.profile) ? aboutPage.profile : {};
+  const aboutUmami = isRecord(aboutPage.umami) ? aboutPage.umami : {};
   const bitsDefaultAuthor = isRecord(bitsPage.defaultAuthor) ? bitsPage.defaultAuthor : {};
   const rawPresetOrder = isRecord(socialLinks.presetOrder) ? socialLinks.presetOrder : {};
   const rawUiArticleMeta: LooseRecord = isRecord(ui.articleMeta) ? ui.articleMeta : {};
@@ -684,6 +695,11 @@ export const canonicalizeAdminThemeSettings = (
           personalityUrl: normalizeTrimmed(aboutProfile.personalityUrl) || null,
           specialties: normalizeSingleLine(aboutProfile.specialties, ''),
           specialtyHighlight: normalizeSingleLine(aboutProfile.specialtyHighlight, '')
+        },
+        umami: {
+          /* 只 trim 保留原串（校验交给 validate），不做 URL 重序列化以免尾斜杠漂移。 */
+          baseUrl: normalizeTrimmed(aboutUmami.baseUrl) || DEFAULT_ABOUT_UMAMI_SETTINGS.baseUrl,
+          shareId: canonicalizeAdminUmamiShareId(aboutUmami.shareId, DEFAULT_ABOUT_UMAMI_SETTINGS.shareId)
         }
       },
       links: {
@@ -802,7 +818,10 @@ export const createAdminWritableThemeSettingsGroups = (
       }
     },
     memo: { ...settings.page.memo },
-    about: { ...settings.page.about },
+    about: {
+      ...settings.page.about,
+      umami: { ...settings.page.about.umami }
+    },
     links: { ...settings.page.links }
   },
   links: { ...settings.links },
@@ -1213,6 +1232,15 @@ export const validateAdminThemeSettings = (
     }
   }
 
+  if (!settings.page.about?.umami?.baseUrl
+    || !isAdminAllowedHttpsUrl(settings.page.about.umami.baseUrl)) {
+    pushIssue('page.about.umami.baseUrl', '关于页 umami 地址必须是合法的 https:// 地址');
+  }
+  if (!settings.page.about?.umami?.shareId
+    || !UMAMI_SHARE_ID_RE.test(settings.page.about.umami.shareId)) {
+    pushIssue('page.about.umami.shareId', 'umami 分享 ID 格式无效（分享链接 /share/ 后的那串字符）');
+  }
+
   if (typeof settings.ui?.articleMeta?.showDate !== 'boolean') {
     pushIssue('ui.articleMeta.showDate', '文章元信息里的“显示发布日期”必须是布尔值');
   }
@@ -1610,13 +1638,18 @@ const fillAdminThemeSettingsPageCompatibilityDefaults = (
   if (isRecord(about)) {
     const rawAbout = next.about;
     const profile = about.profile;
+    const umami = about.umami;
     const rawProfile = isRecord(rawAbout) ? rawAbout.profile : undefined;
+    const rawUmami = isRecord(rawAbout) ? rawAbout.umami : undefined;
     next = {
       ...next,
       about: {
         ...(isRecord(rawAbout) ? rawAbout : {}),
         ...(isRecord(profile)
           ? { profile: isRecord(rawProfile) ? { ...profile, ...rawProfile } : profile }
+          : {}),
+        ...(isRecord(umami)
+          ? { umami: isRecord(rawUmami) ? { ...umami, ...rawUmami } : umami }
           : {})
       }
     };

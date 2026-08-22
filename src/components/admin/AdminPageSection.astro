@@ -6,6 +6,7 @@ import { ADMIN_ARTICLE_META_DATE_LABEL_MAX_LENGTH } from '../../lib/admin-consol
 interface Props {
   pageTitleMaxLength: number;
   pageSubtitleMaxLength: number;
+  aboutUmamiBaseUrl: string;
   memoTitlePlaceholder?: string;
   memoSubtitlePlaceholder?: string;
 }
@@ -13,6 +14,7 @@ interface Props {
 const {
   pageTitleMaxLength,
   pageSubtitleMaxLength,
+  aboutUmamiBaseUrl,
   memoTitlePlaceholder = '',
   memoSubtitlePlaceholder = ''
 } = Astro.props;
@@ -266,6 +268,29 @@ const {
       <label class="admin-field admin-field--full"><span class="admin-label">性格说明链接</span><input class="admin-field__control" id="page-about-profile-personality-url" type="url" maxlength="500" /></label>
       <label class="admin-field"><span class="admin-label">特长文本</span><input class="admin-field__control" id="page-about-profile-specialties" type="text" maxlength="160" /></label>
       <label class="admin-field"><span class="admin-label">特长高亮</span><input class="admin-field__control" id="page-about-profile-specialty-highlight" type="text" maxlength="80" /></label>
+    </div>
+  </div>
+
+  <div class="admin-subgroup">
+    <p class="admin-subtitle">
+      <span class="admin-subtitle__main">/about/页统计（umami）</span>
+      <a class="admin-subtitle__link" href={aboutUmamiBaseUrl} target="_blank" rel="noopener noreferrer">打开 umami ↗</a>
+    </p>
+    <div class="admin-grid">
+      <label class="admin-field admin-field--full">
+        <span class="admin-label">
+          <span class="admin-label__main">umami 地址</span>
+          <span class="admin-label__hint">（实例根地址，仅允许 HTTPS）</span>
+        </span>
+        <input class="admin-field__control" id="page-about-umami-base-url" type="url" inputmode="url" autocomplete="off" required />
+      </label>
+      <label class="admin-field admin-field--full">
+        <span class="admin-label">
+          <span class="admin-label__main">分享 ID</span>
+          <span class="admin-label__hint">（分享链接 /share/ 后的那串字符，也可直接粘贴完整分享链接）</span>
+        </span>
+        <input class="admin-field__control" id="page-about-umami-share-id" type="text" autocomplete="off" required />
+      </label>
     </div>
   </div>
 

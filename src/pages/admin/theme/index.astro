@@ -8,6 +8,7 @@ import {
   ADMIN_SETTINGS_API_PATH
 } from '../../../lib/admin-console/admin-api-paths';
 import { createWithBase } from '../../../utils/format';
+import { DEFAULT_ABOUT_UMAMI_SETTINGS } from '../../../lib/about-umami-settings';
 
 const isDev = import.meta.env.DEV;
 const base = import.meta.env.BASE_URL ?? '/';
@@ -66,6 +67,9 @@ const loadThemeDevState = async () => {
     typeof memoEntry?.data.subtitle === 'string' ? memoEntry.data.subtitle.trim() : '';
 
   const initialState = getEditableThemeSettingsState();
+  const aboutUmamiBaseUrl = initialState.ok
+    ? initialState.payload.settings.page.about.umami.baseUrl
+    : DEFAULT_ABOUT_UMAMI_SETTINGS.baseUrl;
   const bootstrapState = initialState.ok
     ? (() => {
         const initialNavMap = new Map(
@@ -111,6 +115,7 @@ const loadThemeDevState = async () => {
     footerStartYearMin,
     footerStartYearMax,
     homeIntroMaxLength,
+    aboutUmamiBaseUrl,
     memoSubtitlePlaceholder,
     memoTitlePlaceholder,
     navIdOrder,
@@ -146,6 +151,7 @@ const AdminImagePicker = adminDevState?.AdminImagePicker;
           footerStartYearMin={adminDevState.footerStartYearMin}
           footerStartYearMax={adminDevState.footerStartYearMax}
           homeIntroMaxLength={adminDevState.homeIntroMaxLength}
+          aboutUmamiBaseUrl={adminDevState.aboutUmamiBaseUrl}
           memoSubtitlePlaceholder={adminDevState.memoSubtitlePlaceholder}
           memoTitlePlaceholder={adminDevState.memoTitlePlaceholder}
           navIdOrder={adminDevState.navIdOrder}

@@ -764,6 +764,21 @@
   color: var(--faint);
 }
 
+.admin-subtitle__link {
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+  transition: color .2s ease;
+}
+
+.admin-subtitle__link:hover,
+.admin-subtitle__link:focus-visible {
+  color: var(--text);
+}
+
 .admin-subtitle--compact {
   margin-bottom: 0;
 }

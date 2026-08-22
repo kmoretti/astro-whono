@@ -49,6 +49,8 @@ type ValidationContext = {
   inputPageBitsSubtitle: HTMLInputElement;
   inputPageMemoSubtitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
+  inputPageAboutUmamiBaseUrl: HTMLInputElement;
+  inputPageAboutUmamiShareId: HTMLInputElement;
   inputPageLinksSubtitle: HTMLInputElement;
   inputLinksSourceUrl: HTMLInputElement;
   inputLinksLatencySourceUrl: HTMLInputElement;
@@ -131,6 +133,8 @@ export const createValidation = ({
   inputPageBitsSubtitle,
   inputPageMemoSubtitle,
   inputPageAboutSubtitle,
+  inputPageAboutUmamiBaseUrl,
+  inputPageAboutUmamiShareId,
   inputPageLinksSubtitle,
   inputLinksSourceUrl,
   inputLinksLatencySourceUrl,
@@ -244,6 +248,10 @@ export const createValidation = ({
         return () => inputSiteSocialEmail;
       case 'site.socialLinks.custom':
         return () => socialCustomAddBtn;
+      case 'page.about.umami.baseUrl':
+        return () => inputPageAboutUmamiBaseUrl;
+      case 'page.about.umami.shareId':
+        return () => inputPageAboutUmamiShareId;
       case 'links.linksSourceUrl':
         return () => inputLinksSourceUrl;
       case 'links.latencySourceUrl':

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { site as legacySite } from '../../site.config.mjs';
 import { DEFAULT_LINKS_SETTINGS, type LinksSettings } from './links-settings';
+import { DEFAULT_ABOUT_UMAMI_SETTINGS, UMAMI_SHARE_ID_RE } from './about-umami-settings';
 import { asThemeFontIdForRole, type ThemeFontId } from './fonts/registry';
 import {
   getHeroImageLocalFilePath,
@@ -214,12 +215,17 @@ export interface AboutProfileSettings {
   specialtyHighlight: string;
 }
 
+export interface AboutUmamiSettings {
+  baseUrl: string;
+  shareId: string;
+}
+
 export interface PageSettings {
   essay: PageHeadingSettings;
   archive: PageHeadingSettings;
   bits: BitsPageSettings;
   memo: MemoPageSettings;
-  about: PageHeadingSettings & { profile: AboutProfileSettings };
+  about: PageHeadingSettings & { profile: AboutProfileSettings; umami: AboutUmamiSettings };
   links: PageHeadingSettings;
 }
 
@@ -320,6 +326,7 @@ export interface ThemeSettingsSources {
     aboutTitle: SettingSource;
     aboutSubtitle: SettingSource;
     aboutProfile: SettingSource;
+    aboutUmami: SettingSource;
     linksTitle: SettingSource;
     linksSubtitle: SettingSource;
   };
@@ -611,7 +618,8 @@ const DEFAULT_PAGE: PageSettings = {
       personalityUrl: 'https://www.16personalities.com/',
       specialties: '特长、特长',
       specialtyHighlight: '学习能力 MAX'
-    }
+    },
+    umami: { ...DEFAULT_ABOUT_UMAMI_SETTINGS }
   },
   links: {
     title: '友链',
@@ -769,6 +777,23 @@ const asHttpsUrl = (value: unknown, allowedHosts?: readonly string[]): string | 
 const asRequiredHttpsUrl = (value: unknown): string | undefined => {
   const normalized = asHttpsUrl(value);
   return typeof normalized === 'string' && normalized ? normalized : undefined;
+};
+
+const asUmamiShareId = (value: unknown): string | undefined => {
+  const next = asString(value);
+  return next && UMAMI_SHARE_ID_RE.test(next) ? next : undefined;
+};
+
+/* 只校验协议、保留原字符串：避免 URL.toString() 给纯主机地址补尾斜杠，
+   导致与 settings 文件里的原值产生 schema-mismatch。 */
+const asUmamiBaseUrl = (value: unknown): string | undefined => {
+  const next = asString(value);
+  if (!next) return undefined;
+  try {
+    return new URL(next).protocol === 'https:' ? next : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 const asEmailAddress = (value: unknown): string | null | undefined => {
@@ -1278,6 +1303,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const pageMemoJson = isRecord(pageJson?.memo) ? pageJson.memo : undefined;
   const pageAboutJson = isRecord(pageJson?.about) ? pageJson.about : undefined;
   const pageAboutProfileJson = isRecord(pageAboutJson?.profile) ? pageAboutJson.profile : undefined;
+  const pageAboutUmamiJson = isRecord(pageAboutJson?.umami) ? pageAboutJson.umami : undefined;
   const pageLinksJson = isRecord(pageJson?.links) ? pageJson.links : undefined;
 
   const linksSourceUrl = resolveValue(
@@ -1550,6 +1576,10 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     specialties: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.specialties, 160), undefined, DEFAULT_PAGE.about.profile.specialties).value,
     specialtyHighlight: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.specialtyHighlight, 80), undefined, DEFAULT_PAGE.about.profile.specialtyHighlight).value
   };
+  const aboutUmami = {
+    baseUrl: resolveValue(asUmamiBaseUrl(pageAboutUmamiJson?.baseUrl), undefined, DEFAULT_PAGE.about.umami.baseUrl).value,
+    shareId: resolveValue(asUmamiShareId(pageAboutUmamiJson?.shareId), undefined, DEFAULT_PAGE.about.umami.shareId).value
+  };
   const linksTitle = resolveValue(
     asNullableString(pageLinksJson?.title),
     undefined,
@@ -1733,7 +1763,8 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         about: {
           title: aboutTitle.value,
           subtitle: aboutSubtitle.value,
-          profile: aboutProfile
+          profile: aboutProfile,
+          umami: aboutUmami
         },
         links: {
           title: linksTitle.value,
@@ -1834,6 +1865,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         aboutTitle: aboutTitle.source,
         aboutSubtitle: aboutSubtitle.source,
         aboutProfile: pageAboutProfileJson ? 'new' : 'default',
+        aboutUmami: pageAboutUmamiJson ? 'new' : 'default',
         linksTitle: linksTitle.source,
         linksSubtitle: linksSubtitle.source
       },
@@ -1942,7 +1974,10 @@ const buildEditableThemeSettingsSnapshot = (
         }
       },
       memo: { ...resolved.settings.page.memo },
-      about: { ...resolved.settings.page.about },
+      about: {
+        ...resolved.settings.page.about,
+        umami: { ...resolved.settings.page.about.umami }
+      },
       links: { ...resolved.settings.page.links }
     },
     links: { ...resolved.settings.links },
