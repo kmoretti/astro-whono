@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
   canonicalizeAdminThemeSettings,
@@ -80,6 +81,46 @@ describe('admin-console/shared', () => {
     expect(normalizeAdminLinksUrl('https://example.com')).toBe('https://example.com/');
     expect(normalizeAdminLinksUrl('http://example.com/source.yml')).toBe('');
     expect(normalizeAdminLinksUrl('not-a-url')).toBe('');
+  });
+
+  it('canonicalizes comments settings and preserves enabled=false', () => {
+    const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+    raw.comments = {
+      enabled: false,
+      repo: 'example/comments',
+      repoId: 'R_kgDO123456',
+      category: 'Announcements',
+      categoryId: 'DIC_kwDO123456',
+      mapping: 'url',
+      inputPosition: 'bottom',
+      lang: 'en',
+      reactionsEnabled: false,
+      strict: false
+    };
+
+    const canonical = canonicalizeAdminThemeSettings(raw);
+
+    expect(canonical.comments).toEqual(raw.comments);
+  });
+
+  it('returns comments in the writable theme settings groups', () => {
+    const settings = getEditableThemeSettingsPayload().settings;
+    const groups = createAdminWritableThemeSettingsGroups(settings);
+
+    expect(groups.comments).toEqual(settings.comments);
+  });
+
+  it('keeps comments in the admin settings write group list', async () => {
+    const source = await readFile('src/pages/api/admin/settings.ts', 'utf8');
+
+    expect(source).toMatch(/const WRITABLE_GROUPS = \[[^\]]*'comments'/s);
+  });
+
+  it('uses settings.comments for Giscus and does not mount when disabled', async () => {
+    const source = await readFile('src/components/GiscusComments.astro', 'utf8');
+
+    expect(source).toContain('settings.comments');
+    expect(source).toMatch(/if \(.*comments\.enabled.*\)\s*return/);
   });
 
   it('canonicalizes and serializes the friend-link settings group', () => {

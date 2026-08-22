@@ -1,0 +1,112 @@
+---
+import { getThemeSettings } from '../lib/theme-settings';
+
+interface Props {
+  title?: string;
+}
+
+const { title = '评论' } = Astro.props;
+const { settings } = getThemeSettings();
+const comments = settings.comments;
+const getComments = () => {
+  if (!comments.enabled) return null;
+  return comments;
+};
+const commentsConfig = getComments();
+---
+
+{commentsConfig && <section
+  class="giscus-comments"
+  data-giscus-comments
+  data-repo={comments.repo}
+  data-repo-id={comments.repoId}
+  data-category={comments.category}
+  data-category-id={comments.categoryId}
+  data-mapping={comments.mapping}
+  data-input-position={comments.inputPosition}
+  data-lang={comments.lang}
+  data-reactions-enabled={String(Number(comments.reactionsEnabled))}
+  data-strict={String(Number(comments.strict))}
+  aria-label={title}
+>
+  <h2 class="giscus-comments__title">{title}</h2>
+  <div class="giscus-comments__frame"></div>
+  <noscript><p class="giscus-comments__noscript">需要启用 JavaScript 才能查看评论。</p></noscript>
+</section>}
+
+<style>
+  .giscus-comments {
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .giscus-comments__title {
+    margin: 0 0 14px;
+    font-family: var(--font-readable);
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .giscus-comments__noscript {
+    margin: 0;
+    color: var(--muted);
+  }
+</style>
+
+<script>
+  // giscus 主题不能直接用 preferred_color_scheme：站点有自己的明暗切换（含跟随系统），
+  // 因此按 html[data-theme] 的当前值注入初始主题，并用 MutationObserver 监听切换，
+  // 通过 postMessage 通知 giscus iframe 实时换肤。
+  const GISCUS_ORIGIN = 'https://giscus.app';
+
+  const getSiteTheme = (): 'light' | 'dark' =>
+    document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+
+  const mountGiscus = (): void => {
+    const frame = document.querySelector<HTMLElement>('[data-giscus-comments] .giscus-comments__frame');
+    if (!frame || document.querySelector('script[src*="giscus.app/client.js"]')) return;
+
+    const script = document.createElement('script');
+    script.src = `${GISCUS_ORIGIN}/client.js`;
+    script.crossOrigin = 'anonymous';
+    script.async = true;
+
+    const config: Record<string, string> = {
+      repo: frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.repo ?? '',
+      'repo-id': frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.repoId ?? '',
+      category: frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.category ?? '',
+      'category-id': frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.categoryId ?? '',
+      mapping: frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.mapping ?? 'pathname',
+      strict: frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.strict ?? '1',
+      'reactions-enabled': frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.reactionsEnabled ?? '1',
+      'emit-metadata': '0',
+      'input-position': frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.inputPosition ?? 'top',
+      lang: frame.closest<HTMLElement>('[data-giscus-comments]')?.dataset.lang ?? 'zh-CN',
+      loading: 'lazy',
+      theme: getSiteTheme()
+    };
+    Object.entries(config).forEach(([key, value]) => {
+      script.setAttribute(`data-${key}`, value);
+    });
+
+    frame.append(script);
+  };
+
+  let lastTheme = getSiteTheme();
+
+  const syncGiscusTheme = (): void => {
+    const theme = getSiteTheme();
+    if (theme === lastTheme) return;
+    lastTheme = theme;
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    iframe?.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, GISCUS_ORIGIN);
+  };
+
+  mountGiscus();
+  new MutationObserver(syncGiscusTheme).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+</script>

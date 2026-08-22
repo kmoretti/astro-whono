@@ -99,6 +99,16 @@ export type AdminThemeControls = RequiredElements<{
   inputPageAboutProfileSpecialtyHighlight: HTMLInputElement | null;
   inputPageAboutUmamiBaseUrl: HTMLInputElement | null;
   inputPageAboutUmamiShareId: HTMLInputElement | null;
+  inputCommentsEnabled: HTMLInputElement | null;
+  inputCommentsRepo: HTMLInputElement | null;
+  inputCommentsRepoId: HTMLInputElement | null;
+  inputCommentsCategory: HTMLInputElement | null;
+  inputCommentsCategoryId: HTMLInputElement | null;
+  inputCommentsMapping: HTMLSelectElement | null;
+  inputCommentsInputPosition: HTMLSelectElement | null;
+  inputCommentsLang: HTMLSelectElement | null;
+  inputCommentsReactionsEnabled: HTMLInputElement | null;
+  inputCommentsStrict: HTMLInputElement | null;
   inputPageLinksTitle: HTMLInputElement | null;
   inputPageLinksSubtitle: HTMLInputElement | null;
   inputLinksSourceUrl: HTMLInputElement | null;
@@ -222,6 +232,16 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputPageAboutProfileSpecialtyHighlight: byId<HTMLInputElement>('page-about-profile-specialty-highlight'),
     inputPageAboutUmamiBaseUrl: byId<HTMLInputElement>('page-about-umami-base-url'),
     inputPageAboutUmamiShareId: byId<HTMLInputElement>('page-about-umami-share-id'),
+    inputCommentsEnabled: byId<HTMLInputElement>('comments-enabled'),
+    inputCommentsRepo: byId<HTMLInputElement>('comments-repo'),
+    inputCommentsRepoId: byId<HTMLInputElement>('comments-repo-id'),
+    inputCommentsCategory: byId<HTMLInputElement>('comments-category'),
+    inputCommentsCategoryId: byId<HTMLInputElement>('comments-category-id'),
+    inputCommentsMapping: byId<HTMLSelectElement>('comments-mapping'),
+    inputCommentsInputPosition: byId<HTMLSelectElement>('comments-input-position'),
+    inputCommentsLang: byId<HTMLSelectElement>('comments-lang'),
+    inputCommentsReactionsEnabled: byId<HTMLInputElement>('comments-reactions-enabled'),
+    inputCommentsStrict: byId<HTMLInputElement>('comments-strict'),
     inputPageLinksTitle: byId<HTMLInputElement>('page-links-title'),
 
     inputPageLinksSubtitle: byId<HTMLInputElement>('page-links-subtitle'),

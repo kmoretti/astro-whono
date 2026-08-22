@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BitCard from './BitCard.astro';
+import GiscusComments from './GiscusComments.astro';
 import Lightbox from './Lightbox.astro';
 import '../styles/bits-page.css';
 import { MAX_PRIMARY_BITS_FILTER_YEARS, getBitsDerivedText, type BitsEntry, type BitsYearOption } from '../lib/bits';
@@ -296,6 +297,8 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
     </div>
     <div class="bits-search-results__list" data-bits-search-results-list></div>
   </section>
+
+  <GiscusComments />
 
   <noscript>
     <style>

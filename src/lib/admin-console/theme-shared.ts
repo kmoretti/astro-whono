@@ -14,6 +14,20 @@ import type {
 import { DEFAULT_LINKS_SETTINGS } from '../links-settings';
 import { DEFAULT_ABOUT_UMAMI_SETTINGS, UMAMI_SHARE_ID_RE } from '../about-umami-settings';
 import {
+  DEFAULT_COMMENTS_SETTINGS,
+  GISCUS_INPUT_POSITION_OPTIONS,
+  GISCUS_INPUT_POSITION_SET,
+  GISCUS_LANG_OPTIONS,
+  GISCUS_LANG_SET,
+  GISCUS_MAPPING_OPTIONS,
+  GISCUS_MAPPING_SET,
+  GISCUS_ID_RE,
+  GISCUS_REPO_RE,
+  type GiscusInputPosition,
+  type GiscusLang,
+  type GiscusMapping
+} from '../comments-settings';
+import {
   THEME_TYPOGRAPHY_DEFAULT,
   asThemeFontIdForRole,
   getThemeFontOptionsForRole,
@@ -157,6 +171,17 @@ export const ADMIN_SOCIAL_ICON_KEY_SET: ReadonlySet<SiteSocialIconKey> = new Set
 
 export const ADMIN_GITHUB_HOSTS = ['github.com'] as const;
 export const ADMIN_QQ_HOSTS = ['qm.qq.com'] as const;
+
+export const ADMIN_GISCUS_MAPPING_OPTIONS = GISCUS_MAPPING_OPTIONS;
+export const ADMIN_GISCUS_INPUT_POSITION_OPTIONS = GISCUS_INPUT_POSITION_OPTIONS;
+export const ADMIN_GISCUS_LANG_OPTIONS = GISCUS_LANG_OPTIONS;
+
+export const isAdminGiscusMapping = (value: string): value is GiscusMapping =>
+  GISCUS_MAPPING_SET.has(value as GiscusMapping);
+export const isAdminGiscusInputPosition = (value: string): value is GiscusInputPosition =>
+  GISCUS_INPUT_POSITION_SET.has(value as GiscusInputPosition);
+export const isAdminGiscusLang = (value: string): value is GiscusLang =>
+  GISCUS_LANG_SET.has(value as GiscusLang);
 
 export const ADMIN_HOME_INTRO_MAX_LENGTH = 240;
 export const ADMIN_PAGE_TITLE_MAX_LENGTH = 60;
@@ -369,6 +394,7 @@ export type AdminWritableThemeSettingsGroups = {
   home: EditableThemeSettings['home'];
   page: EditableThemeSettings['page'];
   links: EditableThemeSettings['links'];
+  comments: EditableThemeSettings['comments'];
   ui: EditableThemeSettings['ui'];
 };
 
@@ -480,6 +506,7 @@ export const canonicalizeAdminThemeSettings = (
   const home = isRecord(next.home) ? next.home : {};
   const page = isRecord(next.page) ? next.page : {};
   const links = isRecord(next.links) ? next.links : {};
+  const comments = isRecord(next.comments) ? next.comments : {};
   const ui = isRecord(next.ui) ? next.ui : {};
   const siteFooter = isRecord(site.footer) ? site.footer : {};
   const adminOverview = isRecord(site.adminOverview) ? site.adminOverview : {};
@@ -593,6 +620,10 @@ export const canonicalizeAdminThemeSettings = (
     }
     return normalized;
   };
+
+  const commentsMapping = normalizeTrimmed(comments.mapping);
+  const commentsInputPosition = normalizeTrimmed(comments.inputPosition);
+  const commentsLang = normalizeTrimmed(comments.lang);
 
   return {
     site: {
@@ -731,6 +762,18 @@ export const canonicalizeAdminThemeSettings = (
       ),
       ech0ShowError: typeof links.ech0ShowError === 'boolean' ? links.ech0ShowError : DEFAULT_LINKS_SETTINGS.ech0ShowError
     },
+    comments: {
+      enabled: typeof comments.enabled === 'boolean' ? comments.enabled : DEFAULT_COMMENTS_SETTINGS.enabled,
+      repo: normalizeTrimmed(comments.repo) || DEFAULT_COMMENTS_SETTINGS.repo,
+      repoId: normalizeTrimmed(comments.repoId) || DEFAULT_COMMENTS_SETTINGS.repoId,
+      category: normalizeTrimmed(comments.category) || DEFAULT_COMMENTS_SETTINGS.category,
+      categoryId: normalizeTrimmed(comments.categoryId) || DEFAULT_COMMENTS_SETTINGS.categoryId,
+      mapping: isAdminGiscusMapping(commentsMapping) ? commentsMapping : DEFAULT_COMMENTS_SETTINGS.mapping,
+      inputPosition: isAdminGiscusInputPosition(commentsInputPosition) ? commentsInputPosition : DEFAULT_COMMENTS_SETTINGS.inputPosition,
+      lang: isAdminGiscusLang(commentsLang) ? commentsLang : DEFAULT_COMMENTS_SETTINGS.lang,
+      reactionsEnabled: typeof comments.reactionsEnabled === 'boolean' ? comments.reactionsEnabled : DEFAULT_COMMENTS_SETTINGS.reactionsEnabled,
+      strict: typeof comments.strict === 'boolean' ? comments.strict : DEFAULT_COMMENTS_SETTINGS.strict
+    },
     ui: {
       codeBlock: {
         showLineNumbers: Boolean(isRecord(ui.codeBlock) ? ui.codeBlock.showLineNumbers : false)
@@ -825,6 +868,7 @@ export const createAdminWritableThemeSettingsGroups = (
     links: { ...settings.page.links }
   },
   links: { ...settings.links },
+  comments: { ...settings.comments },
   ui: {
     codeBlock: { ...settings.ui.codeBlock },
     readingMode: { ...settings.ui.readingMode },
@@ -1024,6 +1068,35 @@ export const validateAdminThemeSettings = (
       pushIssue(`${basePath}.visible`, `自定义链接 #${index + 1} 的 visible 必须是布尔值`);
     }
   });
+
+  if (typeof settings.comments?.enabled !== 'boolean') {
+    pushIssue('comments.enabled', '评论启用开关必须是布尔值');
+  }
+  if (!settings.comments?.repo || !GISCUS_REPO_RE.test(settings.comments.repo)) {
+    pushIssue('comments.repo', 'Giscus 仓库必须是 owner/repo 格式');
+  }
+  if (!settings.comments?.repoId || !GISCUS_ID_RE.test(settings.comments.repoId)) {
+    pushIssue('comments.repoId', 'Giscus 仓库 ID 格式无效');
+  }
+  if (!settings.comments?.category) pushIssue('comments.category', 'Giscus 分类不能为空');
+  if (!settings.comments?.categoryId || !GISCUS_ID_RE.test(settings.comments.categoryId)) {
+    pushIssue('comments.categoryId', 'Giscus 分类 ID 格式无效');
+  }
+  if (!isAdminGiscusMapping(settings.comments?.mapping ?? '')) {
+    pushIssue('comments.mapping', 'Giscus 映射方式无效');
+  }
+  if (!isAdminGiscusInputPosition(settings.comments?.inputPosition ?? '')) {
+    pushIssue('comments.inputPosition', 'Giscus 输入框位置无效');
+  }
+  if (!isAdminGiscusLang(settings.comments?.lang ?? '')) {
+    pushIssue('comments.lang', 'Giscus 语言无效');
+  }
+  if (typeof settings.comments?.reactionsEnabled !== 'boolean') {
+    pushIssue('comments.reactionsEnabled', 'Giscus反应开关必须是布尔值');
+  }
+  if (typeof settings.comments?.strict !== 'boolean') {
+    pushIssue('comments.strict', 'Giscus严格匹配开关必须是布尔值');
+  }
 
   if (!settings.links?.linksSourceUrl || !isAdminAllowedHttpsUrl(settings.links.linksSourceUrl)) {
     pushIssue('links.linksSourceUrl', '友链主数据源必须是合法的 https:// 地址');

@@ -110,6 +110,16 @@ type FormCodecContext = {
   inputPageAboutProfileSpecialtyHighlight: HTMLInputElement;
   inputPageAboutUmamiBaseUrl: HTMLInputElement;
   inputPageAboutUmamiShareId: HTMLInputElement;
+  inputCommentsEnabled: HTMLInputElement;
+  inputCommentsRepo: HTMLInputElement;
+  inputCommentsRepoId: HTMLInputElement;
+  inputCommentsCategory: HTMLInputElement;
+  inputCommentsCategoryId: HTMLInputElement;
+  inputCommentsMapping: HTMLSelectElement;
+  inputCommentsInputPosition: HTMLSelectElement;
+  inputCommentsLang: HTMLSelectElement;
+  inputCommentsReactionsEnabled: HTMLInputElement;
+  inputCommentsStrict: HTMLInputElement;
   inputPageLinksTitle: HTMLInputElement;
   inputPageLinksSubtitle: HTMLInputElement;
   inputLinksSourceUrl: HTMLInputElement;
@@ -265,6 +275,16 @@ export const createFormCodec = ({
   inputPageAboutProfileSpecialtyHighlight,
   inputPageAboutUmamiBaseUrl,
   inputPageAboutUmamiShareId,
+  inputCommentsEnabled,
+  inputCommentsRepo,
+  inputCommentsRepoId,
+  inputCommentsCategory,
+  inputCommentsCategoryId,
+  inputCommentsMapping,
+  inputCommentsInputPosition,
+  inputCommentsLang,
+  inputCommentsReactionsEnabled,
+  inputCommentsStrict,
   inputPageLinksTitle,
   inputPageLinksSubtitle,
   inputLinksSourceUrl,
@@ -664,6 +684,18 @@ export const createFormCodec = ({
         ech0MaxPages: Number.parseInt(inputLinksEch0MaxPages.value, 10),
         ech0ShowError: Boolean(inputLinksEch0ShowError.checked)
       },
+      comments: {
+        enabled: Boolean(inputCommentsEnabled.checked),
+        repo: inputCommentsRepo.value.trim(),
+        repoId: inputCommentsRepoId.value.trim(),
+        category: inputCommentsCategory.value.trim(),
+        categoryId: inputCommentsCategoryId.value.trim(),
+        mapping: inputCommentsMapping.value as EditableSettings['comments']['mapping'],
+        inputPosition: inputCommentsInputPosition.value as EditableSettings['comments']['inputPosition'],
+        lang: inputCommentsLang.value as EditableSettings['comments']['lang'],
+        reactionsEnabled: Boolean(inputCommentsReactionsEnabled.checked),
+        strict: Boolean(inputCommentsStrict.checked)
+      },
       ui: {
         codeBlock: {
           showLineNumbers: Boolean(inputCodeLineNumbers.checked)
@@ -781,6 +813,16 @@ export const createFormCodec = ({
     inputLinksEch0PageSize.value = String(settings.links?.ech0PageSize ?? 10);
     inputLinksEch0MaxPages.value = String(settings.links?.ech0MaxPages ?? 3);
     inputLinksEch0ShowError.checked = settings.links?.ech0ShowError !== false;
+    inputCommentsEnabled.checked = settings.comments?.enabled !== false;
+    inputCommentsRepo.value = settings.comments?.repo || '';
+    inputCommentsRepoId.value = settings.comments?.repoId || '';
+    inputCommentsCategory.value = settings.comments?.category || '';
+    inputCommentsCategoryId.value = settings.comments?.categoryId || '';
+    inputCommentsMapping.value = settings.comments?.mapping || 'pathname';
+    inputCommentsInputPosition.value = settings.comments?.inputPosition || 'top';
+    inputCommentsLang.value = settings.comments?.lang || 'zh-CN';
+    inputCommentsReactionsEnabled.checked = settings.comments?.reactionsEnabled !== false;
+    inputCommentsStrict.checked = settings.comments?.strict !== false;
     inputPageBitsAuthorName.value = settings.page.bits?.defaultAuthor?.name || '';
     inputPageBitsAuthorAvatar.value = settings.page.bits?.defaultAuthor?.avatar || '';
     inputHomeShowHero.checked = (settings.home.heroPresetId || 'default') !== 'none';

@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "repo": "kmoretti/astro-whono",
+  "repoId": "R_kgDOT8cj_Q",
+  "category": "comments",
+  "categoryId": "DIC_kwDOT8cj_c4DD8ZS",
+  "mapping": "pathname",
+  "inputPosition": "top",
+  "lang": "zh-CN",
+  "reactionsEnabled": true,
+  "strict": true
+}

@@ -3,6 +3,17 @@ import { join } from 'node:path';
 import { site as legacySite } from '../../site.config.mjs';
 import { DEFAULT_LINKS_SETTINGS, type LinksSettings } from './links-settings';
 import { DEFAULT_ABOUT_UMAMI_SETTINGS, UMAMI_SHARE_ID_RE } from './about-umami-settings';
+import {
+  DEFAULT_COMMENTS_SETTINGS,
+  GISCUS_INPUT_POSITION_SET,
+  GISCUS_LANG_SET,
+  GISCUS_MAPPING_SET,
+  GISCUS_REPO_RE,
+  type CommentsSettings,
+  type GiscusInputPosition,
+  type GiscusLang,
+  type GiscusMapping
+} from './comments-settings';
 import { asThemeFontIdForRole, type ThemeFontId } from './fonts/registry';
 import {
   getHeroImageLocalFilePath,
@@ -273,6 +284,7 @@ export interface ThemeSettings {
   home: HomeSettings;
   page: PageSettings;
   links: LinksSettings;
+  comments: CommentsSettings;
   ui: UiSettings;
 }
 
@@ -344,6 +356,18 @@ export interface ThemeSettingsSources {
     ech0MaxPages: SettingSource;
     ech0ShowError: SettingSource;
   };
+  comments: {
+    enabled: SettingSource;
+    repo: SettingSource;
+    repoId: SettingSource;
+    category: SettingSource;
+    categoryId: SettingSource;
+    mapping: SettingSource;
+    inputPosition: SettingSource;
+    lang: SettingSource;
+    reactionsEnabled: SettingSource;
+    strict: SettingSource;
+  };
   ui: {
     codeBlockShowLineNumbers: SettingSource;
     readingModeShowEntry: SettingSource;
@@ -398,7 +422,7 @@ export interface ThemeSettingsEditablePayload {
 
 type EditableThemeSettingsSnapshot = EditableThemeSettings;
 
-export type ThemeSettingsFileGroup = 'site' | 'shell' | 'home' | 'page' | 'links' | 'ui';
+export type ThemeSettingsFileGroup = 'site' | 'shell' | 'home' | 'page' | 'links' | 'comments' | 'ui';
 
 export interface ThemeSettingsReadDiagnostic {
   group: ThemeSettingsFileGroup;
@@ -428,13 +452,14 @@ export type ThemeSettingsEditableState =
 const DEFAULT_SETTINGS_DIR = join(process.cwd(), 'src', 'data', 'settings');
 const INTERNAL_TEST_SETTINGS_DIR_ENV = 'ASTRO_WHONO_INTERNAL_TEST_SETTINGS_DIR';
 const INTERNAL_TEST_SETTINGS_FLAG_ENV = 'ASTRO_WHONO_INTERNAL_TEST_SETTINGS';
-const SETTINGS_FILE_GROUPS: readonly ThemeSettingsFileGroup[] = ['site', 'shell', 'home', 'page', 'links', 'ui'];
+const SETTINGS_FILE_GROUPS: readonly ThemeSettingsFileGroup[] = ['site', 'shell', 'home', 'page', 'links', 'comments', 'ui'];
 const SETTINGS_RELATIVE_PATHS: Record<ThemeSettingsFileGroup, string> = {
   site: 'src/data/settings/site.json',
   shell: 'src/data/settings/shell.json',
   home: 'src/data/settings/home.json',
   page: 'src/data/settings/page.json',
   links: 'src/data/settings/links.json',
+  comments: 'src/data/settings/comments.json',
   ui: 'src/data/settings/ui.json'
 };
 
@@ -524,6 +549,7 @@ const cloneThemeSettingsSources = (sources: ThemeSettingsSources): ThemeSettings
   home: { ...sources.home },
   page: { ...sources.page },
   links: { ...sources.links },
+  comments: { ...sources.comments },
   ui: { ...sources.ui }
 });
 
@@ -628,6 +654,8 @@ const DEFAULT_PAGE: PageSettings = {
 };
 
 const DEFAULT_LINKS: LinksSettings = { ...DEFAULT_LINKS_SETTINGS };
+
+const DEFAULT_COMMENTS: CommentsSettings = { ...DEFAULT_COMMENTS_SETTINGS };
 
 const DEFAULT_UI: UiSettings = {
   codeBlock: {
@@ -782,6 +810,21 @@ const asRequiredHttpsUrl = (value: unknown): string | undefined => {
 const asUmamiShareId = (value: unknown): string | undefined => {
   const next = asString(value);
   return next && UMAMI_SHARE_ID_RE.test(next) ? next : undefined;
+};
+
+const asGiscusEnum = <T extends string>(allowed: ReadonlySet<T>) => (value: unknown): T | undefined => {
+  const next = asString(value);
+  return next && allowed.has(next as T) ? (next as T) : undefined;
+};
+
+const asGiscusRepo = (value: unknown): string | undefined => {
+  const next = asString(value);
+  return next && GISCUS_REPO_RE.test(next) ? next : undefined;
+};
+
+const asGiscusId = (value: unknown): string | undefined => {
+  const next = asString(value);
+  return next && next.length >= 6 && next.length <= 128 && /^[A-Za-z0-9_-]+$/.test(next) ? next : undefined;
 };
 
 /* 只校验协议、保留原字符串：避免 URL.toString() 给纯主机地址补尾斜杠，
@@ -1289,6 +1332,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const homeJson = readSettingsObject('home');
   const pageJson = readSettingsObject('page');
   const linksJson = readSettingsObject('links');
+  const commentsJson = readSettingsObject('comments');
   const uiJson = readSettingsObject('ui');
 
   const siteFooterJson = isRecord(siteJson?.footer) ? siteJson.footer : undefined;
@@ -1326,6 +1370,61 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     undefined,
     DEFAULT_LINKS.submissionUrl
   );
+
+  const asGiscusMapping = asGiscusEnum<GiscusMapping>(GISCUS_MAPPING_SET);
+  const asGiscusInputPosition = asGiscusEnum<GiscusInputPosition>(GISCUS_INPUT_POSITION_SET);
+  const asGiscusLang = asGiscusEnum<GiscusLang>(GISCUS_LANG_SET);
+  const commentsEnabled = resolveValue(
+    asBoolean(commentsJson?.enabled),
+    undefined,
+    DEFAULT_COMMENTS.enabled
+  );
+  const commentsRepo = resolveValue(
+    asGiscusRepo(commentsJson?.repo),
+    undefined,
+    DEFAULT_COMMENTS.repo
+  );
+  const commentsRepoId = resolveValue(
+    asGiscusId(commentsJson?.repoId),
+    undefined,
+    DEFAULT_COMMENTS.repoId
+  );
+  const commentsCategory = resolveValue(
+    asNonEmptyString(commentsJson?.category),
+    undefined,
+    DEFAULT_COMMENTS.category
+  );
+  const commentsCategoryId = resolveValue(
+    asGiscusId(commentsJson?.categoryId),
+    undefined,
+    DEFAULT_COMMENTS.categoryId
+  );
+  const commentsMapping = resolveValue(
+    asGiscusMapping(commentsJson?.mapping),
+    undefined,
+    DEFAULT_COMMENTS.mapping
+  );
+  const commentsInputPosition = resolveValue(
+    asGiscusInputPosition(commentsJson?.inputPosition),
+    undefined,
+    DEFAULT_COMMENTS.inputPosition
+  );
+  const commentsLang = resolveValue(
+    asGiscusLang(commentsJson?.lang),
+    undefined,
+    DEFAULT_COMMENTS.lang
+  );
+  const commentsReactionsEnabled = resolveValue(
+    asBoolean(commentsJson?.reactionsEnabled),
+    undefined,
+    DEFAULT_COMMENTS.reactionsEnabled
+  );
+  const commentsStrict = resolveValue(
+    asBoolean(commentsJson?.strict),
+    undefined,
+    DEFAULT_COMMENTS.strict
+  );
+
   const fcircleSourceUrl = resolveValue(
     asRequiredHttpsUrl(linksJson?.fcircleSourceUrl),
     undefined,
@@ -1785,6 +1884,18 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         ech0MaxPages: ech0MaxPages.value,
         ech0ShowError: ech0ShowError.value
       },
+      comments: {
+        enabled: commentsEnabled.value,
+        repo: commentsRepo.value,
+        repoId: commentsRepoId.value,
+        category: commentsCategory.value,
+        categoryId: commentsCategoryId.value,
+        mapping: commentsMapping.value,
+        inputPosition: commentsInputPosition.value,
+        lang: commentsLang.value,
+        reactionsEnabled: commentsReactionsEnabled.value,
+        strict: commentsStrict.value
+      },
       ui: {
         codeBlock: {
           showLineNumbers: showLineNumbers.value
@@ -1882,6 +1993,18 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         ech0PageSize: ech0PageSize.source,
         ech0MaxPages: ech0MaxPages.source,
         ech0ShowError: ech0ShowError.source
+      },
+      comments: {
+        enabled: commentsEnabled.source,
+        repo: commentsRepo.source,
+        repoId: commentsRepoId.source,
+        category: commentsCategory.source,
+        categoryId: commentsCategoryId.source,
+        mapping: commentsMapping.source,
+        inputPosition: commentsInputPosition.source,
+        lang: commentsLang.source,
+        reactionsEnabled: commentsReactionsEnabled.source,
+        strict: commentsStrict.source
       },
       ui: {
         codeBlockShowLineNumbers: showLineNumbers.source,
@@ -1981,6 +2104,7 @@ const buildEditableThemeSettingsSnapshot = (
       links: { ...resolved.settings.page.links }
     },
     links: { ...resolved.settings.links },
+    comments: { ...resolved.settings.comments },
     ui: {
       codeBlock: { ...resolved.settings.ui.codeBlock },
       readingMode: { ...resolved.settings.ui.readingMode },
