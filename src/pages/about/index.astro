@@ -52,17 +52,60 @@ const { Content } = await render(entryWithContactLinks);
     import { initAboutSiteInfoCopyButtons, initCodeCopyButtons } from '../../scripts/lightbox';
     initCodeCopyButtons();
     initAboutSiteInfoCopyButtons();
+
+    // umami 分享链接方式：先用 /api/share/{id} 换取 websiteId + token，
+    // 再携带 x-umami-share-token / x-umami-share-context 请求头查询统计。
+    const UMAMI_BASE_URL = 'https://um.081531.xyz';
+    const UMAMI_SHARE_ID = 'x5gImy5VXsdslFK5';
+    const UMAMI_STATS_RANGE_MS = 30 * 24 * 60 * 60 * 1000;
+    const UMAMI_STAT_KEYS = ['pageviews', 'visitors', 'visits', 'bounces', 'totaltime'] as const;
+
+    type UmamiShareInfo = { websiteId?: unknown; token?: unknown };
+
+    // 新版 umami 返回扁平数字；旧版嵌套在 value 里。两种都兼容。
+    const asStatNumber = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'object' && value !== null && 'value' in value) {
+        const nested = (value as { value?: unknown }).value;
+        if (typeof nested === 'number' && Number.isFinite(nested)) return nested;
+      }
+      return null;
+    };
+
     const statsRoot = document.querySelector<HTMLElement>('[data-umami-stats]');
     if (statsRoot) {
       const status = statsRoot.querySelector<HTMLElement>('[data-stats-status]');
       const values = statsRoot.querySelector<HTMLElement>('[data-stats-values]');
-      fetch(`${import.meta.env.BASE_URL}api/umami-stats/`)
+      fetch(`${UMAMI_BASE_URL}/api/share/${UMAMI_SHARE_ID}`, { headers: { Accept: 'application/json' } })
+        .then((response) => response.ok ? response.json() : Promise.reject(new Error('share unavailable')))
+        .then((share: UmamiShareInfo) => {
+          const websiteId = typeof share.websiteId === 'string' ? share.websiteId : '';
+          const token = typeof share.token === 'string' ? share.token : '';
+          if (!websiteId || !token) throw new Error('invalid share payload');
+          const endAt = Date.now();
+          const startAt = endAt - UMAMI_STATS_RANGE_MS;
+          return fetch(
+            `${UMAMI_BASE_URL}/api/websites/${encodeURIComponent(websiteId)}/stats?startAt=${startAt}&endAt=${endAt}`,
+            {
+              headers: {
+                Accept: 'application/json',
+                'x-umami-share-token': token,
+                'x-umami-share-context': '1'
+              }
+            }
+          );
+        })
         .then((response) => response.ok ? response.json() : Promise.reject(new Error('stats unavailable')))
         .then((data: Record<string, unknown>) => {
-          const keys = ['pageviews', 'visitors', 'visits', 'bounces', 'totaltime'];
-          const hasValidStats = keys.every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
+          const stats = Object.fromEntries(
+            UMAMI_STAT_KEYS.map((key) => [key, asStatNumber(data[key])])
+          ) as Record<string, number | null>;
+          const hasValidStats = UMAMI_STAT_KEYS.every((key) => stats[key] !== null);
           if (!hasValidStats) throw new Error('invalid stats payload');
-          keys.forEach((key) => { const value = data[key] as number; const target = statsRoot?.querySelector<HTMLElement>(`[data-stat="${key}"]`); if (target) target.textContent = value.toLocaleString(); });
+          UMAMI_STAT_KEYS.forEach((key) => {
+            const target = statsRoot?.querySelector<HTMLElement>(`[data-stat="${key}"]`);
+            if (target) target.textContent = (stats[key] as number).toLocaleString();
+          });
           if (values) values.hidden = false;
           if (status) status.hidden = true;
         })
