@@ -81,6 +81,10 @@ export const onRequestGet = async (context: PagesFunctionContext): Promise<Respo
 
   const endpoint = new URL(parsedBaseUrl);
   endpoint.pathname = `${parsedBaseUrl.pathname.replace(/\/+$/, '')}/api/websites/${encodeURIComponent(websiteId)}/stats`;
+  const endAt = Date.now();
+  const startAt = endAt - 30 * 24 * 60 * 60 * 1000;
+  endpoint.searchParams.set('startAt', String(startAt));
+  endpoint.searchParams.set('endAt', String(endAt));
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

@@ -9,6 +9,7 @@ import {
   normalizeAdminLinksUrl,
   validateAdminThemeSettings
 } from '../src/lib/admin-console/shared';
+import { DEFAULT_LINKS_SETTINGS } from '../src/lib/links-settings';
 import {
   getAdminImageFieldPreviewSrc,
   getAdminRenderedImagePreviewSrc
@@ -87,7 +88,9 @@ describe('admin-console/shared', () => {
       linksSourceUrl: ' https://links.example/source.yml ',
       latencySourceUrl: 'https://latency.example/data.json',
       tombstoneSourceUrl: 'https://links.example/false.yml',
-      submissionUrl: 'https://verify.example/api/submissions'
+      submissionUrl: 'https://verify.example/api/submissions',
+      fcircleSourceUrl: 'https://fcircle.example/all.json',
+      ech0PageSize: 20
     };
 
     const canonical = canonicalizeAdminThemeSettings(raw);
@@ -97,7 +100,15 @@ describe('admin-console/shared', () => {
       linksSourceUrl: 'https://links.example/source.yml',
       latencySourceUrl: 'https://latency.example/data.json',
       tombstoneSourceUrl: 'https://links.example/false.yml',
-      submissionUrl: 'https://verify.example/api/submissions'
+      submissionUrl: 'https://verify.example/api/submissions',
+      fcircleSourceUrl: 'https://fcircle.example/all.json',
+      fcircleEnabled: DEFAULT_LINKS_SETTINGS.fcircleEnabled,
+      fcircleShowError: DEFAULT_LINKS_SETTINGS.fcircleShowError,
+      ech0SourceUrl: DEFAULT_LINKS_SETTINGS.ech0SourceUrl,
+      ech0Enabled: DEFAULT_LINKS_SETTINGS.ech0Enabled,
+      ech0PageSize: 20,
+      ech0MaxPages: DEFAULT_LINKS_SETTINGS.ech0MaxPages,
+      ech0ShowError: DEFAULT_LINKS_SETTINGS.ech0ShowError
     });
     expect(writable.links).toEqual(canonical.links);
     expect(validateAdminThemeSettings(canonical)).not.toEqual(
