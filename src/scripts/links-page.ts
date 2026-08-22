@@ -38,6 +38,9 @@ if (!root) {
   const lightboxMetaRow = lightboxDialog?.querySelector<HTMLElement>('.lightbox-meta-row') ?? null;
   const lightboxNavigation = lightboxDialog?.querySelector<HTMLElement>('.lightbox-navs') ?? null;
   const REQUEST_TIMEOUT_MS = 12000;
+  const linksSourceUrl = root.dataset.linksSourceUrl || LINKS_SOURCE_URL;
+  const latencySourceUrl = root.dataset.latencySourceUrl || LATENCY_SOURCE_URL;
+  const tombstoneSourceUrl = root.dataset.tombstoneSourceUrl || TOMBSTONE_SOURCE_URL;
 
   let groups: NormalizedLinkGroup[] = [];
   let activeTag = '';
@@ -253,7 +256,7 @@ if (!root) {
     const currentRequest = ++tombstoneRequestId;
     const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(TOMBSTONE_SOURCE_URL, {
+      const response = await fetch(tombstoneSourceUrl, {
         signal: controller.signal,
         cache: 'no-store',
         headers: { Accept: 'text/yaml, text/plain' }
@@ -310,7 +313,7 @@ if (!root) {
     const currentRequest = ++latencyRequestId;
     const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(LATENCY_SOURCE_URL, {
+      const response = await fetch(latencySourceUrl, {
         signal: controller.signal,
         cache: 'no-store',
         headers: { Accept: 'application/json' }
@@ -345,7 +348,7 @@ if (!root) {
     const currentRequest = ++requestId;
     const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const response = await fetch(LINKS_SOURCE_URL, { signal: controller.signal, cache: 'no-store', headers: { Accept: 'text/yaml, text/plain' } });
+      const response = await fetch(linksSourceUrl, { signal: controller.signal, cache: 'no-store', headers: { Accept: 'text/yaml, text/plain' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const nextGroups = parseLinksYaml(await response.text());
       if (currentRequest !== requestId) return;

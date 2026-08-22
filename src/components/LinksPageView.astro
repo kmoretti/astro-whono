@@ -5,12 +5,22 @@ interface Props {
   title: string;
   subtitle: string | null;
   recoveryEmail: string | null;
+  linksSourceUrl: string;
+  latencySourceUrl: string;
+  tombstoneSourceUrl: string;
 }
 
-const { title, subtitle, recoveryEmail } = Astro.props;
+const { title, subtitle, recoveryEmail, linksSourceUrl, latencySourceUrl, tombstoneSourceUrl } = Astro.props;
 ---
 
-<section class="links-page__view" data-links-root aria-labelledby="links-page-title">
+<section
+  class="links-page__view"
+  data-links-root
+  data-links-source-url={linksSourceUrl}
+  data-latency-source-url={latencySourceUrl}
+  data-tombstone-source-url={tombstoneSourceUrl}
+  aria-labelledby="links-page-title"
+>
   <header class="links-page__header">
     <div>
       <h1 id="links-page-title" class="page-title">{title}</h1>

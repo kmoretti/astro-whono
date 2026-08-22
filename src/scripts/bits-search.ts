@@ -65,7 +65,7 @@ const getYearButtonValue = (button: HTMLButtonElement) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const availableYears = new Set(
+let availableYears = new Set(
   (yearSelect
     ? Array.from(yearSelect.options)
         .map((option) => option.value.trim())
@@ -81,9 +81,12 @@ const overflowYears = new Set(
 );
 const shouldBypassIndexCache = import.meta.env.DEV;
 
+type ActiveTab = 'local' | 'remote';
 let indexHay: Map<string, string> | null = null;
+let remoteIndexItems: IndexItem[] = [];
 let filterRunId = 0;
 let activeYear: number | null = null;
+let activeTab: ActiveTab = 'local';
 let isMoreMenuOpen = false;
 let statusTimer: number | null = null;
 const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
@@ -313,7 +316,7 @@ const setActiveYearState = (year: number | null) => {
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', String(isActive));
   });
-  yearMenuButtons.forEach((button) => {
+  yearMenu?.querySelectorAll<HTMLButtonElement>('[data-bits-year-menu-item]').forEach((button) => {
     const buttonYear = getYearButtonValue(button);
     const isActive = buttonYear === year;
     button.classList.toggle('is-active', isActive);
@@ -373,7 +376,7 @@ const readInitialState = () => {
   }
 
   const parsedYear = Number(rawYear);
-  if (!Number.isFinite(parsedYear) || !availableYears.has(parsedYear)) {
+  if (!Number.isFinite(parsedYear) || parsedYear < 1 || parsedYear > 9999) {
     return { query, year: null as number | null };
   }
 
@@ -478,14 +481,68 @@ const renderResults = (matchedItems: IndexItem[]) => {
   resultsRoot.removeAttribute('hidden');
 };
 
+const getIndexHay = (item: IndexItem) =>
+  indexHay?.get(getIndexKey(item)) || buildSearchHaystack([item.title, item.description, item.tags, item.text]);
+
 const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null) =>
   index.filter((item) => {
     const key = getIndexKey(item);
     if (!key) return false;
     if (year !== null && item.year !== year) return false;
-    const hay = indexHay?.get(key) || '';
+    const hay = getIndexHay(item);
     return queryTerms.every((term) => hay.includes(term));
   });
+
+const mergeIndexItems = (items: IndexItem[]) => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = getIndexKey(item);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+const bindYearMenuButton = (button: HTMLButtonElement) => {
+  button.addEventListener('click', async () => {
+    if (indexLoader.hasFailed()) return;
+    const year = getYearButtonValue(button);
+    if (year === null || activeYear === year) {
+      closeMoreMenu();
+      return;
+    }
+
+    setActiveYearState(year);
+    closeMoreMenu();
+    await applyFilter();
+  });
+};
+
+const refreshAvailableYears = (items: IndexItem[]) => {
+  const nextYears = items
+    .map((item) => item.year)
+    .filter((year): year is number => typeof year === 'number' && Number.isFinite(year));
+  const addedYears = nextYears.filter((year) => !availableYears.has(year));
+  availableYears = new Set([...availableYears, ...nextYears]);
+
+  addedYears.forEach((year) => {
+    if (yearSelect && !Array.from(yearSelect.options).some((option) => option.value === String(year))) {
+      yearSelect.add(new Option(String(year), String(year)));
+    }
+
+    if (yearMenu && !yearMenuButtons.some((button) => getYearButtonValue(button) === year)) {
+      const button = document.createElement('button');
+      button.className = 'bits-year-menu__item';
+      button.type = 'button';
+      button.dataset.bitsYearMenuItem = '';
+      button.dataset.bitsYear = String(year);
+      button.setAttribute('aria-label', `筛选 ${year} 年絮语`);
+      button.innerHTML = `<span class="bits-year-menu__item-label">${year}</span>`;
+      yearMenu.querySelector('.bits-year-menu__list')?.append(button);
+      bindYearMenuButton(button);
+    }
+  });
+};
 
 const scheduleApplyFilter = (delay = FILTER_DEBOUNCE_MS) => {
   filterRunner.schedule(delay);
@@ -537,6 +594,26 @@ const setDegradedMode = () => {
   showBrowse();
 };
 
+window.addEventListener('bits:remote-loaded', (event) => {
+  const detail = (event as CustomEvent<{ items?: IndexItem[] }>).detail;
+  remoteIndexItems = Array.isArray(detail?.items) ? detail.items : [];
+  refreshAvailableYears(remoteIndexItems);
+  if (indexHay) {
+    remoteIndexItems.forEach((item) => {
+      const key = getIndexKey(item);
+      if (key && !indexHay?.has(key)) {
+        indexHay?.set(key, buildSearchHaystack([item.title, item.description, item.tags, item.text]));
+      }
+    });
+  }
+  if (input && (getTrimmedQuery() || activeYear !== null)) void applyFilter();
+});
+
+window.addEventListener('bits:tab-changed', ((event: CustomEvent<{ tab: ActiveTab }>) => {
+  activeTab = event.detail.tab;
+  if (input && (getTrimmedQuery() || activeYear !== null)) void applyFilter();
+}) as EventListener);
+
 const indexLoader = createJsonIndexLoader<IndexItem>({
   url: indexUrl,
   shouldBypassCache: shouldBypassIndexCache,
@@ -552,6 +629,12 @@ const indexLoader = createJsonIndexLoader<IndexItem>({
         ] as const)
         .filter(([key]) => key !== '')
     );
+    remoteIndexItems.forEach((item) => {
+      const key = getIndexKey(item);
+      if (key && !indexHay?.has(key)) {
+        indexHay?.set(key, buildSearchHaystack([item.title, item.description, item.tags, item.text]));
+      }
+    });
     setStatus('');
   },
   onRejected: () => {
@@ -577,18 +660,19 @@ const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
     return;
   }
 
-  const index = preloadedIndex ?? (await loadIndex());
+  const baseIndex = preloadedIndex ?? (await loadIndex());
   if (runId !== filterRunId || getNormalizedQuery() !== normalizedQuery) {
     return;
   }
-  if (!index || !indexHay) {
+  if (!baseIndex || !indexHay) {
     showBrowse();
     return;
   }
 
   syncUrlState(rawQuery, activeYear);
 
-  const matchedItems = filterIndexItems(index, queryTerms, activeYear);
+  const sourceIndex = activeTab === 'remote' ? remoteIndexItems : mergeIndexItems([...baseIndex]);
+  const matchedItems = filterIndexItems(sourceIndex, queryTerms, activeYear);
   if (matchedItems.length === 0) {
     showBrowse();
     if (resultsRoot && resultsListEl) {
@@ -709,20 +793,7 @@ yearMoreTrigger?.addEventListener('keydown', (event) => {
   }
 });
 
-yearMenuButtons.forEach((button) => {
-  button.addEventListener('click', async () => {
-    if (indexLoader.hasFailed()) return;
-    const year = getYearButtonValue(button);
-    if (year === null || activeYear === year) {
-      closeMoreMenu();
-      return;
-    }
-
-    setActiveYearState(year);
-    closeMoreMenu();
-    await applyFilter();
-  });
-});
+yearMenuButtons.forEach(bindYearMenuButton);
 
 yearMenu?.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {

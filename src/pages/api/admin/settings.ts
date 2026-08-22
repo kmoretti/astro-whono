@@ -32,7 +32,7 @@ import {
   type AdminThemeSettingsChangePreview
 } from '../../../lib/admin-console/theme-shared';
 
-const WRITABLE_GROUPS = ['site', 'shell', 'home', 'page', 'ui'] as const satisfies readonly ThemeSettingsFileGroup[];
+const WRITABLE_GROUPS = ['site', 'shell', 'home', 'page', 'links', 'ui'] as const satisfies readonly ThemeSettingsFileGroup[];
 type WritableGroup = (typeof WRITABLE_GROUPS)[number];
 
 type WriteResult = {
@@ -75,6 +75,7 @@ const createEmptyWriteResultDetails = (): WriteResultDetails => ({
   shell: { changedCount: 0, changedPaths: [], changes: [] },
   home: { changedCount: 0, changedPaths: [], changes: [] },
   page: { changedCount: 0, changedPaths: [], changes: [] },
+  links: { changedCount: 0, changedPaths: [], changes: [] },
   ui: { changedCount: 0, changedPaths: [], changes: [] }
 });
 
@@ -84,6 +85,7 @@ const createResults = (details: WriteResultDetails = createEmptyWriteResultDetai
     shell: { changed: details.shell.changedCount > 0, written: false, ...details.shell },
     home: { changed: details.home.changedCount > 0, written: false, ...details.home },
     page: { changed: details.page.changedCount > 0, written: false, ...details.page },
+    links: { changed: details.links.changedCount > 0, written: false, ...details.links },
     ui: { changed: details.ui.changedCount > 0, written: false, ...details.ui }
   };
 };

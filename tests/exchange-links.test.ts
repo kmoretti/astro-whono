@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
   EXCHANGE_PAGE_SIZE,
@@ -8,6 +9,13 @@ import {
 } from '../src/lib/exchange-links';
 
 describe('exchange link submissions', () => {
+  it('uses the injected submission endpoint with the default fallback', async () => {
+    const source = await readFile(new URL('../src/scripts/exchange-links-page.ts', import.meta.url), 'utf8');
+    expect(source).toContain('root.dataset.submissionUrl || VERIFY_SUBMISSIONS_URL');
+    expect(source).toContain('fetch(`${submissionUrl}?public=1`');
+    expect(source).toContain('fetch(submissionUrl, { method: \'POST\'');
+  });
+
   it('creates the documented apply payload and omits blank optional fields', () => {
     expect(createSubmissionPayload('apply', {
       name: ' Example ',

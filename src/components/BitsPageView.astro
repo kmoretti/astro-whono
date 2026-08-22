@@ -37,7 +37,8 @@ const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const {
   settings: {
-    page
+    page,
+    links
   }
 } = getThemeSettings();
 
@@ -219,23 +220,67 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
     <div class="bits-draft-load-status" id="bits-draft-load-status" role="status" aria-live="polite"></div>
   </div>
 
+  {links.ech0Enabled ? (
+    <div class="bits-source-tabs" data-bits-source-tabs role="tablist" aria-label="絮语来源切换">
+      <button
+        class="bits-source-tabs__item is-active"
+        type="button"
+        data-bits-tab="local"
+        role="tab"
+        aria-selected="true"
+        aria-controls="bits-local-list"
+      >
+        本地絮语
+      </button>
+      <button
+        class="bits-source-tabs__item"
+        type="button"
+        data-bits-tab="remote"
+        role="tab"
+        aria-selected="false"
+        aria-controls="bits-remote-list"
+      >
+        Ech0
+      </button>
+    </div>
+  ) : null}
+
   <div data-bits-browse>
-    <div id="bits-list">
+    <p
+      class="bits-remote-state"
+      data-bits-remote-state
+      data-bits-remote-enabled={links.ech0Enabled ? 'true' : 'false'}
+      data-bits-remote-source-url={links.ech0SourceUrl}
+      data-bits-remote-page-size={String(links.ech0PageSize)}
+      data-bits-remote-max-pages={String(links.ech0MaxPages)}
+      data-bits-remote-show-error={links.ech0ShowError ? 'true' : 'false'}
+      data-bits-author-name={page.bits.defaultAuthor.name}
+      data-bits-author-avatar={withBase(page.bits.defaultAuthor.avatar)}
+      role="status"
+      aria-live="polite"
+    ></p>
+    <div id="bits-local-list" data-bits-local-list>
       {cards.map(({ bit, excerpt, Content }) => (
         <BitCard bit={bit} excerpt={excerpt} Content={Content} prioritizeLeadMedia={bit.id === priorityMediaBitId} />
       ))}
     </div>
 
-    {totalPages > 1 ? (
-      <nav class="pagination" aria-label={`${pageTitleText}分页`}>
-        <div class="pagination__inner">
-          {prevPath ? <a class="pagination__link" rel="prev" href={withBase(prevPath)}>上一页</a> : null}
-          {nextPath ? (
-            <a class="pagination__link pagination__link--next" rel="next" href={withBase(nextPath)}>下一页</a>
-          ) : null}
-        </div>
-      </nav>
+    {links.ech0Enabled ? (
+      <div id="bits-remote-list" data-bits-remote-list hidden></div>
     ) : null}
+
+    <div class="bits-local-pagination" data-bits-local-pagination>
+      {totalPages > 1 ? (
+        <nav class="pagination" aria-label={`${pageTitleText}分页`}>
+          <div class="pagination__inner">
+            {prevPath ? <a class="pagination__link" rel="prev" href={withBase(prevPath)}>上一页</a> : null}
+            {nextPath ? (
+              <a class="pagination__link pagination__link--next" rel="next" href={withBase(nextPath)}>下一页</a>
+            ) : null}
+          </div>
+        </nav>
+      ) : null}
+    </div>
   </div>
 
   <section
@@ -275,6 +320,7 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
   <script>
     import { createWithBase } from '../utils/format';
     import '../scripts/bits-search.ts';
+    import '../scripts/bits-remote.ts';
     import '../scripts/bits-lightbox.ts';
 
     const openBtn = document.querySelector<HTMLButtonElement>('[data-new-bit]');

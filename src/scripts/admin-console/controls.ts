@@ -80,8 +80,37 @@ export type AdminThemeControls = RequiredElements<{
   inputPageMemoSubtitle: HTMLInputElement | null;
   inputPageAboutTitle: HTMLInputElement | null;
   inputPageAboutSubtitle: HTMLInputElement | null;
+  inputPageAboutProfileAvatar: HTMLInputElement | null;
+  inputPageAboutProfileGreeting: HTMLInputElement | null;
+  inputPageAboutProfileName: HTMLInputElement | null;
+  inputPageAboutProfileIdentity: HTMLInputElement | null;
+  inputPageAboutProfileBirthYear: HTMLInputElement | null;
+  inputPageAboutProfileCurrent: HTMLInputElement | null;
+  inputPageAboutProfileMottoLead: HTMLInputElement | null;
+  inputPageAboutProfileMottoTail: HTMLInputElement | null;
+  inputPageAboutProfileInterestsTitle: HTMLInputElement | null;
+  inputPageAboutProfileInterests: HTMLInputElement | null;
+  inputPageAboutProfileMusicTitle: HTMLInputElement | null;
+  inputPageAboutProfileMusic: HTMLInputElement | null;
+  inputPageAboutProfilePersonality: HTMLInputElement | null;
+  inputPageAboutProfilePersonalityType: HTMLInputElement | null;
+  inputPageAboutProfilePersonalityUrl: HTMLInputElement | null;
+  inputPageAboutProfileSpecialties: HTMLInputElement | null;
+  inputPageAboutProfileSpecialtyHighlight: HTMLInputElement | null;
   inputPageLinksTitle: HTMLInputElement | null;
   inputPageLinksSubtitle: HTMLInputElement | null;
+  inputLinksSourceUrl: HTMLInputElement | null;
+  inputLinksLatencySourceUrl: HTMLInputElement | null;
+  inputLinksTombstoneSourceUrl: HTMLInputElement | null;
+  inputLinksSubmissionUrl: HTMLInputElement | null;
+  inputLinksFcircleSourceUrl: HTMLInputElement | null;
+  inputLinksFcircleEnabled: HTMLInputElement | null;
+  inputLinksFcircleShowError: HTMLInputElement | null;
+  inputLinksEch0SourceUrl: HTMLInputElement | null;
+  inputLinksEch0Enabled: HTMLInputElement | null;
+  inputLinksEch0PageSize: HTMLInputElement | null;
+  inputLinksEch0MaxPages: HTMLInputElement | null;
+  inputLinksEch0ShowError: HTMLInputElement | null;
   inputArticleMetaShowDate: HTMLInputElement | null;
   inputArticleMetaDateLabel: HTMLInputElement | null;
   inputArticleMetaShowTags: HTMLInputElement | null;
@@ -172,8 +201,38 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputPageMemoSubtitle: byId<HTMLInputElement>('page-memo-subtitle'),
     inputPageAboutTitle: byId<HTMLInputElement>('page-about-title'),
     inputPageAboutSubtitle: byId<HTMLInputElement>('page-about-subtitle'),
+    inputPageAboutProfileAvatar: byId<HTMLInputElement>('page-about-profile-avatar'),
+    inputPageAboutProfileGreeting: byId<HTMLInputElement>('page-about-profile-greeting'),
+    inputPageAboutProfileName: byId<HTMLInputElement>('page-about-profile-name'),
+    inputPageAboutProfileIdentity: byId<HTMLInputElement>('page-about-profile-identity'),
+    inputPageAboutProfileBirthYear: byId<HTMLInputElement>('page-about-profile-birth-year'),
+    inputPageAboutProfileCurrent: byId<HTMLInputElement>('page-about-profile-current'),
+    inputPageAboutProfileMottoLead: byId<HTMLInputElement>('page-about-profile-motto-lead'),
+    inputPageAboutProfileMottoTail: byId<HTMLInputElement>('page-about-profile-motto-tail'),
+    inputPageAboutProfileInterestsTitle: byId<HTMLInputElement>('page-about-profile-interests-title'),
+    inputPageAboutProfileInterests: byId<HTMLInputElement>('page-about-profile-interests'),
+    inputPageAboutProfileMusicTitle: byId<HTMLInputElement>('page-about-profile-music-title'),
+    inputPageAboutProfileMusic: byId<HTMLInputElement>('page-about-profile-music'),
+    inputPageAboutProfilePersonality: byId<HTMLInputElement>('page-about-profile-personality'),
+    inputPageAboutProfilePersonalityType: byId<HTMLInputElement>('page-about-profile-personality-type'),
+    inputPageAboutProfilePersonalityUrl: byId<HTMLInputElement>('page-about-profile-personality-url'),
+    inputPageAboutProfileSpecialties: byId<HTMLInputElement>('page-about-profile-specialties'),
+    inputPageAboutProfileSpecialtyHighlight: byId<HTMLInputElement>('page-about-profile-specialty-highlight'),
     inputPageLinksTitle: byId<HTMLInputElement>('page-links-title'),
+
     inputPageLinksSubtitle: byId<HTMLInputElement>('page-links-subtitle'),
+    inputLinksSourceUrl: byId<HTMLInputElement>('links-source-url'),
+    inputLinksLatencySourceUrl: byId<HTMLInputElement>('links-latency-source-url'),
+    inputLinksTombstoneSourceUrl: byId<HTMLInputElement>('links-tombstone-source-url'),
+    inputLinksSubmissionUrl: byId<HTMLInputElement>('links-submission-url'),
+    inputLinksFcircleSourceUrl: byId<HTMLInputElement>('links-fcircle-source-url'),
+    inputLinksFcircleEnabled: byId<HTMLInputElement>('links-fcircle-enabled'),
+    inputLinksFcircleShowError: byId<HTMLInputElement>('links-fcircle-show-error'),
+    inputLinksEch0SourceUrl: byId<HTMLInputElement>('links-ech0-source-url'),
+    inputLinksEch0Enabled: byId<HTMLInputElement>('links-ech0-enabled'),
+    inputLinksEch0PageSize: byId<HTMLInputElement>('links-ech0-page-size'),
+    inputLinksEch0MaxPages: byId<HTMLInputElement>('links-ech0-max-pages'),
+    inputLinksEch0ShowError: byId<HTMLInputElement>('links-ech0-show-error'),
     inputArticleMetaShowDate: byId<HTMLInputElement>('ui-article-meta-show-date'),
     inputArticleMetaDateLabel: byId<HTMLInputElement>('ui-article-meta-date-label'),
     inputArticleMetaShowTags: byId<HTMLInputElement>('ui-article-meta-show-tags'),

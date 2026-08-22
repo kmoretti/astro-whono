@@ -139,7 +139,7 @@ const articleHeadings = headings.filter((heading) => heading.depth === 2 || head
   <div class:list={["article-reading-layout", articleHeadings.length && "article-reading-layout--has-toc"]}>
     {articleHeadings.length ? (
       <nav class="article-toc" aria-label="文章目录">
-        <details open>
+        <details>
           <summary>文章目录</summary>
           <ol class="article-toc__items">
             {articleHeadings.map((heading) => (

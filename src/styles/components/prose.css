@@ -201,11 +201,18 @@
   border-bottom-color: currentColor;
 }
 
-.prose table {
-  display: table;
-  width: 100%;
-  margin: 1.35rem 0;
+.prose .table-scroll {
   max-width: 100%;
+  margin: 1.35rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose .table-scroll table {
+  display: table;
+  width: max-content;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   border: 1px solid var(--border);

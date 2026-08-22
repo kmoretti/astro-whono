@@ -2,11 +2,13 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import ExchangeLinksPage from '../../../components/ExchangeLinksPage.astro';
 import '../../../styles/exchange-links-page.css';
+import { getThemeSettings } from '../../../lib/theme-settings';
 
+const { settings } = getThemeSettings();
 const title = '交换友链';
 const description = '提交或更新友链申请。';
 ---
 
 <BaseLayout title={title} description={description} bodyClass="exchange-links-page" activeNavId="links">
-  <ExchangeLinksPage />
+  <ExchangeLinksPage submissionUrl={settings.links.submissionUrl} />
 </BaseLayout>

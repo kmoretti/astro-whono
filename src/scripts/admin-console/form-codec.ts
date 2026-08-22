@@ -32,6 +32,8 @@ import {
 export type EditableSettings = ThemeSettingsEditablePayload['settings'];
 export type EditableCustomSocialItem = EditableSettings['site']['socialLinks']['custom'][number];
 export type EditableNavItem = EditableSettings['shell']['nav'][number];
+export type EditableNavChild = EditableNavItem['children'][number];
+export type SidebarNavChildDraft = { parentId: SidebarNavId; child: EditableNavChild };
 export type SocialPresetOrder = Record<SiteSocialPresetId, number>;
 
 type Query = <T extends Element>(parent: ParentNode, selector: string) => T | null;
@@ -40,6 +42,8 @@ type FormCodecContext = {
   footerStartYearMax: number;
   query: Query;
   getNavRows: () => HTMLElement[];
+  getNavChildDrafts: () => SidebarNavChildDraft[];
+  renderNavChildDrafts: (drafts: SidebarNavChildDraft[]) => void;
   getCustomRows: () => HTMLElement[];
   getCustomRowLabelInput: (row: Element | null) => HTMLInputElement | null;
   defaultCustomSocialIconKey: SiteSocialIconKey;
@@ -87,8 +91,37 @@ type FormCodecContext = {
   inputPageMemoSubtitle: HTMLInputElement;
   inputPageAboutTitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
+  inputPageAboutProfileAvatar: HTMLInputElement;
+  inputPageAboutProfileGreeting: HTMLInputElement;
+  inputPageAboutProfileName: HTMLInputElement;
+  inputPageAboutProfileIdentity: HTMLInputElement;
+  inputPageAboutProfileBirthYear: HTMLInputElement;
+  inputPageAboutProfileCurrent: HTMLInputElement;
+  inputPageAboutProfileMottoLead: HTMLInputElement;
+  inputPageAboutProfileMottoTail: HTMLInputElement;
+  inputPageAboutProfileInterestsTitle: HTMLInputElement;
+  inputPageAboutProfileInterests: HTMLInputElement;
+  inputPageAboutProfileMusicTitle: HTMLInputElement;
+  inputPageAboutProfileMusic: HTMLInputElement;
+  inputPageAboutProfilePersonality: HTMLInputElement;
+  inputPageAboutProfilePersonalityType: HTMLInputElement;
+  inputPageAboutProfilePersonalityUrl: HTMLInputElement;
+  inputPageAboutProfileSpecialties: HTMLInputElement;
+  inputPageAboutProfileSpecialtyHighlight: HTMLInputElement;
   inputPageLinksTitle: HTMLInputElement;
   inputPageLinksSubtitle: HTMLInputElement;
+  inputLinksSourceUrl: HTMLInputElement;
+  inputLinksLatencySourceUrl: HTMLInputElement;
+  inputLinksTombstoneSourceUrl: HTMLInputElement;
+  inputLinksSubmissionUrl: HTMLInputElement;
+  inputLinksFcircleSourceUrl: HTMLInputElement;
+  inputLinksFcircleEnabled: HTMLInputElement;
+  inputLinksFcircleShowError: HTMLInputElement;
+  inputLinksEch0SourceUrl: HTMLInputElement;
+  inputLinksEch0Enabled: HTMLInputElement;
+  inputLinksEch0PageSize: HTMLInputElement;
+  inputLinksEch0MaxPages: HTMLInputElement;
+  inputLinksEch0ShowError: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
   inputArticleMetaShowTags: HTMLInputElement;
@@ -162,6 +195,8 @@ export const createFormCodec = ({
   footerStartYearMax,
   query,
   getNavRows,
+  getNavChildDrafts,
+  renderNavChildDrafts,
   getCustomRows,
   getCustomRowLabelInput,
   defaultCustomSocialIconKey,
@@ -209,8 +244,37 @@ export const createFormCodec = ({
   inputPageMemoSubtitle,
   inputPageAboutTitle,
   inputPageAboutSubtitle,
+  inputPageAboutProfileAvatar,
+  inputPageAboutProfileGreeting,
+  inputPageAboutProfileName,
+  inputPageAboutProfileIdentity,
+  inputPageAboutProfileBirthYear,
+  inputPageAboutProfileCurrent,
+  inputPageAboutProfileMottoLead,
+  inputPageAboutProfileMottoTail,
+  inputPageAboutProfileInterestsTitle,
+  inputPageAboutProfileInterests,
+  inputPageAboutProfileMusicTitle,
+  inputPageAboutProfileMusic,
+  inputPageAboutProfilePersonality,
+  inputPageAboutProfilePersonalityType,
+  inputPageAboutProfilePersonalityUrl,
+  inputPageAboutProfileSpecialties,
+  inputPageAboutProfileSpecialtyHighlight,
   inputPageLinksTitle,
   inputPageLinksSubtitle,
+  inputLinksSourceUrl,
+  inputLinksLatencySourceUrl,
+  inputLinksTombstoneSourceUrl,
+  inputLinksSubmissionUrl,
+  inputLinksFcircleSourceUrl,
+  inputLinksFcircleEnabled,
+  inputLinksFcircleShowError,
+  inputLinksEch0SourceUrl,
+  inputLinksEch0Enabled,
+  inputLinksEch0PageSize,
+  inputLinksEch0MaxPages,
+  inputLinksEch0ShowError,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
   inputArticleMetaShowTags,
@@ -439,9 +503,13 @@ export const createFormCodec = ({
       normalizeCustomSocialLabel
     });
 
-  let preservedNavChildren = new Map<SidebarNavId, EditableNavItem['children']>();
-
   const collectSettings = (): EditableSettings => {
+    const navChildren = new Map<SidebarNavId, EditableNavItem['children']>();
+    getNavChildDrafts().forEach(({ parentId, child }) => {
+      const children = navChildren.get(parentId) ?? [];
+      children.push({ ...child });
+      navChildren.set(parentId, children);
+    });
     const nav = getNavRows().map((row, index): EditableNavItem => {
       const idRaw = row.getAttribute('data-nav-id')?.trim() ?? '';
       const id = isAdminNavId(idRaw) ? idRaw : ADMIN_NAV_IDS[index] ?? 'essay';
@@ -456,7 +524,7 @@ export const createFormCodec = ({
         ornament: ornamentInput ? normalizeOptionalSingleLine(ornamentInput.value) : ADMIN_NAV_ORNAMENT_DEFAULT,
         order: parseOrder(orderInput?.value || '', fallbackOrder),
         visible: Boolean(visibleInput?.checked),
-        children: (preservedNavChildren.get(id) ?? []).map((child) => ({ ...child }))
+        children: (navChildren.get(id) ?? []).map((child) => ({ ...child }))
       };
     });
 
@@ -548,12 +616,45 @@ export const createFormCodec = ({
         },
         about: {
           title: normalizeOptionalSingleLine(inputPageAboutTitle.value),
-          subtitle: normalizeOptionalSingleLine(inputPageAboutSubtitle.value)
+          subtitle: normalizeOptionalSingleLine(inputPageAboutSubtitle.value),
+          profile: {
+            avatar: inputPageAboutProfileAvatar.value.trim(),
+            greeting: inputPageAboutProfileGreeting.value.trim(),
+            name: inputPageAboutProfileName.value.trim(),
+            identity: inputPageAboutProfileIdentity.value.trim(),
+            birthYear: parseInteger(inputPageAboutProfileBirthYear.value) ?? 2010,
+            current: inputPageAboutProfileCurrent.value.trim(),
+            mottoLead: inputPageAboutProfileMottoLead.value.trim(),
+            mottoTail: inputPageAboutProfileMottoTail.value.trim(),
+            interestsTitle: inputPageAboutProfileInterestsTitle.value.trim(),
+            interests: inputPageAboutProfileInterests.value.trim(),
+            musicTitle: inputPageAboutProfileMusicTitle.value.trim(),
+            music: inputPageAboutProfileMusic.value.trim(),
+            personality: inputPageAboutProfilePersonality.value.trim(),
+            personalityType: inputPageAboutProfilePersonalityType.value.trim(),
+            personalityUrl: inputPageAboutProfilePersonalityUrl.value.trim() || null,
+            specialties: inputPageAboutProfileSpecialties.value.trim(),
+            specialtyHighlight: inputPageAboutProfileSpecialtyHighlight.value.trim()
+          }
         },
         links: {
           title: normalizeOptionalSingleLine(inputPageLinksTitle.value),
           subtitle: normalizeOptionalSingleLine(inputPageLinksSubtitle.value)
         }
+      },
+      links: {
+        linksSourceUrl: inputLinksSourceUrl.value.trim(),
+        latencySourceUrl: inputLinksLatencySourceUrl.value.trim(),
+        tombstoneSourceUrl: inputLinksTombstoneSourceUrl.value.trim(),
+        submissionUrl: inputLinksSubmissionUrl.value.trim(),
+        fcircleSourceUrl: inputLinksFcircleSourceUrl.value.trim(),
+        fcircleEnabled: Boolean(inputLinksFcircleEnabled.checked),
+        fcircleShowError: Boolean(inputLinksFcircleShowError.checked),
+        ech0SourceUrl: inputLinksEch0SourceUrl.value.trim(),
+        ech0Enabled: Boolean(inputLinksEch0Enabled.checked),
+        ech0PageSize: Number.parseInt(inputLinksEch0PageSize.value, 10),
+        ech0MaxPages: Number.parseInt(inputLinksEch0MaxPages.value, 10),
+        ech0ShowError: Boolean(inputLinksEch0ShowError.checked)
       },
       ui: {
         codeBlock: {
@@ -639,8 +740,37 @@ export const createFormCodec = ({
     inputPageMemoSubtitle.value = settings.page.memo?.subtitle || '';
     inputPageAboutTitle.value = settings.page.about?.title || '';
     inputPageAboutSubtitle.value = settings.page.about?.subtitle || '';
+    inputPageAboutProfileAvatar.value = settings.page.about?.profile?.avatar || '';
+    inputPageAboutProfileGreeting.value = settings.page.about?.profile?.greeting || '';
+    inputPageAboutProfileName.value = settings.page.about?.profile?.name || '';
+    inputPageAboutProfileIdentity.value = settings.page.about?.profile?.identity || '';
+    inputPageAboutProfileBirthYear.value = String(settings.page.about?.profile?.birthYear ?? '');
+    inputPageAboutProfileCurrent.value = settings.page.about?.profile?.current || '';
+    inputPageAboutProfileMottoLead.value = settings.page.about?.profile?.mottoLead || '';
+    inputPageAboutProfileMottoTail.value = settings.page.about?.profile?.mottoTail || '';
+    inputPageAboutProfileInterestsTitle.value = settings.page.about?.profile?.interestsTitle || '';
+    inputPageAboutProfileInterests.value = settings.page.about?.profile?.interests || '';
+    inputPageAboutProfileMusicTitle.value = settings.page.about?.profile?.musicTitle || '';
+    inputPageAboutProfileMusic.value = settings.page.about?.profile?.music || '';
+    inputPageAboutProfilePersonality.value = settings.page.about?.profile?.personality || '';
+    inputPageAboutProfilePersonalityType.value = settings.page.about?.profile?.personalityType || '';
+    inputPageAboutProfilePersonalityUrl.value = settings.page.about?.profile?.personalityUrl || '';
+    inputPageAboutProfileSpecialties.value = settings.page.about?.profile?.specialties || '';
+    inputPageAboutProfileSpecialtyHighlight.value = settings.page.about?.profile?.specialtyHighlight || '';
     inputPageLinksTitle.value = settings.page.links?.title || '';
     inputPageLinksSubtitle.value = settings.page.links?.subtitle || '';
+    inputLinksSourceUrl.value = settings.links?.linksSourceUrl || '';
+    inputLinksLatencySourceUrl.value = settings.links?.latencySourceUrl || '';
+    inputLinksTombstoneSourceUrl.value = settings.links?.tombstoneSourceUrl || '';
+    inputLinksSubmissionUrl.value = settings.links?.submissionUrl || '';
+    inputLinksFcircleSourceUrl.value = settings.links?.fcircleSourceUrl || '';
+    inputLinksFcircleEnabled.checked = settings.links?.fcircleEnabled !== false;
+    inputLinksFcircleShowError.checked = settings.links?.fcircleShowError !== false;
+    inputLinksEch0SourceUrl.value = settings.links?.ech0SourceUrl || '';
+    inputLinksEch0Enabled.checked = settings.links?.ech0Enabled !== false;
+    inputLinksEch0PageSize.value = String(settings.links?.ech0PageSize ?? 10);
+    inputLinksEch0MaxPages.value = String(settings.links?.ech0MaxPages ?? 3);
+    inputLinksEch0ShowError.checked = settings.links?.ech0ShowError !== false;
     inputPageBitsAuthorName.value = settings.page.bits?.defaultAuthor?.name || '';
     inputPageBitsAuthorAvatar.value = settings.page.bits?.defaultAuthor?.avatar || '';
     inputHomeShowHero.checked = (settings.home.heroPresetId || 'default') !== 'none';
@@ -665,8 +795,10 @@ export const createFormCodec = ({
     refreshArticleMetaPreview();
 
     const navMap = new Map<SidebarNavId, EditableNavItem>(settings.shell.nav.map((item) => [item.id, item]));
-    preservedNavChildren = new Map(
-      settings.shell.nav.map((item) => [item.id, item.children.map((child) => ({ ...child }))])
+    renderNavChildDrafts(
+      settings.shell.nav.flatMap((item) =>
+        item.children.map((child) => ({ parentId: item.id, child: { ...child } }))
+      )
     );
     getNavRows().forEach((row, index) => {
       const rawId = row.getAttribute('data-nav-id')?.trim() ?? '';

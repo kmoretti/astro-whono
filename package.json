@@ -39,13 +39,14 @@
     "new:bit": "node ./scripts/new-bit.mjs"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.2.3",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@aws-sdk/client-s3": "^3.1106.0",
     "@lucide/astro": "^1.28.0",
     "astro": "^7.1.6",
     "github-slugger": "^2.0.0",
-    "yaml": "^2.9.0"
+    "yaml": "2.8.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
@@ -84,7 +85,8 @@
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
     "vfile": "^6.0.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.2",
+    "wrangler": "^4.125.0"
   },
   "overrides": {
     "ajv": "8.18.0",

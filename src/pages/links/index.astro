@@ -11,5 +11,12 @@ const subtitle = settings.page.links.subtitle;
 ---
 
 <BaseLayout title={title} description={subtitle ?? undefined} bodyClass="links-page" activeNavId="links">
-  <LinksPageView title={title} subtitle={subtitle} recoveryEmail={settings.site.socialLinks.email} />
+  <LinksPageView
+    title={title}
+    subtitle={subtitle}
+    recoveryEmail={settings.site.socialLinks.email}
+    linksSourceUrl={settings.links.linksSourceUrl}
+    latencySourceUrl={settings.links.latencySourceUrl}
+    tombstoneSourceUrl={settings.links.tombstoneSourceUrl}
+  />
 </BaseLayout>

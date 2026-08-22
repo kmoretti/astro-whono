@@ -1,10 +1,9 @@
 import YAML from 'yaml';
+import { DEFAULT_LINKS_SETTINGS } from './links-settings';
 
-export const LINKS_SOURCE_URL =
-  'https://cdn.jsdmirror.com/gh/kmoretti/butterfly-link-check@main/link.yml';
-export const LATENCY_SOURCE_URL = 'https://fc.081531.xyz/link.json';
-export const TOMBSTONE_SOURCE_URL =
-  'https://cdn.jsdmirror.com/gh/kmoretti/butterfly-link-check@main/link-false.yml';
+export const LINKS_SOURCE_URL = DEFAULT_LINKS_SETTINGS.linksSourceUrl;
+export const LATENCY_SOURCE_URL = DEFAULT_LINKS_SETTINGS.latencySourceUrl;
+export const TOMBSTONE_SOURCE_URL = DEFAULT_LINKS_SETTINGS.tombstoneSourceUrl;
 export const LINKS_CACHE_KEY = 'astro-whono:links-cache';
 export const LINKS_CACHE_VERSION = 1;
 export const LINKS_CACHE_TTL_MS = 60 * 60 * 1000;

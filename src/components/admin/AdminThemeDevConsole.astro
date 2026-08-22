@@ -2,6 +2,7 @@
 import type { SidebarNavId } from '../../lib/theme-settings';
 import AdminDiagnosticPanel from './AdminDiagnosticPanel.astro';
 import AdminHomeSection from './AdminHomeSection.astro';
+import AdminLinksSection from './AdminLinksSection.astro';
 import AdminPageSection from './AdminPageSection.astro';
 import AdminSidebarSection from './AdminSidebarSection.astro';
 import AdminSiteSection from './AdminSiteSection.astro';
@@ -61,6 +62,8 @@ const {
     <AdminSidebarSection navIdOrder={navIdOrder} />
 
     <AdminHomeSection homeIntroMaxLength={homeIntroMaxLength} />
+
+    <AdminLinksSection />
 
     <AdminPageSection
       pageTitleMaxLength={pageTitleMaxLength}

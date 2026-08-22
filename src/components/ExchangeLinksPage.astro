@@ -1,4 +1,10 @@
 ---
+interface Props {
+  submissionUrl: string;
+}
+
+const { submissionUrl } = Astro.props;
+
 const conditions = [
   '本站内容健康、可正常访问，并已稳定运行一段时间。',
   '已在站点友链页面添加本站链接，并确保后续持续保留。',
@@ -8,7 +14,7 @@ const conditions = [
 ];
 ---
 
-<section class="exchange-page" data-exchange-root aria-labelledby="exchange-page-title">
+<section class="exchange-page" data-exchange-root data-submission-url={submissionUrl} aria-labelledby="exchange-page-title">
   <header class="exchange-page__header">
     <p class="exchange-page__eyebrow">友链</p>
     <h1 id="exchange-page-title" class="page-title">交换友链</h1>

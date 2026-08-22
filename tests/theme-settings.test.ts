@@ -91,6 +91,10 @@ describe('theme-settings revision semantics', () => {
     );
     expect(getSidebarHref('links')).toBe('/links/');
     expect(resolved.settings.page.links).toEqual({ title: '友链', subtitle: null });
+    expect(resolved.settings.links.linksSourceUrl).toMatch(/^https:\/\//);
+    expect(resolved.settings.links.latencySourceUrl).toMatch(/^https:\/\//);
+    expect(resolved.settings.links.tombstoneSourceUrl).toMatch(/^https:\/\//);
+    expect(resolved.settings.links.submissionUrl).toMatch(/^https:\/\//);
   });
 
   it('keeps configured nested navigation children in the editable payload', () => {

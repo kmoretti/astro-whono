@@ -211,5 +211,26 @@ const { navIdOrder } = Astro.props;
         }
       </div>
     </div>
+    <div class="admin-nav-children-panel">
+      <div class="admin-social-panel__head">
+        <p class="admin-subtitle admin-subtitle--compact">
+          <span class="admin-subtitle__main">多级导航</span>
+          <span class="admin-subtitle__hint">（仅支持一级 + 二级）</span>
+        </p>
+        <button id="shell-nav-child-add" class="admin-btn admin-btn--ghost admin-btn--compact" type="button">
+          新增子导航
+        </button>
+      </div>
+      <div id="shell-nav-child-list" class="admin-nav-child-list">
+        <div class="admin-nav-child-header" aria-hidden="true">
+          <span>所属一级导航</span>
+          <span>导航名称</span>
+          <span>站内路径</span>
+          <span>排序</span>
+          <span>展示</span>
+          <span>操作</span>
+        </div>
+      </div>
+    </div>
   </div>
 </fieldset>

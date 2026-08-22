@@ -53,6 +53,7 @@ const nav = settings.shell.nav
         ? item.id === activeNavId
         : pathname === href || (href !== homeHref && pathname.startsWith(href)),
       children: item.children
+        .filter((child) => child.id !== 'fcircle' || settings.links.fcircleEnabled)
         .filter((child) => child.visible)
         .sort((a, b) => a.order - b.order)
         .map((child) => {

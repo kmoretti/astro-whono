@@ -6,6 +6,7 @@ import {
   fillAdminThemeSettingsCompatibilityDefaults,
   getAdminNavOrderIssues,
   getAdminSocialOrderIssues,
+  normalizeAdminLinksUrl,
   validateAdminThemeSettings
 } from '../src/lib/admin-console/shared';
 import {
@@ -71,6 +72,37 @@ describe('admin-console/shared', () => {
       { type: 'duplicate', key: 'bits', order: 1 },
       { type: 'range', key: 'memo', order: 0 }
     ]);
+  });
+
+  it('accepts only HTTPS URLs for friend-link settings', () => {
+    expect(normalizeAdminLinksUrl(' https://example.com/source.yml ')).toBe('https://example.com/source.yml');
+    expect(normalizeAdminLinksUrl('https://example.com')).toBe('https://example.com/');
+    expect(normalizeAdminLinksUrl('http://example.com/source.yml')).toBe('');
+    expect(normalizeAdminLinksUrl('not-a-url')).toBe('');
+  });
+
+  it('canonicalizes and serializes the friend-link settings group', () => {
+    const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+    raw.links = {
+      linksSourceUrl: ' https://links.example/source.yml ',
+      latencySourceUrl: 'https://latency.example/data.json',
+      tombstoneSourceUrl: 'https://links.example/false.yml',
+      submissionUrl: 'https://verify.example/api/submissions'
+    };
+
+    const canonical = canonicalizeAdminThemeSettings(raw);
+    const writable = createAdminWritableThemeSettingsGroups(canonical);
+
+    expect(canonical.links).toEqual({
+      linksSourceUrl: 'https://links.example/source.yml',
+      latencySourceUrl: 'https://latency.example/data.json',
+      tombstoneSourceUrl: 'https://links.example/false.yml',
+      submissionUrl: 'https://verify.example/api/submissions'
+    });
+    expect(writable.links).toEqual(canonical.links);
+    expect(validateAdminThemeSettings(canonical)).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ path: 'links.linksSourceUrl' })])
+    );
   });
 
   it('canonicalizes and serializes the fixed links navigation and page settings', () => {

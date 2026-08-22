@@ -170,3 +170,80 @@
 .admin-nav-cell-label {
   display: none;
 }
+
+.admin-nav-children-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border);
+}
+
+.admin-nav-child-list {
+  --admin-nav-child-columns: 96px minmax(100px, 0.8fr) minmax(180px, 1.4fr) 52px 52px 52px;
+  --admin-nav-child-min-width: 620px;
+  display: grid;
+  gap: 0;
+  overflow-x: auto;
+  border: 1px solid var(--admin-row-border);
+  border-radius: var(--admin-row-radius);
+  background: var(--bg);
+}
+
+.admin-nav-child-header {
+  display: grid;
+  grid-template-columns: var(--admin-nav-child-columns);
+  gap: 8px;
+  min-width: var(--admin-nav-child-min-width);
+  padding: 8px;
+  color: var(--muted);
+  font-size: var(--admin-text-2xs);
+  text-align: center;
+  background: var(--admin-row-bg-muted);
+}
+
+.admin-nav-child-row {
+  display: grid;
+  grid-template-columns: var(--admin-nav-child-columns);
+  gap: 8px;
+  align-items: center;
+  min-width: var(--admin-nav-child-min-width);
+  padding: 8px;
+  border-top: 1px solid var(--admin-row-divider);
+}
+
+.admin-nav-child-row:first-child {
+  border-top: 0;
+}
+
+.admin-nav-child-field {
+  min-width: 0;
+  gap: 4px;
+}
+
+.admin-nav-child-field .admin-field__control {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.admin-nav-child-field--order .admin-field__control {
+  text-align: center;
+}
+
+.admin-nav-child-visible {
+  min-height: var(--admin-control-height);
+  justify-content: center;
+}
+
+.admin-nav-child-actions {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .admin-nav-child-list {
+    --admin-nav-child-columns: 92px minmax(100px, 0.8fr) minmax(160px, 1.4fr) 48px 48px 52px;
+    --admin-nav-child-min-width: 580px;
+  }
+}

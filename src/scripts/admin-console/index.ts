@@ -21,6 +21,7 @@ import { createAdminFaviconUploads } from './favicon-uploads';
 import { createFormCodec } from './form-codec';
 import { createAdminThemeImageFields } from './image-fields';
 import { createSocialLinks } from './social-links';
+import { createSidebarNavChildren } from './sidebar-nav-children';
 import { createAdminConsoleUiState } from './ui-state';
 import { createValidation } from './validation';
 
@@ -37,6 +38,11 @@ if (!root) {
     const endpoint = root.getAttribute('data-settings-endpoint') || ADMIN_SETTINGS_API_PATH;
     const footerStartYearMax = getAdminFooterStartYearMax();
     const getNavRows = (): HTMLElement[] => queryAll<HTMLElement>(root, '[data-nav-id]');
+    const navChildren = createSidebarNavChildren({
+      list: query<HTMLElement>(root, '#shell-nav-child-list')!,
+      addButton: query<HTMLButtonElement>(root, '#shell-nav-child-add')!,
+      query
+    });
 
     const socialLinks = createSocialLinks({
       query,
@@ -55,6 +61,8 @@ if (!root) {
       footerStartYearMax,
       query,
       getNavRows,
+      getNavChildDrafts: navChildren.collect,
+      renderNavChildDrafts: navChildren.render,
       getCustomRows: socialLinks.getCustomRows,
       getCustomRowLabelInput: socialLinks.getCustomRowLabelInput,
       defaultCustomSocialIconKey: socialLinks.defaultCustomSocialIconKey,
@@ -102,8 +110,37 @@ if (!root) {
       inputPageMemoSubtitle: controls.inputPageMemoSubtitle,
       inputPageAboutTitle: controls.inputPageAboutTitle,
       inputPageAboutSubtitle: controls.inputPageAboutSubtitle,
+      inputPageAboutProfileAvatar: controls.inputPageAboutProfileAvatar,
+      inputPageAboutProfileGreeting: controls.inputPageAboutProfileGreeting,
+      inputPageAboutProfileName: controls.inputPageAboutProfileName,
+      inputPageAboutProfileIdentity: controls.inputPageAboutProfileIdentity,
+      inputPageAboutProfileBirthYear: controls.inputPageAboutProfileBirthYear,
+      inputPageAboutProfileCurrent: controls.inputPageAboutProfileCurrent,
+      inputPageAboutProfileMottoLead: controls.inputPageAboutProfileMottoLead,
+      inputPageAboutProfileMottoTail: controls.inputPageAboutProfileMottoTail,
+      inputPageAboutProfileInterestsTitle: controls.inputPageAboutProfileInterestsTitle,
+      inputPageAboutProfileInterests: controls.inputPageAboutProfileInterests,
+      inputPageAboutProfileMusicTitle: controls.inputPageAboutProfileMusicTitle,
+      inputPageAboutProfileMusic: controls.inputPageAboutProfileMusic,
+      inputPageAboutProfilePersonality: controls.inputPageAboutProfilePersonality,
+      inputPageAboutProfilePersonalityType: controls.inputPageAboutProfilePersonalityType,
+      inputPageAboutProfilePersonalityUrl: controls.inputPageAboutProfilePersonalityUrl,
+      inputPageAboutProfileSpecialties: controls.inputPageAboutProfileSpecialties,
+      inputPageAboutProfileSpecialtyHighlight: controls.inputPageAboutProfileSpecialtyHighlight,
       inputPageLinksTitle: controls.inputPageLinksTitle,
       inputPageLinksSubtitle: controls.inputPageLinksSubtitle,
+      inputLinksSourceUrl: controls.inputLinksSourceUrl,
+      inputLinksLatencySourceUrl: controls.inputLinksLatencySourceUrl,
+      inputLinksTombstoneSourceUrl: controls.inputLinksTombstoneSourceUrl,
+      inputLinksSubmissionUrl: controls.inputLinksSubmissionUrl,
+      inputLinksFcircleSourceUrl: controls.inputLinksFcircleSourceUrl,
+      inputLinksFcircleEnabled: controls.inputLinksFcircleEnabled,
+      inputLinksFcircleShowError: controls.inputLinksFcircleShowError,
+      inputLinksEch0SourceUrl: controls.inputLinksEch0SourceUrl,
+      inputLinksEch0Enabled: controls.inputLinksEch0Enabled,
+      inputLinksEch0PageSize: controls.inputLinksEch0PageSize,
+      inputLinksEch0MaxPages: controls.inputLinksEch0MaxPages,
+      inputLinksEch0ShowError: controls.inputLinksEch0ShowError,
       inputArticleMetaShowDate: controls.inputArticleMetaShowDate,
       inputArticleMetaDateLabel: controls.inputArticleMetaDateLabel,
       inputArticleMetaShowTags: controls.inputArticleMetaShowTags,
@@ -180,6 +217,18 @@ if (!root) {
       inputPageMemoSubtitle: controls.inputPageMemoSubtitle,
       inputPageAboutSubtitle: controls.inputPageAboutSubtitle,
       inputPageLinksSubtitle: controls.inputPageLinksSubtitle,
+      inputLinksSourceUrl: controls.inputLinksSourceUrl,
+      inputLinksLatencySourceUrl: controls.inputLinksLatencySourceUrl,
+      inputLinksTombstoneSourceUrl: controls.inputLinksTombstoneSourceUrl,
+      inputLinksSubmissionUrl: controls.inputLinksSubmissionUrl,
+      inputLinksFcircleSourceUrl: controls.inputLinksFcircleSourceUrl,
+      inputLinksFcircleEnabled: controls.inputLinksFcircleEnabled,
+      inputLinksFcircleShowError: controls.inputLinksFcircleShowError,
+      inputLinksEch0SourceUrl: controls.inputLinksEch0SourceUrl,
+      inputLinksEch0Enabled: controls.inputLinksEch0Enabled,
+      inputLinksEch0PageSize: controls.inputLinksEch0PageSize,
+      inputLinksEch0MaxPages: controls.inputLinksEch0MaxPages,
+      inputLinksEch0ShowError: controls.inputLinksEch0ShowError,
       inputArticleMetaShowDate: controls.inputArticleMetaShowDate,
       inputArticleMetaDateLabel: controls.inputArticleMetaDateLabel,
       inputArticleMetaShowTags: controls.inputArticleMetaShowTags,

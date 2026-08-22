@@ -11,6 +11,7 @@ import type {
   ThemeSettingsFileGroup,
   TypographySettings
 } from '../theme-settings';
+import { DEFAULT_LINKS_SETTINGS } from '../links-settings';
 import {
   THEME_TYPOGRAPHY_DEFAULT,
   asThemeFontIdForRole,
@@ -111,6 +112,9 @@ export const ADMIN_SOCIAL_ORDER_MIN = 1;
 export const ADMIN_SOCIAL_ORDER_MAX = ADMIN_SOCIAL_PRESET_IDS.length + ADMIN_SOCIAL_CUSTOM_LIMIT;
 export const ADMIN_NAV_ORDER_MIN = 1;
 export const ADMIN_NAV_ORDER_MAX = 999;
+export const ADMIN_NAV_CHILD_ID_MAX_LENGTH = 80;
+export const ADMIN_NAV_CHILD_LABEL_MAX_LENGTH = 80;
+export const ADMIN_NAV_CHILD_HREF_MAX_LENGTH = 500;
 
 type AdminSocialOrderScope = 'preset' | 'custom';
 type AdminSocialOrderInput = {
@@ -156,6 +160,42 @@ export const ADMIN_QQ_HOSTS = ['qm.qq.com'] as const;
 export const ADMIN_HOME_INTRO_MAX_LENGTH = 240;
 export const ADMIN_PAGE_TITLE_MAX_LENGTH = 60;
 export const ADMIN_PAGE_SUBTITLE_MAX_LENGTH = 120;
+export const ADMIN_ABOUT_PROFILE_DEFAULTS = {
+  avatar: 'author/avatar.png',
+  greeting: '您好，很高兴认识您！',
+  name: '克喵Moretti',
+  identity: '是一名学生、独立开发者、博主。',
+  birthYear: 2010,
+  current: '15 岁',
+  mottoLead: '总有些事情',
+  mottoTail: '比永恒更重要！',
+  interestsTitle: '您的爱好',
+  interests: '编程、写作、探索新事物',
+  musicTitle: '伤感、民谣、轻音乐',
+  music: '等我喜欢就听',
+  personality: '调停者',
+  personalityType: 'INFP-T',
+  personalityUrl: 'https://www.16personalities.com/',
+  specialties: '特长、特长',
+  specialtyHighlight: '学习能力 MAX'
+} as const;
+export const ADMIN_ABOUT_PROFILE_MAX_LENGTHS = {
+  avatar: 500,
+  greeting: 120,
+  name: 80,
+  identity: 160,
+  current: 40,
+  mottoLead: 80,
+  mottoTail: 80,
+  interestsTitle: 80,
+  interests: 160,
+  musicTitle: 100,
+  music: 160,
+  personality: 80,
+  personalityType: 30,
+  specialties: 160,
+  specialtyHighlight: 80
+} as const;
 export const ADMIN_NAV_ORNAMENT_DEFAULT = '·';
 export const ADMIN_NAV_ORNAMENT_MAX_LENGTH = 4;
 export const ADMIN_FOOTER_START_YEAR_MIN = 1900;
@@ -281,6 +321,23 @@ export const isAdminAllowedHttpsUrl = (value: string, allowedHosts?: readonly st
   }
 };
 
+export const normalizeAdminLinksUrl = (value: unknown): string => {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  if (!isAdminAllowedHttpsUrl(normalized)) return '';
+
+  try {
+    return new URL(normalized).toString();
+  } catch {
+    return '';
+  }
+};
+
+const canonicalizeAdminLinksUrl = (value: unknown, fallback: string): string => {
+  const raw = normalizeTrimmed(value);
+  if (!raw) return fallback;
+  return normalizeAdminLinksUrl(raw) || raw;
+};
+
 export type AdminThemeSettingsValidationIssue = {
   path: string;
   message: string;
@@ -301,6 +358,7 @@ export type AdminWritableThemeSettingsGroups = {
   shell: EditableThemeSettings['shell'];
   home: EditableThemeSettings['home'];
   page: EditableThemeSettings['page'];
+  links: EditableThemeSettings['links'];
   ui: EditableThemeSettings['ui'];
 };
 
@@ -353,6 +411,16 @@ const parseInteger = (value: string | number | null | undefined): number | null 
   return Number.isFinite(next) ? next : null;
 };
 
+const normalizeBoundedInteger = (
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number
+): number => {
+  const parsed = parseInteger(value as string | number | null | undefined);
+  return parsed !== null && parsed >= min && parsed <= max ? parsed : fallback;
+};
+
 const defaultNormalizeCustomSocialLabel = (value: unknown): string => normalizeTrimmed(value);
 
 const cloneCustomItems = (
@@ -401,12 +469,15 @@ export const canonicalizeAdminThemeSettings = (
   const shell = isRecord(next.shell) ? next.shell : {};
   const home = isRecord(next.home) ? next.home : {};
   const page = isRecord(next.page) ? next.page : {};
+  const links = isRecord(next.links) ? next.links : {};
   const ui = isRecord(next.ui) ? next.ui : {};
   const siteFooter = isRecord(site.footer) ? site.footer : {};
   const adminOverview = isRecord(site.adminOverview) ? site.adminOverview : {};
   const socialLinks = isRecord(site.socialLinks) ? site.socialLinks : {};
   const customItems = Array.isArray(socialLinks.custom) ? socialLinks.custom : [];
   const bitsPage = isRecord(page.bits) ? page.bits : {};
+  const aboutPage = isRecord(page.about) ? page.about : {};
+  const aboutProfile = isRecord(aboutPage.profile) ? aboutPage.profile : {};
   const bitsDefaultAuthor = isRecord(bitsPage.defaultAuthor) ? bitsPage.defaultAuthor : {};
   const rawPresetOrder = isRecord(socialLinks.presetOrder) ? socialLinks.presetOrder : {};
   const rawUiArticleMeta: LooseRecord = isRecord(ui.articleMeta) ? ui.articleMeta : {};
@@ -594,12 +665,55 @@ export const canonicalizeAdminThemeSettings = (
       },
       about: {
         title: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.title ?? '' : '')),
-        subtitle: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.subtitle ?? '' : ''))
+        subtitle: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.subtitle ?? '' : '')),
+        profile: {
+          avatar: normalizeTrimmed(aboutProfile.avatar),
+          greeting: normalizeSingleLine(aboutProfile.greeting, ''),
+          name: normalizeSingleLine(aboutProfile.name, ''),
+          identity: normalizeSingleLine(aboutProfile.identity, ''),
+          birthYear: parseInteger(aboutProfile.birthYear as string | number | null | undefined) ?? 2010,
+          current: normalizeSingleLine(aboutProfile.current, ''),
+          mottoLead: normalizeSingleLine(aboutProfile.mottoLead, ''),
+          mottoTail: normalizeSingleLine(aboutProfile.mottoTail, ''),
+          interestsTitle: normalizeSingleLine(aboutProfile.interestsTitle, ''),
+          interests: normalizeSingleLine(aboutProfile.interests, ''),
+          musicTitle: normalizeSingleLine(aboutProfile.musicTitle, ''),
+          music: normalizeSingleLine(aboutProfile.music, ''),
+          personality: normalizeSingleLine(aboutProfile.personality, ''),
+          personalityType: normalizeSingleLine(aboutProfile.personalityType, ''),
+          personalityUrl: normalizeTrimmed(aboutProfile.personalityUrl) || null,
+          specialties: normalizeSingleLine(aboutProfile.specialties, ''),
+          specialtyHighlight: normalizeSingleLine(aboutProfile.specialtyHighlight, '')
+        }
       },
       links: {
         title: normalizeOptionalSingleLine(String(isRecord(page.links) ? page.links.title ?? '' : '')),
         subtitle: normalizeOptionalSingleLine(String(isRecord(page.links) ? page.links.subtitle ?? '' : ''))
       }
+    },
+    links: {
+      linksSourceUrl: canonicalizeAdminLinksUrl(links.linksSourceUrl, DEFAULT_LINKS_SETTINGS.linksSourceUrl),
+      latencySourceUrl: canonicalizeAdminLinksUrl(links.latencySourceUrl, DEFAULT_LINKS_SETTINGS.latencySourceUrl),
+      tombstoneSourceUrl: canonicalizeAdminLinksUrl(links.tombstoneSourceUrl, DEFAULT_LINKS_SETTINGS.tombstoneSourceUrl),
+      submissionUrl: canonicalizeAdminLinksUrl(links.submissionUrl, DEFAULT_LINKS_SETTINGS.submissionUrl),
+      fcircleSourceUrl: canonicalizeAdminLinksUrl(links.fcircleSourceUrl, DEFAULT_LINKS_SETTINGS.fcircleSourceUrl),
+      fcircleEnabled: typeof links.fcircleEnabled === 'boolean' ? links.fcircleEnabled : DEFAULT_LINKS_SETTINGS.fcircleEnabled,
+      fcircleShowError: typeof links.fcircleShowError === 'boolean' ? links.fcircleShowError : DEFAULT_LINKS_SETTINGS.fcircleShowError,
+      ech0SourceUrl: canonicalizeAdminLinksUrl(links.ech0SourceUrl, DEFAULT_LINKS_SETTINGS.ech0SourceUrl),
+      ech0Enabled: typeof links.ech0Enabled === 'boolean' ? links.ech0Enabled : DEFAULT_LINKS_SETTINGS.ech0Enabled,
+      ech0PageSize: normalizeBoundedInteger(
+        links.ech0PageSize,
+        DEFAULT_LINKS_SETTINGS.ech0PageSize,
+        1,
+        50
+      ),
+      ech0MaxPages: normalizeBoundedInteger(
+        links.ech0MaxPages,
+        DEFAULT_LINKS_SETTINGS.ech0MaxPages,
+        1,
+        10
+      ),
+      ech0ShowError: typeof links.ech0ShowError === 'boolean' ? links.ech0ShowError : DEFAULT_LINKS_SETTINGS.ech0ShowError
     },
     ui: {
       codeBlock: {
@@ -691,6 +805,7 @@ export const createAdminWritableThemeSettingsGroups = (
     about: { ...settings.page.about },
     links: { ...settings.page.links }
   },
+  links: { ...settings.links },
   ui: {
     codeBlock: { ...settings.ui.codeBlock },
     readingMode: { ...settings.ui.readingMode },
@@ -891,6 +1006,43 @@ export const validateAdminThemeSettings = (
     }
   });
 
+  if (!settings.links?.linksSourceUrl || !isAdminAllowedHttpsUrl(settings.links.linksSourceUrl)) {
+    pushIssue('links.linksSourceUrl', '友链主数据源必须是合法的 https:// 地址');
+  }
+  if (!settings.links?.latencySourceUrl || !isAdminAllowedHttpsUrl(settings.links.latencySourceUrl)) {
+    pushIssue('links.latencySourceUrl', '友链延迟数据源必须是合法的 https:// 地址');
+  }
+  if (!settings.links?.tombstoneSourceUrl || !isAdminAllowedHttpsUrl(settings.links.tombstoneSourceUrl)) {
+    pushIssue('links.tombstoneSourceUrl', '友链失效数据源必须是合法的 https:// 地址');
+  }
+  if (!settings.links?.submissionUrl || !isAdminAllowedHttpsUrl(settings.links.submissionUrl)) {
+    pushIssue('links.submissionUrl', '友链申请 API 必须是合法的 https:// 地址');
+  }
+  if (!settings.links?.fcircleSourceUrl || !isAdminAllowedHttpsUrl(settings.links.fcircleSourceUrl)) {
+    pushIssue('links.fcircleSourceUrl', '朋友圈数据源必须是合法的 https:// 地址');
+  }
+  if (typeof settings.links?.fcircleEnabled !== 'boolean') {
+    pushIssue('links.fcircleEnabled', '朋友圈启用开关必须是布尔值');
+  }
+  if (typeof settings.links?.fcircleShowError !== 'boolean') {
+    pushIssue('links.fcircleShowError', '朋友圈错误提示开关必须是布尔值');
+  }
+  if (!settings.links?.ech0SourceUrl || !isAdminAllowedHttpsUrl(settings.links.ech0SourceUrl)) {
+    pushIssue('links.ech0SourceUrl', 'Ech0 实例地址必须是合法的 https:// 地址');
+  }
+  if (typeof settings.links?.ech0Enabled !== 'boolean') {
+    pushIssue('links.ech0Enabled', 'Ech0 启用开关必须是布尔值');
+  }
+  if (!Number.isInteger(settings.links?.ech0PageSize) || settings.links.ech0PageSize < 1 || settings.links.ech0PageSize > 50) {
+    pushIssue('links.ech0PageSize', 'Ech0 分页大小必须是 1-50 的整数');
+  }
+  if (!Number.isInteger(settings.links?.ech0MaxPages) || settings.links.ech0MaxPages < 1 || settings.links.ech0MaxPages > 10) {
+    pushIssue('links.ech0MaxPages', 'Ech0 最大分页数必须是 1-10 的整数');
+  }
+  if (typeof settings.links?.ech0ShowError !== 'boolean') {
+    pushIssue('links.ech0ShowError', 'Ech0 错误提示开关必须是布尔值');
+  }
+
   if (!settings.shell.brandTitle) pushIssue('shell.brandTitle', '侧栏站点名不能为空');
   if (!settings.shell.quote) pushIssue('shell.quote', '侧栏引用文案不能为空');
 
@@ -1012,6 +1164,43 @@ export const validateAdminThemeSettings = (
     }
   });
 
+  const aboutProfile = settings.page.about?.profile;
+  const aboutProfileFields = Object.entries(aboutProfile ?? {}) as Array<[string, unknown]>;
+  aboutProfileFields.forEach(([field, value]) => {
+    if (field === 'avatar') {
+      if (typeof value !== 'string' || !value) {
+        pushIssue(`page.about.profile.${field}`, '头像地址不能为空');
+      } else if (!isAdminAllowedHttpsUrl(value) && !/^(?:\/?[A-Za-z0-9_-]+\/)*[A-Za-z0-9_.-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(value)) {
+        pushIssue(`page.about.profile.${field}`, '头像必须是 https:// 地址或站内图片路径');
+      }
+      return;
+    }
+    if (field === 'personalityUrl') {
+      if (value !== null && (!value || !isAdminAllowedHttpsUrl(String(value)))) {
+        pushIssue(`page.about.profile.${field}`, '性格说明链接必须是 https:// 地址');
+      }
+      return;
+    }
+    if (field === 'birthYear') {
+      if (!Number.isInteger(value) || Number(value) < 1900 || Number(value) > new Date().getFullYear()) {
+        pushIssue(`page.about.profile.${field}`, '出生年份必须是有效整数年份');
+      }
+      return;
+    }
+    if (typeof value !== 'string' || !value) {
+      pushIssue(`page.about.profile.${field}`, '关于页个人资料不能为空');
+      return;
+    }
+    if (value.includes('\\n') || value.includes('\\r')) {
+      pushIssue(`page.about.profile.${field}`, '关于页个人资料只允许单行文本');
+      return;
+    }
+    const maxLength = ADMIN_ABOUT_PROFILE_MAX_LENGTHS[field as keyof typeof ADMIN_ABOUT_PROFILE_MAX_LENGTHS];
+    if (maxLength && value.length > maxLength) {
+      pushIssue(`page.about.profile.${field}`, `关于页个人资料不能超过 ${maxLength} 个字符`);
+    }
+  });
+
   if (!settings.page.bits?.defaultAuthor?.name) {
     pushIssue('page.bits.defaultAuthor.name', 'Bits 默认作者名不能为空');
   }
@@ -1091,6 +1280,7 @@ export const validateAdminThemeSettings = (
   }
 
   const seenIds = new Set<SidebarNavId>();
+  const seenChildIds = new Set<string>();
   const navOrderIssues = new Map<SidebarNavId, 'range' | 'duplicate'>();
   getAdminNavOrderIssues(
     nav.flatMap((item) =>
@@ -1141,6 +1331,32 @@ export const validateAdminThemeSettings = (
     if (typeof item.visible !== 'boolean') {
       pushIssue(`${basePath}.visible`, `导航项 ${item.id} 的 visible 必须是布尔值`);
     }
+
+    const childOrders = new Set<number>();
+    item.children.forEach((child, childIndex) => {
+      const childPath = `${basePath}.children[${childIndex}]`;
+      if (!child.id || child.id.length > ADMIN_NAV_CHILD_ID_MAX_LENGTH) {
+        pushIssue(`${childPath}.id`, '子导航 ID 不能为空且不能超过长度限制');
+      } else if (seenChildIds.has(child.id)) {
+        pushIssue(`${childPath}.id`, `子导航 ID 重复：${child.id}`);
+      }
+      seenChildIds.add(child.id);
+      if (!child.label || child.label.length > ADMIN_NAV_CHILD_LABEL_MAX_LENGTH) {
+        pushIssue(`${childPath}.label`, '子导航名称不能为空且不能超过长度限制');
+      }
+      if (!/^\/(?!\/)/.test(child.href) || child.href.length > ADMIN_NAV_CHILD_HREF_MAX_LENGTH) {
+        pushIssue(`${childPath}.href`, '子导航路径必须是站内绝对路径且不能超过长度限制');
+      }
+      if (!Number.isInteger(child.order) || child.order < ADMIN_NAV_ORDER_MIN || child.order > ADMIN_NAV_ORDER_MAX) {
+        pushIssue(`${childPath}.order`, `子导航排序必须为 ${ADMIN_NAV_ORDER_MIN}-${ADMIN_NAV_ORDER_MAX} 的整数`);
+      } else if (childOrders.has(child.order)) {
+        pushIssue(`${childPath}.order`, `同一一级导航下的子导航排序不能重复：${child.order}`);
+      }
+      childOrders.add(child.order);
+      if (typeof child.visible !== 'boolean') {
+        pushIssue(`${childPath}.visible`, '子导航的 visible 必须是布尔值');
+      }
+    });
   });
 
   return issues;
@@ -1364,15 +1580,52 @@ const fillAdminThemeSettingsShellCompatibilityDefaults = (
   };
 };
 
+const fillAdminThemeSettingsLinksCompatibilityDefaults = (
+  rawLinks: LooseRecord,
+  canonicalLinks: LooseRecord
+): LooseRecord => ({
+  linksSourceUrl: canonicalLinks.linksSourceUrl,
+  latencySourceUrl: canonicalLinks.latencySourceUrl,
+  tombstoneSourceUrl: canonicalLinks.tombstoneSourceUrl,
+  submissionUrl: canonicalLinks.submissionUrl,
+  fcircleSourceUrl: canonicalLinks.fcircleSourceUrl,
+  fcircleEnabled: canonicalLinks.fcircleEnabled,
+  fcircleShowError: canonicalLinks.fcircleShowError,
+  ech0SourceUrl: canonicalLinks.ech0SourceUrl,
+  ech0Enabled: canonicalLinks.ech0Enabled,
+  ech0PageSize: canonicalLinks.ech0PageSize,
+  ech0MaxPages: canonicalLinks.ech0MaxPages,
+  ech0ShowError: canonicalLinks.ech0ShowError,
+  ...rawLinks
+});
+
 const fillAdminThemeSettingsPageCompatibilityDefaults = (
   rawPage: LooseRecord,
   canonicalPage: LooseRecord
 ): LooseRecord => {
   const links = canonicalPage.links;
-  if (!isRecord(links)) return rawPage;
-  const rawLinks = rawPage.links;
+  const about = canonicalPage.about;
+  let next = rawPage;
+
+  if (isRecord(about)) {
+    const rawAbout = next.about;
+    const profile = about.profile;
+    const rawProfile = isRecord(rawAbout) ? rawAbout.profile : undefined;
+    next = {
+      ...next,
+      about: {
+        ...(isRecord(rawAbout) ? rawAbout : {}),
+        ...(isRecord(profile)
+          ? { profile: isRecord(rawProfile) ? { ...profile, ...rawProfile } : profile }
+          : {})
+      }
+    };
+  }
+
+  if (!isRecord(links)) return next;
+  const rawLinks = next.links;
   return {
-    ...rawPage,
+    ...next,
     links: isRecord(rawLinks) ? { ...links, ...rawLinks } : links
   };
 };
@@ -1386,6 +1639,7 @@ export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
   if (group === 'site') return fillAdminThemeSettingsSiteCompatibilityDefaults(rawGroup, canonicalGroup);
   if (group === 'shell') return fillAdminThemeSettingsShellCompatibilityDefaults(rawGroup, canonicalGroup);
   if (group === 'page') return fillAdminThemeSettingsPageCompatibilityDefaults(rawGroup, canonicalGroup);
+  if (group === 'links') return fillAdminThemeSettingsLinksCompatibilityDefaults(rawGroup, canonicalGroup);
   if (group === 'ui') return fillAdminThemeSettingsUiCompatibilityDefaults(rawGroup, canonicalGroup);
   return rawGroup;
 };
@@ -1422,6 +1676,10 @@ export const fillAdminThemeSettingsCompatibilityDefaults = (
           )
         }
       : {}),
+    links: fillAdminThemeSettingsLinksCompatibilityDefaults(
+      isRecord(settings.links) ? settings.links : {},
+      canonicalSettings.links as unknown as LooseRecord
+    ),
     ...(isRecord(settings.ui)
       ? {
           ui: fillAdminThemeSettingsUiCompatibilityDefaults(

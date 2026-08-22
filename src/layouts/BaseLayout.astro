@@ -201,6 +201,7 @@ const adminUiPrefsScriptHref = isDevAdminPage
     {devUiPrefsStylesHref ? <link rel="stylesheet" href={devUiPrefsStylesHref} /> : null}
     {typographyApiFonts.map((font) => <Font cssVariable={`--font-${font.id}`} />)}
     <slot name="head" />
+    <script is:inline defer src="https://um.081531.xyz/script.js" data-website-id="a8adfc05-1acf-43ff-ac23-14962072384a"></script>
   </head>
   <body
     class={bodyClass}

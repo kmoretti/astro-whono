@@ -35,6 +35,8 @@ const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : un
   id={getBitAnchorId(bitEntry.id)}
   data-bit
   data-bit-key={bitEntry.id}
+  data-bit-date={bitEntry.data.date.toISOString()}
+  data-bit-content={bitEntry.body ?? ''}
   data-slug={card.slug}
 >
   <div class="bit-author">

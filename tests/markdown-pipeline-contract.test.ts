@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
+import rehypeStringify from 'rehype-stringify';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
 import remarkSmartypants from 'remark-smartypants';
+import { unified } from 'unified';
 import { rehypeAboutDirectives, remarkAboutDirectives } from '../src/plugins/about-directives.mjs';
 import {
   createMarkdownShikiConfig,
   createProjectMarkdownRehypePlugins,
   createProjectMarkdownRemarkPlugins,
   createPublicMarkdownConfig,
+  rehypeTableScroll,
   markdownFeatureContract,
   markdownMathOptions,
   markdownRenderingDifferences,
@@ -102,6 +107,7 @@ describe('markdown pipeline contract', () => {
         'rehypeRestoreMarkdownMathBoundary',
         'rehype-about-directives',
         'rehype-sanitize',
+        'rehype-table-scroll',
         'rehype-katex'
       ]
     });
@@ -140,7 +146,25 @@ describe('markdown pipeline contract', () => {
     expect(optionsOf(rehypePlugins[3])).toEqual({ base: '/blog/', enabled: true });
     expect(pluginOf(rehypePlugins[4])).toBe(rehypeSanitize);
     expect(optionsOf(rehypePlugins[4])).toBe(sanitizeSchema);
-    expect(pluginOf(rehypePlugins[5])).toBe(rehypeKatex);
+    expect(pluginOf(rehypePlugins[5])).toBe(rehypeTableScroll);
+    expect(pluginOf(rehypePlugins[6])).toBe(rehypeKatex);
+  });
+
+  it('wraps markdown tables in a horizontal scroll container', async () => {
+    const html = String(
+      await unified()
+        .use(remarkParse)
+        .use(remarkGfm)
+        .use(remarkRehype)
+        .use(rehypeTableScroll)
+        .use(rehypeStringify)
+        .process('| Name | Value |\n| --- | --- |\n| A | B |')
+    );
+
+    expect(html).toContain('<div class="table-scroll"><table>');
+    expect(html).toContain('<th>Name</th>');
+    expect(html).toContain('<td>B</td>');
+    expect(html).toContain('</table></div>');
   });
 
   it('keeps Shiki themes and toolbar transformer in one public factory', () => {
@@ -158,6 +182,8 @@ describe('markdown pipeline contract', () => {
     expect(previewSegmentIndex('raw-html')).toBeLessThan(previewSegmentIndex('sanitize'));
     expect(previewSegmentIndex('preview-local-image-src')).toBeLessThan(previewSegmentIndex('sanitize'));
     expect(previewSegmentIndex('about-directives')).toBeLessThan(previewSegmentIndex('sanitize'));
+    expect(previewSegmentIndex('sanitize')).toBeLessThan(previewSegmentIndex('table-scroll'));
+    expect(previewSegmentIndex('table-scroll')).toBeLessThan(previewSegmentIndex('katex'));
     expect(previewSegmentIndex('sanitize')).toBeLessThan(previewSegmentIndex('katex'));
     expect(previewSegmentIndex('katex')).toBeLessThan(previewSegmentIndex('preview-stringify'));
   });

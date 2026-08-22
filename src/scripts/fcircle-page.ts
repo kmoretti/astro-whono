@@ -9,6 +9,10 @@ const root = document.querySelector<HTMLElement>('[data-fcircle-root]');
 
 if (root) {
   const status = root.querySelector<HTMLElement>('[data-fcircle-status]');
+  const streamSection = root.querySelector<HTMLElement>('[data-fcircle-source-url]');
+  const sourceUrl = streamSection?.dataset.fcircleSourceUrl || FCIRCLE_SOURCE_URL;
+  const enabled = streamSection?.dataset.fcircleEnabled !== 'false';
+  const showError = streamSection?.dataset.fcircleShowError !== 'false';
   const summary = root.querySelector<HTMLElement>('[data-fcircle-summary]');
   const stream = root.querySelector<HTMLElement>('[data-fcircle-stream]');
   const empty = root.querySelector<HTMLElement>('[data-fcircle-empty]');
@@ -99,10 +103,20 @@ if (root) {
     const requestController = new AbortController();
     controller.current = requestController;
     const timeout = window.setTimeout(() => requestController.abort(), timeoutMs);
+    if (!enabled) {
+      setState('empty', '朋友圈未启用');
+      if (empty) {
+        empty.hidden = false;
+        empty.textContent = '朋友圈功能当前未启用。';
+      }
+      if (stream) stream.replaceChildren();
+      if (retry) retry.hidden = true;
+      return;
+    }
     setState('loading', '正在加载朋友圈…');
     if (retry) retry.hidden = true;
     try {
-      const response = await fetch(FCIRCLE_SOURCE_URL, {
+      const response = await fetch(sourceUrl, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
         signal: requestController.signal
@@ -112,13 +126,13 @@ if (root) {
       if (requestId === controller.requestId) render(data);
     } catch {
       if (requestId !== controller.requestId) return;
-      setState('error', '朋友圈数据加载失败');
+      setState(showError ? 'error' : 'empty', showError ? '朋友圈数据加载失败' : '暂无朋友圈数据');
       if (empty) {
         empty.hidden = false;
-        empty.textContent = '暂时无法获取远程数据，请稍后重试。';
+        empty.textContent = showError ? '暂时无法获取远程数据，请稍后重试。' : '暂无可显示的朋友圈动态。';
       }
       if (stream) stream.replaceChildren();
-      if (retry) retry.hidden = false;
+      if (retry) retry.hidden = !showError;
     } finally {
       window.clearTimeout(timeout);
     }

@@ -115,6 +115,10 @@
   min-width: 0;
 }
 
+.admin-sidebar-layout > .admin-nav-children-panel {
+  grid-column: 1 / -1;
+}
+
 .admin-subgroup.admin-subgroup--sidebar-nav {
   margin-top: 0;
   min-width: 0;

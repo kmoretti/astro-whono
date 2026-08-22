@@ -12,7 +12,10 @@ import {
 import { rehypeAboutDirectives, remarkAboutDirectives } from './about-directives.mjs';
 import remarkCallout from './remark-callout.mjs';
 import { sanitizeSchema } from './sanitize-schema.mjs';
+import { rehypeTableScroll } from './rehype-table-scroll.mjs';
 import shikiToolbar from './shiki-toolbar.mjs';
+
+export { rehypeTableScroll };
 
 export const markdownMathOptions = Object.freeze({
   singleDollarTextMath: false
@@ -140,6 +143,7 @@ export const publicMarkdownRehypeSegments = Object.freeze([
       'rehypeRestoreMarkdownMathBoundary',
       'rehype-about-directives',
       'rehype-sanitize',
+      'rehype-table-scroll',
       'rehype-katex'
     ]
   },
@@ -210,6 +214,11 @@ export const previewMarkdownRehypeSegments = Object.freeze([
     strategy: 'shared-schema'
   },
   {
+    id: 'table-scroll',
+    plugins: ['rehype-table-scroll'],
+    after: 'sanitize'
+  },
+  {
     id: 'katex',
     plugins: ['rehype-katex'],
     after: 'sanitize'
@@ -275,6 +284,7 @@ export const createProjectMarkdownRehypePlugins = ({ aboutBase = '/', aboutEnabl
     ...(aboutEnabled === undefined ? {} : { enabled: aboutEnabled })
   }],
   [rehypeSanitize, sanitizeSchema],
+  rehypeTableScroll,
   rehypeKatex
 ];
 

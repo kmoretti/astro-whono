@@ -6,7 +6,7 @@ export type AdminDataBootstrap = {
   importEndpoint: string;
 };
 
-export type WriteGroup = 'site' | 'shell' | 'home' | 'page' | 'ui';
+export type WriteGroup = 'site' | 'shell' | 'home' | 'page' | 'links' | 'ui';
 
 export type WriteFieldChangeKind = 'added' | 'removed' | 'updated';
 
@@ -31,13 +31,14 @@ export type PreviewState = 'idle' | 'ready' | 'loading' | 'diff' | 'clean' | 'ap
 
 export type AdminDataStatusState = 'idle' | 'loading' | 'ok' | 'warn' | 'error' | 'ready';
 
-export const GROUP_ORDER: readonly WriteGroup[] = ['site', 'shell', 'home', 'page', 'ui'];
+export const GROUP_ORDER: readonly WriteGroup[] = ['site', 'shell', 'home', 'page', 'links', 'ui'];
 
 export const GROUP_LABELS: Record<WriteGroup, string> = {
   site: 'Site',
   shell: 'Sidebar',
   home: 'Home',
   page: 'Inner Pages',
+  links: 'Links',
   ui: 'Reading / Code'
 };
 
@@ -46,6 +47,7 @@ export const GROUP_FILES: Record<WriteGroup, string> = {
   shell: 'src/data/settings/shell.json',
   home: 'src/data/settings/home.json',
   page: 'src/data/settings/page.json',
+  links: 'src/data/settings/links.json',
   ui: 'src/data/settings/ui.json'
 };
 

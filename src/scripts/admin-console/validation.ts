@@ -50,6 +50,18 @@ type ValidationContext = {
   inputPageMemoSubtitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
   inputPageLinksSubtitle: HTMLInputElement;
+  inputLinksSourceUrl: HTMLInputElement;
+  inputLinksLatencySourceUrl: HTMLInputElement;
+  inputLinksTombstoneSourceUrl: HTMLInputElement;
+  inputLinksSubmissionUrl: HTMLInputElement;
+  inputLinksFcircleSourceUrl: HTMLInputElement;
+  inputLinksFcircleEnabled: HTMLInputElement;
+  inputLinksFcircleShowError: HTMLInputElement;
+  inputLinksEch0SourceUrl: HTMLInputElement;
+  inputLinksEch0Enabled: HTMLInputElement;
+  inputLinksEch0PageSize: HTMLInputElement;
+  inputLinksEch0MaxPages: HTMLInputElement;
+  inputLinksEch0ShowError: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
   inputArticleMetaShowTags: HTMLInputElement;
@@ -120,6 +132,18 @@ export const createValidation = ({
   inputPageMemoSubtitle,
   inputPageAboutSubtitle,
   inputPageLinksSubtitle,
+  inputLinksSourceUrl,
+  inputLinksLatencySourceUrl,
+  inputLinksTombstoneSourceUrl,
+  inputLinksSubmissionUrl,
+  inputLinksFcircleSourceUrl,
+  inputLinksFcircleEnabled,
+  inputLinksFcircleShowError,
+  inputLinksEch0SourceUrl,
+  inputLinksEch0Enabled,
+  inputLinksEch0PageSize,
+  inputLinksEch0MaxPages,
+  inputLinksEch0ShowError,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
   inputArticleMetaShowTags,
@@ -220,6 +244,30 @@ export const createValidation = ({
         return () => inputSiteSocialEmail;
       case 'site.socialLinks.custom':
         return () => socialCustomAddBtn;
+      case 'links.linksSourceUrl':
+        return () => inputLinksSourceUrl;
+      case 'links.latencySourceUrl':
+        return () => inputLinksLatencySourceUrl;
+      case 'links.tombstoneSourceUrl':
+        return () => inputLinksTombstoneSourceUrl;
+      case 'links.submissionUrl':
+        return () => inputLinksSubmissionUrl;
+      case 'links.fcircleSourceUrl':
+        return () => inputLinksFcircleSourceUrl;
+      case 'links.fcircleEnabled':
+        return () => inputLinksFcircleEnabled;
+      case 'links.fcircleShowError':
+        return () => inputLinksFcircleShowError;
+      case 'links.ech0SourceUrl':
+        return () => inputLinksEch0SourceUrl;
+      case 'links.ech0Enabled':
+        return () => inputLinksEch0Enabled;
+      case 'links.ech0PageSize':
+        return () => inputLinksEch0PageSize;
+      case 'links.ech0MaxPages':
+        return () => inputLinksEch0MaxPages;
+      case 'links.ech0ShowError':
+        return () => inputLinksEch0ShowError;
       case 'shell.brandTitle':
         return () => inputShellBrandTitle;
       case 'shell.quote':

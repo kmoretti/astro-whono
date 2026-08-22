@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { site as legacySite } from '../../site.config.mjs';
+import { DEFAULT_LINKS_SETTINGS, type LinksSettings } from './links-settings';
 import { asThemeFontIdForRole, type ThemeFontId } from './fonts/registry';
 import {
   getHeroImageLocalFilePath,
@@ -194,12 +194,32 @@ export interface BitsPageSettings extends PageHeadingSettings {
   defaultAuthor: BitsDefaultAuthorSettings;
 }
 
+export interface AboutProfileSettings {
+  avatar: string;
+  greeting: string;
+  name: string;
+  identity: string;
+  birthYear: number;
+  current: string;
+  mottoLead: string;
+  mottoTail: string;
+  interestsTitle: string;
+  interests: string;
+  musicTitle: string;
+  music: string;
+  personality: string;
+  personalityType: string;
+  personalityUrl: string | null;
+  specialties: string;
+  specialtyHighlight: string;
+}
+
 export interface PageSettings {
   essay: PageHeadingSettings;
   archive: PageHeadingSettings;
   bits: BitsPageSettings;
   memo: MemoPageSettings;
-  about: PageHeadingSettings;
+  about: PageHeadingSettings & { profile: AboutProfileSettings };
   links: PageHeadingSettings;
 }
 
@@ -246,6 +266,7 @@ export interface ThemeSettings {
   shell: ShellSettings;
   home: HomeSettings;
   page: PageSettings;
+  links: LinksSettings;
   ui: UiSettings;
 }
 
@@ -298,8 +319,23 @@ export interface ThemeSettingsSources {
     memoSubtitle: SettingSource;
     aboutTitle: SettingSource;
     aboutSubtitle: SettingSource;
+    aboutProfile: SettingSource;
     linksTitle: SettingSource;
     linksSubtitle: SettingSource;
+  };
+  links: {
+    linksSourceUrl: SettingSource;
+    latencySourceUrl: SettingSource;
+    tombstoneSourceUrl: SettingSource;
+    submissionUrl: SettingSource;
+    fcircleSourceUrl: SettingSource;
+    fcircleEnabled: SettingSource;
+    fcircleShowError: SettingSource;
+    ech0SourceUrl: SettingSource;
+    ech0Enabled: SettingSource;
+    ech0PageSize: SettingSource;
+    ech0MaxPages: SettingSource;
+    ech0ShowError: SettingSource;
   };
   ui: {
     codeBlockShowLineNumbers: SettingSource;
@@ -355,7 +391,7 @@ export interface ThemeSettingsEditablePayload {
 
 type EditableThemeSettingsSnapshot = EditableThemeSettings;
 
-export type ThemeSettingsFileGroup = 'site' | 'shell' | 'home' | 'page' | 'ui';
+export type ThemeSettingsFileGroup = 'site' | 'shell' | 'home' | 'page' | 'links' | 'ui';
 
 export interface ThemeSettingsReadDiagnostic {
   group: ThemeSettingsFileGroup;
@@ -385,12 +421,13 @@ export type ThemeSettingsEditableState =
 const DEFAULT_SETTINGS_DIR = join(process.cwd(), 'src', 'data', 'settings');
 const INTERNAL_TEST_SETTINGS_DIR_ENV = 'ASTRO_WHONO_INTERNAL_TEST_SETTINGS_DIR';
 const INTERNAL_TEST_SETTINGS_FLAG_ENV = 'ASTRO_WHONO_INTERNAL_TEST_SETTINGS';
-const SETTINGS_FILE_GROUPS: readonly ThemeSettingsFileGroup[] = ['site', 'shell', 'home', 'page', 'ui'];
+const SETTINGS_FILE_GROUPS: readonly ThemeSettingsFileGroup[] = ['site', 'shell', 'home', 'page', 'links', 'ui'];
 const SETTINGS_RELATIVE_PATHS: Record<ThemeSettingsFileGroup, string> = {
   site: 'src/data/settings/site.json',
   shell: 'src/data/settings/shell.json',
   home: 'src/data/settings/home.json',
   page: 'src/data/settings/page.json',
+  links: 'src/data/settings/links.json',
   ui: 'src/data/settings/ui.json'
 };
 
@@ -479,6 +516,7 @@ const cloneThemeSettingsSources = (sources: ThemeSettingsSources): ThemeSettings
   shell: { ...sources.shell },
   home: { ...sources.home },
   page: { ...sources.page },
+  links: { ...sources.links },
   ui: { ...sources.ui }
 });
 
@@ -554,13 +592,34 @@ const DEFAULT_PAGE: PageSettings = {
   },
   about: {
     title: LEGACY_ABOUT_TITLE,
-    subtitle: null
+    subtitle: null,
+    profile: {
+      avatar: 'author/avatar.png',
+      greeting: '您好，很高兴认识您！',
+      name: '克喵Moretti',
+      identity: '是一名学生、独立开发者、博主。',
+      birthYear: 2010,
+      current: '15 岁',
+      mottoLead: '总有些事情',
+      mottoTail: '比永恒更重要！',
+      interestsTitle: '您的爱好',
+      interests: '编程、写作、探索新事物',
+      musicTitle: '伤感、民谣、轻音乐',
+      music: '等我喜欢就听',
+      personality: '调停者',
+      personalityType: 'INFP-T',
+      personalityUrl: 'https://www.16personalities.com/',
+      specialties: '特长、特长',
+      specialtyHighlight: '学习能力 MAX'
+    }
   },
   links: {
     title: '友链',
     subtitle: null
   }
 };
+
+const DEFAULT_LINKS: LinksSettings = { ...DEFAULT_LINKS_SETTINGS };
 
 const DEFAULT_UI: UiSettings = {
   codeBlock: {
@@ -705,6 +764,11 @@ const asHttpsUrl = (value: unknown, allowedHosts?: readonly string[]): string | 
   } catch {
     return undefined;
   }
+};
+
+const asRequiredHttpsUrl = (value: unknown): string | undefined => {
+  const normalized = asHttpsUrl(value);
+  return typeof normalized === 'string' && normalized ? normalized : undefined;
 };
 
 const asEmailAddress = (value: unknown): string | null | undefined => {
@@ -1199,6 +1263,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const shellJson = readSettingsObject('shell');
   const homeJson = readSettingsObject('home');
   const pageJson = readSettingsObject('page');
+  const linksJson = readSettingsObject('links');
   const uiJson = readSettingsObject('ui');
 
   const siteFooterJson = isRecord(siteJson?.footer) ? siteJson.footer : undefined;
@@ -1212,7 +1277,49 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const pageBitsDefaultAuthorJson = isRecord(pageBitsJson?.defaultAuthor) ? pageBitsJson.defaultAuthor : undefined;
   const pageMemoJson = isRecord(pageJson?.memo) ? pageJson.memo : undefined;
   const pageAboutJson = isRecord(pageJson?.about) ? pageJson.about : undefined;
+  const pageAboutProfileJson = isRecord(pageAboutJson?.profile) ? pageAboutJson.profile : undefined;
   const pageLinksJson = isRecord(pageJson?.links) ? pageJson.links : undefined;
+
+  const linksSourceUrl = resolveValue(
+    asRequiredHttpsUrl(linksJson?.linksSourceUrl),
+    undefined,
+    DEFAULT_LINKS.linksSourceUrl
+  );
+  const latencySourceUrl = resolveValue(
+    asRequiredHttpsUrl(linksJson?.latencySourceUrl),
+    undefined,
+    DEFAULT_LINKS.latencySourceUrl
+  );
+  const tombstoneSourceUrl = resolveValue(
+    asRequiredHttpsUrl(linksJson?.tombstoneSourceUrl),
+    undefined,
+    DEFAULT_LINKS.tombstoneSourceUrl
+  );
+  const submissionUrl = resolveValue(
+    asRequiredHttpsUrl(linksJson?.submissionUrl),
+    undefined,
+    DEFAULT_LINKS.submissionUrl
+  );
+  const fcircleSourceUrl = resolveValue(
+    asRequiredHttpsUrl(linksJson?.fcircleSourceUrl),
+    undefined,
+    DEFAULT_LINKS.fcircleSourceUrl
+  );
+  const fcircleEnabled = resolveValue(
+    typeof linksJson?.fcircleEnabled === 'boolean' ? linksJson.fcircleEnabled : undefined,
+    undefined,
+    DEFAULT_LINKS.fcircleEnabled
+  );
+  const fcircleShowError = resolveValue(
+    typeof linksJson?.fcircleShowError === 'boolean' ? linksJson.fcircleShowError : undefined,
+    undefined,
+    DEFAULT_LINKS.fcircleShowError
+  );
+  const ech0SourceUrl = resolveValue(asRequiredHttpsUrl(linksJson?.ech0SourceUrl), undefined, DEFAULT_LINKS.ech0SourceUrl);
+  const ech0Enabled = resolveValue(typeof linksJson?.ech0Enabled === 'boolean' ? linksJson.ech0Enabled : undefined, undefined, DEFAULT_LINKS.ech0Enabled);
+  const ech0PageSize = resolveValue(typeof linksJson?.ech0PageSize === 'number' && Number.isInteger(linksJson.ech0PageSize) ? linksJson.ech0PageSize : undefined, undefined, DEFAULT_LINKS.ech0PageSize);
+  const ech0MaxPages = resolveValue(typeof linksJson?.ech0MaxPages === 'number' && Number.isInteger(linksJson.ech0MaxPages) ? linksJson.ech0MaxPages : undefined, undefined, DEFAULT_LINKS.ech0MaxPages);
+  const ech0ShowError = resolveValue(typeof linksJson?.ech0ShowError === 'boolean' ? linksJson.ech0ShowError : undefined, undefined, DEFAULT_LINKS.ech0ShowError);
 
   const title = resolveValue(
     asNonEmptyString(siteJson?.title),
@@ -1424,6 +1531,25 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     undefined,
     DEFAULT_PAGE.about.subtitle
   );
+  const aboutProfile = {
+    avatar: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.avatar, 500), undefined, DEFAULT_PAGE.about.profile.avatar).value,
+    greeting: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.greeting, 120), undefined, DEFAULT_PAGE.about.profile.greeting).value,
+    name: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.name, 80), asNonEmptyString(legacySite.author), DEFAULT_PAGE.about.profile.name).value,
+    identity: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.identity, 160), undefined, DEFAULT_PAGE.about.profile.identity).value,
+    birthYear: resolveValue(asInteger(pageAboutProfileJson?.birthYear), undefined, DEFAULT_PAGE.about.profile.birthYear).value,
+    current: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.current, 40), undefined, DEFAULT_PAGE.about.profile.current).value,
+    mottoLead: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.mottoLead, 80), undefined, DEFAULT_PAGE.about.profile.mottoLead).value,
+    mottoTail: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.mottoTail, 80), undefined, DEFAULT_PAGE.about.profile.mottoTail).value,
+    interestsTitle: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.interestsTitle, 80), undefined, DEFAULT_PAGE.about.profile.interestsTitle).value,
+    interests: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.interests, 160), undefined, DEFAULT_PAGE.about.profile.interests).value,
+    musicTitle: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.musicTitle, 100), undefined, DEFAULT_PAGE.about.profile.musicTitle).value,
+    music: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.music, 160), undefined, DEFAULT_PAGE.about.profile.music).value,
+    personality: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.personality, 80), undefined, DEFAULT_PAGE.about.profile.personality).value,
+    personalityType: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.personalityType, 30), undefined, DEFAULT_PAGE.about.profile.personalityType).value,
+    personalityUrl: resolveValue(asHttpsUrl(pageAboutProfileJson?.personalityUrl), undefined, DEFAULT_PAGE.about.profile.personalityUrl).value,
+    specialties: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.specialties, 160), undefined, DEFAULT_PAGE.about.profile.specialties).value,
+    specialtyHighlight: resolveValue(asTrimmedSingleLineString(pageAboutProfileJson?.specialtyHighlight, 80), undefined, DEFAULT_PAGE.about.profile.specialtyHighlight).value
+  };
   const linksTitle = resolveValue(
     asNullableString(pageLinksJson?.title),
     undefined,
@@ -1606,12 +1732,27 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         },
         about: {
           title: aboutTitle.value,
-          subtitle: aboutSubtitle.value
+          subtitle: aboutSubtitle.value,
+          profile: aboutProfile
         },
         links: {
           title: linksTitle.value,
           subtitle: linksSubtitle.value
         }
+      },
+      links: {
+        linksSourceUrl: linksSourceUrl.value,
+        latencySourceUrl: latencySourceUrl.value,
+        tombstoneSourceUrl: tombstoneSourceUrl.value,
+        submissionUrl: submissionUrl.value,
+        fcircleSourceUrl: fcircleSourceUrl.value,
+        fcircleEnabled: fcircleEnabled.value,
+        fcircleShowError: fcircleShowError.value,
+        ech0SourceUrl: ech0SourceUrl.value,
+        ech0Enabled: ech0Enabled.value,
+        ech0PageSize: ech0PageSize.value,
+        ech0MaxPages: ech0MaxPages.value,
+        ech0ShowError: ech0ShowError.value
       },
       ui: {
         codeBlock: {
@@ -1692,8 +1833,23 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         memoSubtitle: memoSubtitle.source,
         aboutTitle: aboutTitle.source,
         aboutSubtitle: aboutSubtitle.source,
+        aboutProfile: pageAboutProfileJson ? 'new' : 'default',
         linksTitle: linksTitle.source,
         linksSubtitle: linksSubtitle.source
+      },
+      links: {
+        linksSourceUrl: linksSourceUrl.source,
+        latencySourceUrl: latencySourceUrl.source,
+        tombstoneSourceUrl: tombstoneSourceUrl.source,
+        submissionUrl: submissionUrl.source,
+        fcircleSourceUrl: fcircleSourceUrl.source,
+        fcircleEnabled: fcircleEnabled.source,
+        fcircleShowError: fcircleShowError.source,
+        ech0SourceUrl: ech0SourceUrl.source,
+        ech0Enabled: ech0Enabled.source,
+        ech0PageSize: ech0PageSize.source,
+        ech0MaxPages: ech0MaxPages.source,
+        ech0ShowError: ech0ShowError.source
       },
       ui: {
         codeBlockShowLineNumbers: showLineNumbers.source,
@@ -1789,6 +1945,7 @@ const buildEditableThemeSettingsSnapshot = (
       about: { ...resolved.settings.page.about },
       links: { ...resolved.settings.page.links }
     },
+    links: { ...resolved.settings.links },
     ui: {
       codeBlock: { ...resolved.settings.ui.codeBlock },
       readingMode: { ...resolved.settings.ui.readingMode },
@@ -1800,9 +1957,13 @@ const buildEditableThemeSettingsSnapshot = (
   });
 
 const hashEditableThemeSettingsSnapshot = (snapshot: EditableThemeSettingsSnapshot): string => {
-  const hash = createHash('sha1');
-  hash.update(JSON.stringify(snapshot));
-  return hash.digest('hex');
+  const value = JSON.stringify(snapshot);
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
 };
 
 export const getEditableThemeSettingsPayload = (

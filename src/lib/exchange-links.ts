@@ -1,4 +1,6 @@
-export const VERIFY_SUBMISSIONS_URL = 'https://verify.081531.xyz/api/submissions';
+import { DEFAULT_LINKS_SETTINGS } from './links-settings';
+
+export const VERIFY_SUBMISSIONS_URL = DEFAULT_LINKS_SETTINGS.submissionUrl;
 export const EXCHANGE_PAGE_SIZE = 8;
 
 export type ExchangeSubmissionType = 'apply' | 'update';

@@ -1,0 +1,106 @@
+---
+import AdminIcon from './AdminIcon.astro';
+---
+
+<fieldset class="admin-group">
+  <legend class="admin-group__legend">
+    <AdminIcon name="database" class="admin-group__legend-icon" size={14} />
+    <span class="admin-group__legend-copy">
+      <span class="admin-group__legend-zh">絮语远程数据配置</span>
+      <span class="admin-group__legend-en">Ech0</span>
+    </span>
+  </legend>
+  <div class="admin-grid">
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">Ech0 实例地址</span>
+        <span class="admin-label__hint">（公开 API 根地址，仅允许 HTTPS，不填写 token）</span>
+      </span>
+      <input class="admin-field__control" id="links-ech0-source-url" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-toggle admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">启用 Ech0 远程絮语</span>
+        <span class="admin-label__hint">（在浏览器端合并公开说说）</span>
+      </span>
+      <span class="admin-toggle__control"><input id="links-ech0-enabled" type="checkbox" /></span>
+    </label>
+    <label class="admin-field">
+      <span class="admin-label"><span class="admin-label__main">Ech0 分页大小</span><span class="admin-label__hint">（1-50）</span></span>
+      <input class="admin-field__control" id="links-ech0-page-size" type="number" min="1" max="50" step="1" required />
+    </label>
+    <label class="admin-field">
+      <span class="admin-label"><span class="admin-label__main">Ech0 最大分页数</span><span class="admin-label__hint">（1-10）</span></span>
+      <input class="admin-field__control" id="links-ech0-max-pages" type="number" min="1" max="10" step="1" required />
+    </label>
+    <label class="admin-toggle admin-field--full">
+      <span class="admin-label"><span class="admin-label__main">显示 Ech0 错误</span><span class="admin-label__hint">（远程失败时显示提示，本地絮语不受影响）</span></span>
+      <span class="admin-toggle__control"><input id="links-ech0-show-error" type="checkbox" /></span>
+    </label>
+  </div>
+</fieldset>
+
+<fieldset class="admin-group">
+  <legend class="admin-group__legend">
+    <AdminIcon name="link" class="admin-group__legend-icon" size={14} />
+    <span class="admin-group__legend-copy">
+      <span class="admin-group__legend-zh">友链设置</span>
+      <span class="admin-group__legend-en">Links</span>
+    </span>
+  </legend>
+  <div class="admin-grid">
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">友链数据源</span>
+        <span class="admin-label__hint">（主友链 YAML 地址，仅允许 HTTPS）</span>
+      </span>
+      <input class="admin-field__control" id="links-source-url" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">延迟数据源</span>
+        <span class="admin-label__hint">（友链延迟 JSON 地址，仅允许 HTTPS）</span>
+      </span>
+      <input class="admin-field__control" id="links-latency-source-url" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">失效数据源</span>
+        <span class="admin-label__hint">（友链墓碑 YAML 地址，仅允许 HTTPS）</span>
+      </span>
+      <input class="admin-field__control" id="links-tombstone-source-url" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">友链申请 API</span>
+        <span class="admin-label__hint">（申请记录查询与提交地址，仅允许 HTTPS）</span>
+      </span>
+      <input class="admin-field__control" id="links-submission-url" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">朋友圈数据源</span>
+        <span class="admin-label__hint">（朋友圈 JSON 地址，仅允许 HTTPS）</span>
+      </span>
+      <input class="admin-field__control" id="links-fcircle-source-url" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-toggle admin-field--full" id="links-fcircle-enabled-row">
+      <span class="admin-label">
+        <span class="admin-label__main">启用朋友圈</span>
+        <span class="admin-label__hint">（关闭后隐藏前台导航入口）</span>
+      </span>
+      <span class="admin-toggle__control">
+        <input id="links-fcircle-enabled" type="checkbox" />
+      </span>
+    </label>
+    <label class="admin-toggle admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">显示加载错误</span>
+        <span class="admin-label__hint">（朋友圈数据请求失败时显示错误提示）</span>
+      </span>
+      <span class="admin-toggle__control">
+        <input id="links-fcircle-show-error" type="checkbox" />
+      </span>
+    </label>
+  </div>
+</fieldset>

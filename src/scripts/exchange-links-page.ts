@@ -12,6 +12,7 @@ import {
 const root = document.querySelector<HTMLElement>('[data-exchange-root]');
 
 if (root) {
+  const submissionUrl = root.dataset.submissionUrl || VERIFY_SUBMISSIONS_URL;
   const conditions = Array.from(root.querySelectorAll<HTMLInputElement>('[data-exchange-condition]'));
   const workspace = root.querySelector<HTMLElement>('[data-exchange-workspace]');
   const conditionStatus = root.querySelector<HTMLElement>('[data-exchange-condition-status]');
@@ -70,7 +71,7 @@ if (root) {
   const loadSubmissions = async () => {
     if (listStatus) listStatus.textContent = '正在加载…';
     try {
-      const response = await fetch(`${VERIFY_SUBMISSIONS_URL}?public=1`, { headers: { Accept: 'application/json' } });
+      const response = await fetch(`${submissionUrl}?public=1`, { headers: { Accept: 'application/json' } });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       submissions = normalizePublicSubmissions(await response.json());
       if (listStatus) listStatus.textContent = `${submissions.length} 条公开记录`;
@@ -99,7 +100,7 @@ if (root) {
       submit?.setAttribute('disabled', '');
       setFormStatus(form, '正在提交…');
       try {
-        const response = await fetch(VERIFY_SUBMISSIONS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
+        const response = await fetch(submissionUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
         const result = await response.json().catch(() => null) as { message?: unknown } | null;
         if (!response.ok) throw new Error(typeof result?.message === 'string' ? result.message : '提交失败，请稍后重试。');
         setFormStatus(form, '已提交，审核结果将显示在公开记录中。');

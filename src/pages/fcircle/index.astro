@@ -1,6 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getThemeSettings } from '../../lib/theme-settings';
 import '../../styles/fcircle-page.css';
+
+const { settings } = getThemeSettings();
 ---
 
 <BaseLayout title="朋友圈" description="站点友邻的最新文章聚合" bodyClass="fcircle-page" activeNavId="links">
@@ -27,7 +30,13 @@ import '../../styles/fcircle-page.css';
     </dl>
     <p class="fcircle-page__summary-updated" data-fcircle-updated>正在读取更新时间…</p>
 
-    <section class="fcircle-page__stream-section" aria-labelledby="fcircle-stream-title">
+    <section
+      class="fcircle-page__stream-section"
+      aria-labelledby="fcircle-stream-title"
+      data-fcircle-source-url={settings.links.fcircleSourceUrl}
+      data-fcircle-enabled={settings.links.fcircleEnabled ? 'true' : 'false'}
+      data-fcircle-show-error={settings.links.fcircleShowError ? 'true' : 'false'}
+    >
       <div class="fcircle-page__stream-header">
         <h2 id="fcircle-stream-title" class="fcircle-page__section-title">最新文章</h2>
         <p class="fcircle-page__status" data-fcircle-status role="status" aria-live="polite">正在加载朋友圈…</p>

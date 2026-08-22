@@ -2,62 +2,71 @@
 import { getEntry, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import BrandIcon from '../../components/BrandIcon.astro';
+import UiIcon from '../../components/UiIcon.astro';
+import AdminIcon from '../../components/admin/AdminIcon.astro';
 import '../../styles/about.css';
 import { getThemeSettings } from '../../lib/theme-settings';
+import { site as legacySite } from '../../../site.config.mjs';
 import { replaceAboutContactLinksPlaceholderHtml } from '../../lib/about-contact-links';
 
 const entry = await getEntry('about', 'index');
-if (!entry) {
-  throw new Error('Missing about page entry: src/content/about/index.md');
-}
+if (!entry) throw new Error('Missing about page entry: src/content/about/index.md');
 
 const { settings } = getThemeSettings();
+const profile = settings.page.about.profile;
+const profileAvatar = profile.avatar || legacySite.authorAvatar;
+const profileName = settings.site.title ? profile.name || legacySite.author : legacySite.author;
 const resolvedSocialItems = settings.site.socialLinks.resolvedSocialItems.filter((item) => item.visible);
 const aboutTitle = settings.page.about.title || '关于';
 const aboutSubtitle = settings.page.about.subtitle;
 const entryWithContactLinks = entry.rendered
-  ? {
-      ...entry,
-      rendered: {
-        ...entry.rendered,
-        html: replaceAboutContactLinksPlaceholderHtml(entry.rendered.html, resolvedSocialItems)
-      }
-    }
+  ? { ...entry, rendered: { ...entry.rendered, html: replaceAboutContactLinksPlaceholderHtml(entry.rendered.html, resolvedSocialItems) } }
   : entry;
 const { Content } = await render(entryWithContactLinks);
 ---
 
-<BaseLayout
-  title={aboutTitle}
-  description={aboutSubtitle ?? undefined}
-  bodyClass="about-page"
->
-  <div class="page-header page-header--about">
-    <div class="page-heading">
+<BaseLayout title={aboutTitle} description={aboutSubtitle ?? undefined} bodyClass="about-page">
+  <header class="about-header">
+    <div class="about-header__avatar"><img src={profileAvatar} alt={`${profileName} 的头像`} loading="lazy" decoding="async" /></div>
+    <div class="about-header__text">
       <h1 class="page-title">{aboutTitle}</h1>
-      {aboutSubtitle ? <span class="page-subtitle">{aboutSubtitle}</span> : null}
+      {aboutSubtitle ? <p class="page-subtitle">{aboutSubtitle}</p> : null}
     </div>
-    {
-      resolvedSocialItems.length ? (
-        <div class="page-actions">
-          {resolvedSocialItems.map((item) => (
-            <a class="icon-link" href={item.href} aria-label={item.label} title={item.label}>
-              <BrandIcon name={item.iconKey} class="icon" />
-            </a>
-          ))}
-        </div>
-      ) : null
-    }
-  </div>
+  </header>
 
-  <div class="about-body prose">
-    <Content />
-  </div>
+  <section class="about-cards" aria-label="个人资料">
+    <article class="about-card about-card--intro"><UiIcon name="user-circle" class="about-card__decor" size={72} /><p class="about-card__eyebrow">{profile.greeting}</p><h2>我叫 {profileName}</h2><p>{profile.identity}</p></article>
+    <article class="about-card about-card--facts"><UiIcon name="map-pin" class="about-card__decor" size={72} /><h2>关于我</h2><dl><div><dt>出生</dt><dd>{profile.birthYear}</dd></div><div><dt>当前</dt><dd>{profile.current}</dd></div></dl></article>
+    <article class="about-card about-card--motto"><UiIcon name="quote" class="about-card__decor" size={72} /><h2>座右铭</h2><p>{profile.mottoLead}<br /><strong>{profile.mottoTail}</strong></p></article>
+    <article class="about-card"><UiIcon name="book-open" class="about-card__decor" size={72} aria-hidden="true" /><h2>{profile.interestsTitle}</h2><p>{profile.interests}</p></article>
+    <article class="about-card"><UiIcon name="quote" class="about-card__decor" size={72} /><h2>{profile.musicTitle}</h2><p>{profile.music}</p></article>
+    <article class="about-card"><AdminIcon name="activity" class="about-card__decor" size={72} /><h2>{profile.personality} <span>{profile.personalityType}</span></h2>{profile.personalityUrl ? <a class="about-card__link" href={profile.personalityUrl} rel="noreferrer">了解我的性格</a> : null}</article>
+    <article class="about-card about-card--specialties"><AdminIcon name="waypoints" class="about-card__decor" size={72} /><h2>特长</h2><p>{profile.specialties}</p><strong>{profile.specialtyHighlight}</strong></article>
+    <article class="about-card about-card--contact"><AdminIcon name="admin-site" class="about-card__decor" size={72} /><h2>联系</h2><div class="about-contact-links">{resolvedSocialItems.map((item) => <a href={item.href} aria-label={item.label} title={item.label}><BrandIcon name={item.iconKey} class="icon" /></a>)}</div></article>
+    <article class="about-card about-card--stats" data-umami-stats aria-live="polite"><AdminIcon name="activity" class="about-card__decor" size={72} /><h2>网站统计</h2><p data-stats-status>正在加载统计数据…</p><dl data-stats-values hidden><div><dt>页面浏览</dt><dd data-stat="pageviews">—</dd></div><div><dt>访客</dt><dd data-stat="visitors">—</dd></div><div><dt>访问</dt><dd data-stat="visits">—</dd></div><div><dt>跳出</dt><dd data-stat="bounces">—</dd></div><div><dt>停留时间</dt><dd data-stat="totaltime">—</dd></div></dl></article>
+  </section>
+
+  <div class="about-body prose"><Content /></div>
 
   <script>
     import { initAboutSiteInfoCopyButtons, initCodeCopyButtons } from '../../scripts/lightbox';
-
     initCodeCopyButtons();
     initAboutSiteInfoCopyButtons();
+    const statsRoot = document.querySelector<HTMLElement>('[data-umami-stats]');
+    if (statsRoot) {
+      const status = statsRoot.querySelector<HTMLElement>('[data-stats-status]');
+      const values = statsRoot.querySelector<HTMLElement>('[data-stats-values]');
+      fetch(`${import.meta.env.BASE_URL}api/umami-stats/`)
+        .then((response) => response.ok ? response.json() : Promise.reject(new Error('stats unavailable')))
+        .then((data: Record<string, unknown>) => {
+          const keys = ['pageviews', 'visitors', 'visits', 'bounces', 'totaltime'];
+          const hasValidStats = keys.every((key) => typeof data[key] === 'number' && Number.isFinite(data[key]));
+          if (!hasValidStats) throw new Error('invalid stats payload');
+          keys.forEach((key) => { const value = data[key] as number; const target = statsRoot?.querySelector<HTMLElement>(`[data-stat="${key}"]`); if (target) target.textContent = value.toLocaleString(); });
+          if (values) values.hidden = false;
+          if (status) status.hidden = true;
+        })
+        .catch(() => { if (status) status.textContent = '统计数据暂不可用'; });
+    }
   </script>
 </BaseLayout>
