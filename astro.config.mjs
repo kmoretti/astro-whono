@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, fontProviders } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import { createPublicMarkdownConfig } from './src/plugins/markdown-pipeline.mjs';
@@ -120,7 +119,6 @@ export default defineConfig({
   // 开发环境使用 server output 允许 Theme Console 的 /api/admin/settings/ 处理读写；
   // 生产构建使用 static，交由 Cloudflare Pages 发布静态站点与独立 Functions。
   output: isProductionBuild ? 'static' : 'server',
-  ...(isProductionBuild ? { adapter: cloudflare({ prerenderEnvironment: 'node' }) } : {}),
   integrations,
   ...(fonts.length ? { fonts } : {}),
   trailingSlash: 'always',
