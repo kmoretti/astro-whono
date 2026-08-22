@@ -64,7 +64,8 @@ const response = (body: Record<string, unknown>, status = 200) =>
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': CACHE_CONTROL
+      // 错误响应不可缓存：瞬时上游失败不应在边缘驻留 5 分钟。
+      'cache-control': status === 200 ? CACHE_CONTROL : 'no-store'
     }
   });
 
