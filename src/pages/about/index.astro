@@ -72,6 +72,20 @@ const { Content } = await render(entryWithContactLinks);
       return null;
     };
 
+    // totaltime 单位是秒；取最长的两段非零单位，例如 772 → “12 分 52 秒”、809968 → “9 天 8 小时”。
+    const formatDuration = (totalSeconds: number): string => {
+      const seconds = Math.max(0, Math.round(totalSeconds));
+      const units: Array<[number, string]> = [
+        [Math.floor(seconds / 86400), '天'],
+        [Math.floor((seconds % 86400) / 3600), '小时'],
+        [Math.floor((seconds % 3600) / 60), '分'],
+        [seconds % 60, '秒']
+      ];
+      const parts = units.filter(([value]) => value > 0);
+      if (parts.length === 0) return '0 秒';
+      return parts.slice(0, 2).map(([value, label]) => `${value} ${label}`).join(' ');
+    };
+
     const statsRoot = document.querySelector<HTMLElement>('[data-umami-stats]');
     if (statsRoot) {
       const status = statsRoot.querySelector<HTMLElement>('[data-stats-status]');
@@ -104,7 +118,9 @@ const { Content } = await render(entryWithContactLinks);
           if (!hasValidStats) throw new Error('invalid stats payload');
           UMAMI_STAT_KEYS.forEach((key) => {
             const target = statsRoot?.querySelector<HTMLElement>(`[data-stat="${key}"]`);
-            if (target) target.textContent = (stats[key] as number).toLocaleString();
+            if (!target) return;
+            const value = stats[key] as number;
+            target.textContent = key === 'totaltime' ? formatDuration(value) : value.toLocaleString();
           });
           if (values) values.hidden = false;
           if (status) status.hidden = true;

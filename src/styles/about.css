@@ -21,9 +21,9 @@
 .about-card__decor { position: absolute; right: 18px; bottom: 16px; opacity: .1; color: var(--text); pointer-events: none; }
 .about-card h2 span { color: var(--muted); font: 500 13px var(--font-mono); }
 .about-card dl { z-index: 1; display: grid; gap: 14px; width: 100%; margin: 0; }
-.about-card dl div { display: flex; justify-content: space-between; gap: 12px; }
+.about-card dl div { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
 .about-card dt { color: var(--faint); }
-.about-card dd { margin: 0; color: var(--text); font-size: 24px; font-weight: 700; }
+.about-card dd { margin: 0; color: var(--text); font-size: 22px; font-weight: 700; }
 .about-card--specialties strong { z-index: 1; display: inline-block; margin-top: 12px; color: var(--text); font-size: 24px; }
 .about-contact-links { z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .about-contact-links a { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border: 1px solid var(--border); border-radius: 50%; background: var(--code-content-bg); }
