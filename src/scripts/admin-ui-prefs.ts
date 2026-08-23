@@ -14,6 +14,7 @@ import {
   type AdminEditorDefaults,
   type AdminSidebarNavMode
 } from '../lib/admin-console/ui-prefs-keys';
+import { onPageChange } from './page-controllers';
 
 const PREFS_POPOVER_CLOSE_DELAY_MS = 160;
 
@@ -166,7 +167,7 @@ const bindEditorDefaultPreferences = (prefsRoot: HTMLElement) => {
   });
 };
 
-const bindDetailsPopoverClose = (details: HTMLDetailsElement) => {
+const bindDetailsPopoverClose = (details: HTMLDetailsElement): (() => void) => {
   const summary = details.querySelector<HTMLElement>('summary');
   let closeTimer: number | undefined;
 
@@ -215,20 +216,33 @@ const bindDetailsPopoverClose = (details: HTMLDetailsElement) => {
     clearClosingState();
   });
 
-  document.addEventListener('click', (event) => {
+  const handleDocumentClick = (event: MouseEvent) => {
     if (!details.open) return;
     if (event.target instanceof Node && details.contains(event.target)) return;
     closePopover(false);
-  });
+  };
+  document.addEventListener('click', handleDocumentClick);
 
   details.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     event.preventDefault();
     closePopover(true);
   });
+
+  // swup 重初始化前解绑 document 级监听,避免跨页面累积。
+  return () => {
+    document.removeEventListener('click', handleDocumentClick);
+    if (closeTimer !== undefined) window.clearTimeout(closeTimer);
+  };
 };
 
+// 上一轮初始化的 document 级监听清理句柄。
+let teardownPopoverGuard: (() => void) | null = null;
+
 export function initAdminUiPrefs() {
+  teardownPopoverGuard?.();
+  teardownPopoverGuard = null;
+
   if (!document.body.classList.contains('admin-page')) return;
 
   const root = document.documentElement;
@@ -240,12 +254,11 @@ export function initAdminUiPrefs() {
   bindEditorDefaultPreferences(prefsRoot);
 
   if (prefsRoot instanceof HTMLDetailsElement) {
-    bindDetailsPopoverClose(prefsRoot);
+    teardownPopoverGuard = bindDetailsPopoverClose(prefsRoot);
   }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAdminUiPrefs, { once: true });
-} else {
-  initAdminUiPrefs();
+if (typeof window !== 'undefined') {
+  // module 脚本随 .shell 容器插入首次执行;swup 导航后由 page-change 重初始化。
+  onPageChange(initAdminUiPrefs);
 }

@@ -1,4 +1,5 @@
 import { createModalDialogFocusController } from '../admin-console/modal-dialog-focus';
+import { onPageChange } from '../page-controllers';
 
 const COMMAND = 'npm run dev:clean';
 const CLEANUP_KEY = '__astroWhonoAdminEditorRecoveryCleanup';
@@ -226,10 +227,7 @@ export const initAdminEditorRecovery = (
   return cleanup;
 };
 
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => initAdminEditorRecovery(), { once: true });
-  } else {
-    initAdminEditorRecovery();
-  }
+if (typeof window !== 'undefined') {
+  // swup 导航回到编辑页时重初始化(自带 cleanup 机制防止监听累积)。
+  onPageChange(() => initAdminEditorRecovery());
 }

@@ -19,49 +19,17 @@
   z-index: 20;
 }
 
-.article-toc-float__button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 82px;
-  min-height: var(--tap-min-h, 44px);
-  padding: 0 15px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--toc-panel-bg);
-  color: var(--text);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
-  cursor: pointer;
-  list-style: none;
-  font-size: 13px;
-  line-height: 1;
-  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.article-toc-float__button::-webkit-details-marker {
+.article-toc-float__summary {
   display: none;
 }
 
-.article-toc-float__button:hover {
-  border-color: var(--muted);
-  background: var(--code-content-bg);
-  transform: translateY(-1px);
+.article-toc-float__summary::-webkit-details-marker {
+  display: none;
 }
 
-.article-toc-float__button:focus-visible,
 .article-toc__items a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-}
-
-.article-toc-float__button:focus-visible {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent), 0 8px 24px rgb(0 0 0 / 10%);
-}
-
-.article-toc-float__button .icon {
-  width: 16px;
-  height: 16px;
 }
 
 .article-toc-float__panel {
@@ -180,12 +148,6 @@
     --toc-edge: 14px;
   }
 
-  .article-toc-float__button {
-    min-width: 88px;
-    min-height: 48px;
-    padding: 0 16px;
-  }
-
   .article-toc-float__panel {
     right: 0;
     width: min(320px, calc(100vw - 28px));
@@ -210,7 +172,6 @@ body.immersive-page[data-reading="immersive"] .article-toc-float__panel {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .article-toc-float__button,
   .article-toc__items a {
     transition: none;
   }

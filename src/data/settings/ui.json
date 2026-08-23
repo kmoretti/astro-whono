@@ -20,6 +20,12 @@
   "layout": {
     "sidebarDivider": "default"
   },
+  "background": {
+    "starry": true
+  },
+  "transitions": {
+    "swup": true
+  },
   "typography": {
     "readable": "noto-serif-sc",
     "copy": "lxgw-wenkai-lite",

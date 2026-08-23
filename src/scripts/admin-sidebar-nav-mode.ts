@@ -5,6 +5,7 @@ import {
   isAdminSidebarNavMode,
   type AdminSidebarNavMode
 } from '../lib/admin-console/ui-prefs-keys';
+import { onPageChange } from './page-controllers';
 
 type SidebarNavElements = {
   container: HTMLElement;
@@ -120,7 +121,13 @@ const syncSwitchers = (
   });
 };
 
+// 模块级生命周期句柄：swup 导航替换 .shell 后重新挂载前，先解绑上一轮监听
+let teardownLifecycle: (() => void) | null = null;
+
 export function initAdminSidebarNavMode() {
+  teardownLifecycle?.();
+  teardownLifecycle = null;
+
   const root = document.documentElement;
   const isAdminPage = document.body.classList.contains('admin-page');
   const railViewportQuery = typeof window.matchMedia === 'function'
@@ -229,17 +236,22 @@ export function initAdminSidebarNavMode() {
 
   syncLifecycle();
 
-  if (!isAdminPage || !railViewportQuery) return;
-
   const handleViewportChange = () => {
     syncLifecycle();
   };
 
+  teardownLifecycle = () => {
+    unmount();
+    railViewportQuery?.removeEventListener('change', handleViewportChange);
+  };
+
+  if (!isAdminPage || !railViewportQuery) return;
+
   railViewportQuery.addEventListener('change', handleViewportChange);
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAdminSidebarNavMode, { once: true });
-} else {
-  initAdminSidebarNavMode();
+if (typeof window !== 'undefined') {
+  // module 脚本 defer 执行时 DOM 已就绪；swup 导航后由 page-change
+  // 重新查询侧边栏并绑定新 switcher 按钮（旧 DOM 监听已随清理解绑）。
+  onPageChange(initAdminSidebarNavMode);
 }

@@ -263,6 +263,14 @@ export interface TypographySettings {
   brand: ThemeFontId;
 }
 
+export interface BackgroundSettings {
+  starry: boolean;
+}
+
+export interface TransitionsSettings {
+  swup: boolean;
+}
+
 export interface UiSettings {
   codeBlock: {
     showLineNumbers: boolean;
@@ -276,6 +284,8 @@ export interface UiSettings {
     sidebarDivider: SidebarDividerVariant;
   };
   typography: TypographySettings;
+  background: BackgroundSettings;
+  transitions: TransitionsSettings;
 }
 
 export interface ThemeSettings {
@@ -380,6 +390,8 @@ export interface ThemeSettingsSources {
     articleMetaShowWordCount: SettingSource;
     articleMetaShowReadingTime: SettingSource;
     layoutSidebarDivider: SettingSource;
+    backgroundStarry: SettingSource;
+    transitionsSwup: SettingSource;
     typographyReadable: SettingSource;
     typographyCopy: SettingSource;
     typographyMono: SettingSource;
@@ -678,6 +690,12 @@ const DEFAULT_UI: UiSettings = {
   },
   layout: {
     sidebarDivider: ADMIN_SIDEBAR_DIVIDER_DEFAULT
+  },
+  background: {
+    starry: true
+  },
+  transitions: {
+    swup: true
   },
   typography: {
     ...ADMIN_TYPOGRAPHY_DEFAULT
@@ -1696,6 +1714,8 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const uiArticleMeta = isRecord(uiJson?.articleMeta) ? uiJson.articleMeta : undefined;
   const uiLayout = isRecord(uiJson?.layout) ? uiJson.layout : undefined;
   const uiTypography = isRecord(uiJson?.typography) ? uiJson.typography : undefined;
+  const uiBackground = isRecord(uiJson?.background) ? uiJson.background : undefined;
+  const uiTransitions = isRecord(uiJson?.transitions) ? uiJson.transitions : undefined;
 
   const showLineNumbers = resolveValue(
     asBoolean(uiCodeBlock?.showLineNumbers),
@@ -1751,6 +1771,16 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     asSidebarDividerVariant(uiLayout?.sidebarDivider),
     undefined,
     DEFAULT_UI.layout.sidebarDivider
+  );
+  const backgroundStarry = resolveValue(
+    asBoolean(uiBackground?.starry),
+    undefined,
+    DEFAULT_UI.background.starry
+  );
+  const transitionsSwup = resolveValue(
+    asBoolean(uiTransitions?.swup),
+    undefined,
+    DEFAULT_UI.transitions.swup
   );
   const typographyReadable = resolveValue(
     asTypographyFontId('readable', uiTypography?.readable),
@@ -1918,6 +1948,12 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         layout: {
           sidebarDivider: sidebarDivider.value
         },
+        background: {
+          starry: backgroundStarry.value
+        },
+        transitions: {
+          swup: transitionsSwup.value
+        },
         typography: {
           readable: typographyReadable.value,
           copy: typographyCopy.value,
@@ -2018,6 +2054,8 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         articleMetaShowWordCount: showArticleWordCount.source,
         articleMetaShowReadingTime: showArticleReadingTime.source,
         layoutSidebarDivider: sidebarDivider.source,
+        backgroundStarry: backgroundStarry.source,
+        transitionsSwup: transitionsSwup.source,
         typographyReadable: typographyReadable.source,
         typographyCopy: typographyCopy.source,
         typographyMono: typographyMono.source,
@@ -2111,6 +2149,8 @@ const buildEditableThemeSettingsSnapshot = (
       sidebarActions: { ...resolved.settings.ui.sidebarActions },
       articleMeta: { ...resolved.settings.ui.articleMeta },
       layout: { ...resolved.settings.ui.layout },
+      background: { ...resolved.settings.ui.background },
+      transitions: { ...resolved.settings.ui.transitions },
       typography: { ...resolved.settings.ui.typography }
     }
   });

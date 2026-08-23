@@ -1,3 +1,5 @@
+import { onPageChange } from './page-controllers';
+
 const THEME_KEY = 'theme';
 const THEME_MODE_KEY = 'theme-mode';
 type Theme = 'light' | 'dark';
@@ -7,8 +9,11 @@ type LegacyMediaQueryList = {
 };
 
 const root = document.documentElement;
-const themeBtn = document.getElementById('theme-toggle');
 const colorSchemeMq = window.matchMedia('(prefers-color-scheme: dark)');
+
+// swup 导航后重初始化：#theme-toggle 随 .global-action-menu 容器替换，
+// 按钮引用由 initTheme 每次重查；主题模式为模块级单例状态，不随 init 重置。
+let themeBtn: HTMLElement | null = null;
 
 const isTheme = (value: string | null): value is Theme =>
   value === 'light' || value === 'dark';
@@ -99,18 +104,24 @@ const listenSystemThemeChange = (listener: () => void) => {
 };
 
 const initTheme = () => {
+  themeBtn = document.getElementById('theme-toggle');
   setThemeMode(activeThemeMode, false);
   themeBtn?.addEventListener('click', () => {
     setThemeMode(getNextThemeMode(activeThemeMode));
   });
-
-  const syncSystemTheme = () => {
-    if (activeThemeMode === 'system') setThemeMode('system', false);
-  };
-
-  listenSystemThemeChange(syncSystemTheme);
 };
 
-initTheme();
+// 系统主题变化为 window 级监听（MediaQueryList），只在模块顶层注册一次，
+// 经模块级 activeThemeMode / themeBtn 引用同步当前状态与按钮。
+const syncSystemTheme = () => {
+  if (activeThemeMode === 'system') setThemeMode('system', false);
+};
+
+listenSystemThemeChange(syncSystemTheme);
+
+onPageChange(() => {
+  if (!document.querySelector('[data-global-action-menu]')) return;
+  initTheme();
+});
 
 export {};

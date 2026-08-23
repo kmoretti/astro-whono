@@ -39,7 +39,6 @@ import {
   type AdminImageViewMode
 } from './types';
 
-const root = document.querySelector<HTMLElement>('[data-admin-images-root]');
 const LARGE_FILE_THRESHOLD = 500 * 1024;
 const GRID_VIEW_PAGE_SIZE = ADMIN_IMAGE_DEFAULT_LIST_LIMIT;
 const MOBILE_GRID_VIEW_PAGE_SIZE = 9;
@@ -59,6 +58,8 @@ const getIconMarkup = (name: string): string => {
 };
 
 export const initAdminImagesConsole = () => {
+  // 每次初始化(swup 导航后)重新查询根节点,避免持有旧容器的 detached 引用。
+  const root = document.querySelector<HTMLElement>('[data-admin-images-root]');
   if (!root) {
     return;
   }

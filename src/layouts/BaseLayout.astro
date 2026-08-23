@@ -19,23 +19,34 @@ const {
   image,
   ogType = 'website',
   bodyClass,
-  allowReadingMode = true,
   deferGlobalStyles = false,
   activeNavId,
-  adminSidebarScope = 'default'
+  adminSidebarScope = 'default',
+  actionCapabilities = {}
 } = Astro.props as {
   title?: string;
   description?: string;
   image?: string;
   ogType?: string;
   bodyClass?: string;
-  allowReadingMode?: boolean;
   deferGlobalStyles?: boolean;
   activeNavId?: SidebarNavId;
   adminSidebarScope?: 'default' | 'page';
+  actionCapabilities?: {
+    toc?: boolean;
+    comments?: boolean;
+    reading?: boolean;
+  };
 };
 
+const showGlobalReading = actionCapabilities.reading ?? false;
+const showGlobalToc = actionCapabilities.toc ?? false;
+const showGlobalComments = actionCapabilities.comments ?? false;
+
 const { settings } = getThemeSettings();
+const starryBackgroundEnabled = settings.ui.background.starry !== false;
+// swup 无刷新导航开关：ui.transitions.swup 主题字段由并行任务添加，此处可选链 + 默认 true 兜底
+const swupEnabled = (settings.ui as { transitions?: { swup?: boolean } }).transitions?.swup !== false;
 const siteTitle = settings.site.title;
 const brandTitle = settings.shell.brandTitle ?? siteTitle;
 const metaDescription = description ?? settings.site.description;
@@ -208,15 +219,17 @@ const adminUiPrefsScriptHref = isDevAdminPage
     data-code-line-numbers={showCodeLineNumbers ? undefined : 'off'}
     data-dev-ui={isDev ? 'true' : undefined}
     data-admin-dev={adminDevState}
+    data-starry-enabled={(starryBackgroundEnabled && !isAdminPage) ? 'true' : 'false'}
+    data-swup-enabled={(swupEnabled && !isAdminPage) ? 'true' : 'false'}
   >
+    <canvas id="starry-bg" data-starry-bg class="starry-bg-canvas" aria-hidden="true" hidden={!starryBackgroundEnabled || isAdminPage}></canvas>
     <a class="skip-link" href="#content">跳到内容</a>
-    <div class="shell" data-sidebar-divider={sidebarDividerVariant}>
+    <div class="shell transition-fade" data-sidebar-divider={sidebarDividerVariant}>
       <Sidebar
         siteTitle={brandTitle}
         activeNavId={activeNavId}
         isAdminContext={isAdminPage}
         isDev={isDev}
-        allowReadingMode={allowReadingMode}
         adminSidebarScope={isPageScopedAdminSidebar ? 'page' : 'default'}
       />
       <div class="divider" aria-hidden="true"></div>
@@ -226,31 +239,72 @@ const adminUiPrefsScriptHref = isDevAdminPage
           <footer class="site-footer">© {yearRange} {footerCopyright}</footer>
         </div>
       </main>
+      {/* admin dev 脚本置于 swup 容器内：公共页 swup 进入 admin 时随容器替换插入执行；
+          module 去重后由各自入口的 onPageChange 注册驱动重初始化。 */}
+      {adminSidebarNavModeScriptHref ? (
+        <script is:inline type="module" src={adminSidebarNavModeScriptHref}></script>
+      ) : null}
+      {adminUiPrefsScriptHref ? (
+        <script is:inline type="module" src={adminUiPrefsScriptHref}></script>
+      ) : null}
     </div>
-    <template id="scroll-top-template">
-      <button
-        type="button"
-        class="icon-button float-action scroll-top"
-        aria-label="回到顶部"
-        title="回到顶部"
-        aria-hidden="true"
-        tabindex="-1"
-      >
-        <UiIcon name="chevron-up" class="icon" />
+    <div class="global-action-menu transition-fade" data-global-action-menu>
+      <div id="global-action-menu-items" class="global-action-menu__items" data-menu-items hidden>
+        {showGlobalToc ? (
+          <button class="icon-button global-action-menu__action" type="button" data-action="toc" aria-label="文章目录" title="文章目录">
+            <UiIcon name="list" class="icon" />
+          </button>
+        ) : null}
+        {showGlobalComments ? (
+          <button class="icon-button global-action-menu__action" type="button" data-action="comments" aria-label="评论" title="评论">
+            <UiIcon name="quote" class="icon" />
+          </button>
+        ) : null}
+        {showGlobalReading ? (
+          <button id="reader-toggle" class="icon-button global-action-menu__action reader-toggle" type="button" data-action="reading" aria-label="阅读模式" title="阅读模式" aria-pressed="false">
+            <UiIcon name="book-open" class="icon icon-book-open" />
+            <UiIcon name="book-closed" class="icon icon-book-closed" />
+          </button>
+        ) : null}
+        <button id="theme-toggle" class="icon-button global-action-menu__action theme-toggle" type="button" data-action="theme" aria-label="夜间模式" title="夜间模式" aria-pressed="false">
+          <UiIcon name="sun-moon" class="icon icon-system" />
+          <UiIcon name="moon" class="icon icon-moon" />
+          <UiIcon name="sun" class="icon icon-sun" />
+        </button>
+        <button class="icon-button global-action-menu__action scroll-top" type="button" data-action="scroll-top" aria-label="回到顶部" title="回到顶部" aria-hidden="true" tabindex="-1">
+          <UiIcon name="chevron-up" class="icon" />
+        </button>
+      </div>
+      <button class="icon-button global-action-menu__trigger" type="button" aria-label="打开设置菜单" aria-expanded="false" aria-controls="global-action-menu-items">
+        <UiIcon name="settings" class="icon" />
       </button>
-    </template>
+    </div>
     <script>
       import '../scripts/sidebar-theme.ts';
       import '../scripts/sidebar-rail-nav.ts';
       import '../scripts/sidebar-floating-actions.ts';
+      import '../scripts/global-action-menu.ts';
       import '../scripts/sidebar-reading.ts';
       import '../scripts/sidebar-submenu.ts';
+      import '../scripts/starry-bg.ts';
+      import '../scripts/swup-init.ts';
+      import '../scripts/page-controllers.ts';
+      // 页面级脚本集中导入：整页加载时随本模块执行一次，
+      // swup 导航后通过各自的 onPageChange 注册重初始化。
+      import '../scripts/article-toc.ts';
+      import '../scripts/article-page.ts';
+      import '../scripts/entry-search.ts';
+      import '../scripts/bits-search.ts';
+      import '../scripts/bits-remote.ts';
+      import '../scripts/bits-lightbox.ts';
+      import '../scripts/bits-drafts.ts';
+      import '../scripts/links-page.ts';
+      import '../scripts/fcircle-page.ts';
+      import '../scripts/exchange-links-page.ts';
+      import '../scripts/giscus-comments.ts';
+      import '../scripts/memo-toc-sync.ts';
+      import '../scripts/memo-page.ts';
+      import '../scripts/umami-stats.ts';
     </script>
-    {adminSidebarNavModeScriptHref ? (
-      <script is:inline type="module" src={adminSidebarNavModeScriptHref}></script>
-    ) : null}
-    {adminUiPrefsScriptHref ? (
-      <script is:inline type="module" src={adminUiPrefsScriptHref}></script>
-    ) : null}
   </body>
 </html>

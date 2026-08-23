@@ -22,9 +22,7 @@ const {
   homeHref,
   rssHref,
   adminOverviewHref,
-  showReaderToggle = false,
   showRssLink = false,
-  showThemeToggle = false,
   showAdminEntry = false
 } = Astro.props as {
   isAdminContext?: boolean;
@@ -33,9 +31,7 @@ const {
   homeHref: string;
   rssHref: string;
   adminOverviewHref: string;
-  showReaderToggle?: boolean;
   showRssLink?: boolean;
-  showThemeToggle?: boolean;
   showAdminEntry?: boolean;
 };
 
@@ -103,20 +99,6 @@ const publicNavItems = navItems.map((item) => ({
     </details>
   ) : null}
 
-  {showReaderToggle ? (
-    <button
-      id="reader-toggle"
-      class="icon-button reader-toggle sidebar-action--rail-hidden"
-      type="button"
-      aria-label="阅读模式"
-      aria-pressed="false"
-      data-tooltip="阅读模式"
-    >
-      <UiIcon name="book-open" class="icon icon-book-open" />
-      <UiIcon name="book-closed" class="icon icon-book-closed" />
-    </button>
-  ) : null}
-
   {showRssLink ? (
     <a
       class="icon-button rss-link sidebar-action--rail-hidden"
@@ -126,21 +108,6 @@ const publicNavItems = navItems.map((item) => ({
     >
       <UiIcon name="rss" class="icon" />
     </a>
-  ) : null}
-
-  {showThemeToggle ? (
-    <button
-      id="theme-toggle"
-      class="icon-button theme-toggle"
-      type="button"
-      aria-label="夜间模式"
-      aria-pressed="false"
-      data-tooltip="夜间模式"
-    >
-      <UiIcon name="sun-moon" class="icon icon-system" />
-      <UiIcon name="moon" class="icon icon-moon" />
-      <UiIcon name="sun" class="icon icon-sun" />
-    </button>
   ) : null}
 
   {showAdminEntry ? (

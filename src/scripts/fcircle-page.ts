@@ -4,10 +4,12 @@ import {
   type FcircleArticle,
   type NormalizedFcircleData
 } from '../lib/fcircle';
+import { onPageChange } from './page-controllers';
 
-const root = document.querySelector<HTMLElement>('[data-fcircle-root]');
+const initFcirclePage = () => {
+  const root = document.querySelector<HTMLElement>('[data-fcircle-root]');
+  if (!root) return;
 
-if (root) {
   const status = root.querySelector<HTMLElement>('[data-fcircle-status]');
   const streamSection = root.querySelector<HTMLElement>('[data-fcircle-source-url]');
   const sourceUrl = streamSection?.dataset.fcircleSourceUrl || FCIRCLE_SOURCE_URL;
@@ -140,4 +142,9 @@ if (root) {
 
   retry?.addEventListener('click', () => void load());
   void load();
+};
+
+if (typeof window !== 'undefined') {
+  // 每次初始化（含 swup 导航后）都重新拉取朋友圈数据并渲染。
+  onPageChange(initFcirclePage);
 }

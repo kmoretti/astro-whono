@@ -134,6 +134,8 @@ export type AdminThemeControls = RequiredElements<{
   inputHeroImageSrc: HTMLInputElement | null;
   inputHeroImageAlt: HTMLInputElement | null;
   inputCodeLineNumbers: HTMLInputElement | null;
+  inputBackgroundStarry: HTMLInputElement | null;
+  inputTransitionsSwup: HTMLInputElement | null;
   inputReadingEntry: HTMLInputElement | null;
   inputSidebarActionsShowRssLink: HTMLInputElement | null;
   inputSidebarActionsShowThemeToggle: HTMLInputElement | null;
@@ -268,6 +270,8 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputHeroImageSrc: byId<HTMLInputElement>('home-hero-image-src'),
     inputHeroImageAlt: byId<HTMLInputElement>('home-hero-image-alt'),
     inputCodeLineNumbers: byId<HTMLInputElement>('ui-code-line-numbers'),
+    inputBackgroundStarry: byId<HTMLInputElement>('ui-background-starry'),
+    inputTransitionsSwup: byId<HTMLInputElement>('ui-transitions-swup'),
     inputReadingEntry: byId<HTMLInputElement>('ui-reading-entry'),
     inputSidebarActionsShowRssLink: byId<HTMLInputElement>('ui-sidebar-actions-show-rss-link'),
     inputSidebarActionsShowThemeToggle: byId<HTMLInputElement>('ui-sidebar-actions-show-theme-toggle'),

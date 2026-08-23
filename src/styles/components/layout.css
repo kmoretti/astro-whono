@@ -1377,6 +1377,116 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   }
 }
 
+/* swup 无刷新导航淡入淡出过渡（官方动画类方案） */
+.transition-fade {
+  transition: opacity 200ms ease;
+}
+
+html.is-animating .transition-fade {
+  opacity: 0;
+}
+
+[data-global-action-menu] {
+  isolation: isolate;
+}
+
+.global-action-menu {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 10px;
+}
+
+.global-action-menu__trigger,
+.global-action-menu__action {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+.global-action-menu__items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: min(60vh, 360px);
+  overflow-y: auto;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+}
+
+.global-action-menu__items[hidden] {
+  display: none;
+}
+
+/* Admin 粘性保存栏吸底时（data-sticky="true"，由 global-action-menu.ts 同步），
+   菜单上移避让，避免被更高 z-index 的保存栏遮挡。 */
+.global-action-menu[data-admin-sticky='true'] {
+  bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+.global-action-menu__action[data-visible="false"] {
+  display: none;
+}
+
+.global-action-menu[data-open="true"] .global-action-menu__trigger .icon {
+  transform: rotate(45deg);
+}
+
+@media (max-width: 640px) {
+  .global-action-menu {
+    right: calc(12px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ===============================
+   星光/流星背景
+   全屏 Canvas，仅在 data-starry-enabled="true" 且非沉浸式阅读时显示，
+   z-index 低于内容层，pointer-events 关闭，不影响交互。
+================================ */
+.starry-bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;
+  contain: strict;
+}
+
+/* canvas 为 z-index:-1，绘制顺序位于 body 背景之下；开启时需将 body 背景透明化，
+   让星光绘制在 html 背景之上、内容之下。 */
+body[data-starry-enabled="true"] {
+  background: transparent;
+}
+
+body[data-starry-enabled="false"] .starry-bg-canvas,
+body.admin-page .starry-bg-canvas,
+.starry-bg-canvas[hidden] {
+  display: none;
+}
+
+body[data-reading="immersive"] .starry-bg-canvas {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starry-bg-canvas {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-action-menu,
+  .global-action-menu .icon {
+    transition: none;
+  }
+}
+
 /* 阅读模式：隐藏侧栏/导航/页脚，增强正文可读性 */
 body.immersive-page[data-reading="immersive"] .sidebar,
 body.immersive-page[data-reading="immersive"] .divider,

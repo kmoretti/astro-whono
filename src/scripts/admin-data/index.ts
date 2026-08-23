@@ -20,8 +20,8 @@ import {
   type WriteResultsMap
 } from './shared';
 import { createAdminDataUi } from './ui';
+import { onPageChange } from '../page-controllers';
 
-const root = document.querySelector<HTMLElement>('[data-admin-data-root]');
 type ImportAction = 'dry-run' | 'apply';
 type ImportFailureOptions = {
   status: 'error' | 'warn';
@@ -33,9 +33,12 @@ type ImportFailureOptions = {
   previewBody: string;
 };
 
-if (!root) {
-  // Current page does not use admin data console.
-} else {
+const initAdminDataConsole = () => {
+  const root = document.querySelector<HTMLElement>('[data-admin-data-root]');
+
+  if (!root) {
+    // Current page does not use admin data console.
+  } else {
   const controlState = queryAdminDataControls();
   if (!controlState.ok) {
     reportAdminDataSetupError(controlState.controls, {
@@ -432,4 +435,10 @@ if (!root) {
       ui.setStatus('idle', '准备就绪', { announce: false });
     }
   }
+  }
+};
+
+if (typeof window !== 'undefined') {
+  // swup 导航回到本页时重新查询控件并绑定(全部元素级监听,旧 DOM 随容器移除)。
+  onPageChange(initAdminDataConsole);
 }

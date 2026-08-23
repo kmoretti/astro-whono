@@ -8,10 +8,12 @@ import {
   type ExchangeSubmissionType,
   type PublicSubmission
 } from '../lib/exchange-links';
+import { onPageChange } from './page-controllers';
 
-const root = document.querySelector<HTMLElement>('[data-exchange-root]');
+const initExchangeLinksPage = () => {
+  const root = document.querySelector<HTMLElement>('[data-exchange-root]');
+  if (!root) return;
 
-if (root) {
   const submissionUrl = root.dataset.submissionUrl || VERIFY_SUBMISSIONS_URL;
   const conditions = Array.from(root.querySelectorAll<HTMLInputElement>('[data-exchange-condition]'));
   const workspace = root.querySelector<HTMLElement>('[data-exchange-workspace]');
@@ -117,4 +119,6 @@ if (root) {
   searchInput?.addEventListener('input', () => { page = 1; renderList(); });
   updateGate();
   void loadSubmissions();
-}
+};
+
+if (typeof window !== 'undefined') onPageChange(initExchangeLinksPage);

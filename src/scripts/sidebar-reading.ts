@@ -1,7 +1,11 @@
+import { onPageChange } from './page-controllers';
+
 const body = document.body;
 
-const readerBtn = document.getElementById('reader-toggle');
-const readerExit = document.getElementById('reader-exit');
+// swup 导航后重初始化：#reader-toggle 随 .global-action-menu 容器替换、
+// #reader-exit 随 .shell 容器替换，两个引用由 initReader 每次重查。
+let readerBtn: HTMLElement | null = null;
+let readerExit: HTMLElement | null = null;
 
 const setControlLabel = (element: HTMLElement, label: string) => {
   element.setAttribute('aria-label', label);
@@ -14,7 +18,6 @@ const setControlLabel = (element: HTMLElement, label: string) => {
 };
 
 const isReaderOn = () => body?.dataset.reading === 'immersive';
-const isImmersivePage = body?.classList.contains('immersive-page');
 
 const notifyReadingModeChange = () => {
   window.dispatchEvent(new CustomEvent('astro-whono:reading-mode-change'));
@@ -59,12 +62,17 @@ const applyReader = (on: boolean) => {
   if (readerExit) {
     setControlLabel(readerExit, '退出阅读');
   }
-  setVisible(readerExit as HTMLElement | null, on);
+  setVisible(readerExit, on);
   notifyReadingModeChange();
 };
 
 const initReader = () => {
+  readerBtn = document.getElementById('reader-toggle');
+  readerExit = document.getElementById('reader-exit');
   if (!readerBtn) return;
+
+  // body class 由 swup 的 body-class-plugin 在导航时同步，须每次 init 重判。
+  const isImmersivePage = body?.classList.contains('immersive-page');
   if (!isImmersivePage) {
     setReaderDisabled(true);
     return;
@@ -82,6 +90,9 @@ const initReader = () => {
   });
 };
 
-initReader();
+onPageChange(() => {
+  if (!document.querySelector('[data-global-action-menu]')) return;
+  initReader();
+});
 
 export {};

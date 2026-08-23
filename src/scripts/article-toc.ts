@@ -1,3 +1,5 @@
+import { onPageChange } from './page-controllers';
+
 type HeadingPosition = {
   id: string;
   top: number;
@@ -13,11 +15,21 @@ export const getActiveHeadingId = (headings: HeadingPosition[], offset: number) 
 export const getScrollBehavior = (reducedMotion: boolean): ScrollBehavior =>
   reducedMotion ? 'auto' : 'smooth';
 
+type ArticleTocController = {
+  isOpen: () => boolean;
+  containsTarget: (target: Node) => boolean;
+  close: (restoreFocus: boolean) => void;
+};
+
+let controller: ArticleTocController | null = null;
+
 const initArticleToc = () => {
   const toc = document.querySelector<HTMLDetailsElement>('.article-toc-float');
-  if (!toc) return;
+  if (!toc) {
+    controller = null;
+    return;
+  }
 
-  const button = toc.querySelector<HTMLElement>('.article-toc-float__button');
   const panel = toc.querySelector<HTMLElement>('.article-toc-float__panel');
   const links = Array.from(toc.querySelectorAll<HTMLAnchorElement>('.article-toc__items a'));
   const headingElements = links
@@ -30,27 +42,14 @@ const initArticleToc = () => {
     if (!toc.open) return;
     toc.open = false;
     if (restoreFocus) {
-      (lastFocusedElement ?? button)?.focus();
+      lastFocusedElement?.focus();
     }
   };
 
   toc.addEventListener('toggle', () => {
     if (toc.open) {
-      lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : button;
+      lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       window.requestAnimationFrame(focusFirstLink);
-    }
-  });
-
-  document.addEventListener('click', (event) => {
-    if (toc.open && event.target instanceof Node && !toc.contains(event.target)) {
-      close(false);
-    }
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && toc.open) {
-      event.preventDefault();
-      close(true);
     }
   });
 
@@ -62,7 +61,7 @@ const initArticleToc = () => {
       target.scrollIntoView({ behavior: getScrollBehavior(window.matchMedia('(prefers-reduced-motion: reduce)').matches), block: 'start' });
       history.replaceState(null, '', link.hash);
       close(false);
-      link.focus();
+      link.focus({ preventScroll: true });
     });
   });
 
@@ -96,6 +95,30 @@ const initArticleToc = () => {
     );
     headingElements.forEach((heading) => observer.observe(heading));
   }
+
+  controller = {
+    isOpen: () => toc.open,
+    containsTarget: (target: Node) => toc.contains(target),
+    close
+  };
 };
 
-if (typeof window !== 'undefined') initArticleToc();
+if (typeof window !== 'undefined') {
+  // document 级监听器模块顶层只绑一次,通过 controller 作用于当前页面的目录组件,
+  // swup 导航后由 init 重新查询并替换 controller。
+  document.addEventListener('click', (event) => {
+    if (!controller?.isOpen()) return;
+    if (event.target instanceof Node && !controller.containsTarget(event.target)) {
+      controller.close(false);
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && controller?.isOpen()) {
+      event.preventDefault();
+      controller.close(true);
+    }
+  });
+
+  onPageChange(initArticleToc);
+}

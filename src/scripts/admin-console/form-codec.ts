@@ -145,6 +145,8 @@ type FormCodecContext = {
   inputHeroImageSrc: HTMLInputElement;
   inputHeroImageAlt: HTMLInputElement;
   inputCodeLineNumbers: HTMLInputElement;
+  inputBackgroundStarry: HTMLInputElement;
+  inputTransitionsSwup: HTMLInputElement;
   inputReadingEntry: HTMLInputElement;
   inputSidebarActionsShowRssLink: HTMLInputElement;
   inputSidebarActionsShowThemeToggle: HTMLInputElement;
@@ -310,6 +312,8 @@ export const createFormCodec = ({
   inputHeroImageSrc,
   inputHeroImageAlt,
   inputCodeLineNumbers,
+  inputBackgroundStarry,
+  inputTransitionsSwup,
   inputReadingEntry,
   inputSidebarActionsShowRssLink,
   inputSidebarActionsShowThemeToggle,
@@ -700,6 +704,12 @@ export const createFormCodec = ({
         codeBlock: {
           showLineNumbers: Boolean(inputCodeLineNumbers.checked)
         },
+        background: {
+          starry: Boolean(inputBackgroundStarry.checked)
+        },
+        transitions: {
+          swup: Boolean(inputTransitionsSwup.checked)
+        },
         readingMode: {
           showEntry: Boolean(inputReadingEntry.checked)
         },
@@ -831,6 +841,8 @@ export const createFormCodec = ({
     syncHeroControls();
     syncFooterYearControls();
     inputCodeLineNumbers.checked = Boolean(settings.ui?.codeBlock?.showLineNumbers);
+    inputBackgroundStarry.checked = settings.ui?.background?.starry !== false;
+    inputTransitionsSwup.checked = settings.ui?.transitions?.swup !== false;
     inputReadingEntry.checked = Boolean(settings.ui?.readingMode?.showEntry);
     inputSidebarActionsShowRssLink.checked = settings.ui?.sidebarActions?.showRssLink !== false;
     inputSidebarActionsShowThemeToggle.checked = settings.ui?.sidebarActions?.showThemeToggle !== false;

@@ -11,7 +11,7 @@ import {
   MARKDOWN_MATH_STYLESHEET_HREF,
   MARKDOWN_MATH_STYLESHEET_ID
 } from '../lib/markdown-math-styles';
-import type { ArticleMetaSettings, SidebarNavId } from '../lib/theme-settings';
+import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '../lib/theme-settings';
 import { formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
 
@@ -70,6 +70,7 @@ const shouldShowMetaLine = articleMetaSettings.showDate
   || articleMetaSettings.showWordCount
   || articleMetaSettings.showReadingTime;
 const articleHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const { settings } = getThemeSettings();
 
 ---
 
@@ -80,6 +81,7 @@ const articleHeadings = headings.filter((heading) => heading.depth === 2 || head
   ogType="article"
   bodyClass="article-page immersive-page"
   activeNavId={activeNavId}
+  actionCapabilities={{ toc: articleHeadings.length > 0, comments: settings.comments.enabled, reading: true }}
 >
   <Fragment slot="head">
     <meta property="article:published_time" content={entry.data.date.toISOString()} />
@@ -145,10 +147,7 @@ const articleHeadings = headings.filter((heading) => heading.depth === 2 || head
 
   {articleHeadings.length ? (
     <details class="article-toc-float">
-      <summary class="article-toc-float__button" aria-label="展开文章目录" title="文章目录" aria-controls="article-toc-panel">
-        <UiIcon name="list" class="icon" />
-        <span>目录</span>
-      </summary>
+      <summary class="article-toc-float__summary" aria-hidden="true" tabindex="-1"></summary>
       <nav id="article-toc-panel" class="article-toc-float__panel" aria-label="文章目录">
         <div class="article-toc-float__header">
           <span>文章目录</span>
@@ -198,18 +197,4 @@ const articleHeadings = headings.filter((heading) => heading.depth === 2 || head
     enablePan={false}
     enableSwipeDownClose={false}
   />
-
-  <script>
-    import { initArticleLightbox, initCodeCopyButtons } from '../scripts/lightbox';
-    import '../scripts/article-toc';
-
-    initCodeCopyButtons();
-    initArticleLightbox({
-      dialogId: 'lightbox',
-      containerSelector: '.prose',
-      enableZoom: false,
-      enablePan: false,
-      enableSwipeDownClose: false
-    });
-  </script>
 </BaseLayout>

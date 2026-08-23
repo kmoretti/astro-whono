@@ -156,6 +156,52 @@
   color: #ef4444;
 }
 
+.bits-remote-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 4px;
+}
+
+.bits-remote-more[hidden] {
+  display: none;
+}
+
+.bits-remote-more__button {
+  padding: 8px 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--accent) 72%, var(--text));
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.bits-remote-more__button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+}
+
+.bits-remote-more__button:focus-visible {
+  outline: 2px solid var(--bits-focus, var(--muted));
+  outline-offset: 2px;
+}
+
+.bits-remote-more__button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.bits-remote-more__hint {
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .bit-card--remote {
   min-width: 0;
   overflow: hidden;

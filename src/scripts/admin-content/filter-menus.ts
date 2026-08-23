@@ -1,4 +1,5 @@
 import { initAdminDetailsMenus } from './details-menu';
+import { onPageChange } from '../page-controllers';
 
 const CLEANUP_KEY = '__astroWhonoAdminContentFilterMenusCleanup';
 type WindowWithAdminContentFilterMenus = Window & {
@@ -23,8 +24,7 @@ const initAdminContentFilterMenus = () => {
   };
 };
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAdminContentFilterMenus, { once: true });
-} else {
-  initAdminContentFilterMenus();
+if (typeof window !== 'undefined') {
+  // swup 导航回到本页时重初始化(自带 cleanup 机制防止监听累积)。
+  onPageChange(initAdminContentFilterMenus);
 }

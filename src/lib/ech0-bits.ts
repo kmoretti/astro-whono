@@ -357,3 +357,39 @@ export const loadEch0Echoes = async ({
     partial: total > echoes.length && loadedPages >= safeMaxPages
   };
 };
+
+export type Ech0PageResult = {
+  items: Ech0NormalizedEcho[];
+  page: number;
+  total: number;
+};
+
+// 单页加载:供前端「加载更多」渐进式分页使用,每次只请求一页。
+export const loadEch0EchoPage = async ({
+  sourceUrl,
+  page,
+  pageSize,
+  signal
+}: {
+  sourceUrl: string;
+  page: number;
+  pageSize: number;
+  signal?: AbortSignal;
+}): Promise<Ech0PageResult> => {
+  const safePageSize = Math.min(Math.max(Number.isFinite(pageSize) ? Math.trunc(pageSize) : 10, 1), 50);
+  const safePage = Math.max(Number.isFinite(page) ? Math.trunc(page) : 1, 1);
+  const response = await fetch(getEch0QueryUrl(sourceUrl), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(createEch0QueryBody(safePage, safePageSize)),
+    ...(signal ? { signal } : {})
+  });
+  if (!response.ok) throw new Error(`Ech0 request failed: ${response.status}`);
+  const pageData = normalizeEch0QueryPage(await response.json());
+  if (!pageData) throw new Error('Ech0 response is invalid');
+  return {
+    items: dedupeEch0Echoes(normalizeEch0Echoes(pageData.items)),
+    page: safePage,
+    total: pageData.total
+  };
+};

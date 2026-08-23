@@ -33,8 +33,11 @@ type LightboxController = {
 
 const IMAGE_EXT = /\.(avif|webp|png|jpe?g|gif|svg)(?:$|[?#&])/i;
 const toSafeDocumentImageUrl = (value: string) => toSafeHttpUrl(value, window.location.href);
-let codeCopyInitialized = false;
-let aboutSiteInfoCopyInitialized = false;
+
+// window resize 监听器全模块只绑一次（布尔守卫），转发给当前控制器的同步闭包；
+// swup 导航后 dialog 随容器重建，init 重建控制器时替换引用，旧闭包随之可回收。
+let activeLightboxResizeSync: (() => void) | null = null;
+let lightboxResizeBound = false;
 
 const legacyCopy = (value: string) => {
   const helper = document.createElement('textarea');
@@ -342,12 +345,18 @@ const createLightboxController = (options: LightboxOptions): LightboxController 
   };
 
   const init = () => {
-    window.addEventListener('resize', () => {
+    activeLightboxResizeSync = () => {
       if (!dialog.open) return;
       syncMetrics();
       clampTranslate();
       applyTransform();
-    });
+    };
+    if (!lightboxResizeBound) {
+      lightboxResizeBound = true;
+      window.addEventListener('resize', () => {
+        activeLightboxResizeSync?.();
+      });
+    }
 
     prevBtn?.addEventListener('click', () => stepIndex(-1));
     nextBtn?.addEventListener('click', () => stepIndex(1));
@@ -531,74 +540,102 @@ const createLightboxController = (options: LightboxOptions): LightboxController 
 };
 
 export const initCodeCopyButtons = () => {
-  if (codeCopyInitialized) return;
-
   const buttons = document.querySelectorAll<HTMLButtonElement>('.code-copy');
-  if (!buttons.length) return;
-
-  codeCopyInitialized = true;
   buttons.forEach((button) => {
+    // 元素级守卫：swup 导航后新按钮重新启用并绑定，已绑定按钮跳过。
+    if (button.dataset.copyBound === 'true') return;
+    button.dataset.copyBound = 'true';
     button.disabled = false;
-  });
+    button.addEventListener('click', async () => {
+      const code = button.closest('.code-block')?.querySelector('pre code');
+      const text = code?.textContent ?? '';
+      if (!text) return;
 
-  document.addEventListener('click', async (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
+      const copied = await copyTextToClipboard(text);
+      if (!copied) return;
 
-    const button = target.closest<HTMLButtonElement>('.code-copy');
-    if (!button) return;
-
-    const code = button.closest('.code-block')?.querySelector('pre code');
-    const text = code?.textContent ?? '';
-    if (!text) return;
-
-    const copied = await copyTextToClipboard(text);
-    if (!copied) return;
-
-    button.dataset.state = 'copied';
-    button.setAttribute('aria-label', '已复制');
-    button.setAttribute('title', '已复制');
-    window.setTimeout(() => {
-      button.dataset.state = 'idle';
-      button.setAttribute('aria-label', '复制代码');
-      button.setAttribute('title', '复制代码');
-    }, 1200);
+      button.dataset.state = 'copied';
+      button.setAttribute('aria-label', '已复制');
+      button.setAttribute('title', '已复制');
+      window.setTimeout(() => {
+        button.dataset.state = 'idle';
+        button.setAttribute('aria-label', '复制代码');
+        button.setAttribute('title', '复制代码');
+      }, 1200);
+    });
   });
 };
 
 export const initAboutSiteInfoCopyButtons = () => {
-  if (aboutSiteInfoCopyInitialized) return;
-
   const buttons = document.querySelectorAll<HTMLButtonElement>('[data-about-site-info-copy]');
-  if (!buttons.length) return;
-
-  aboutSiteInfoCopyInitialized = true;
   buttons.forEach((button) => {
+    // 元素级守卫：swup 导航后新按钮重新启用并绑定，已绑定按钮跳过。
+    if (button.dataset.copyBound === 'true') return;
+    button.dataset.copyBound = 'true';
     button.disabled = false;
+    button.addEventListener('click', async () => {
+      const text = button.dataset.aboutCopyText ?? '';
+      if (!text) return;
+
+      const copied = await copyTextToClipboard(text);
+      if (!copied) return;
+
+      button.dataset.state = 'copied';
+      button.setAttribute('aria-label', '已复制友链信息');
+      button.setAttribute('title', '已复制友链信息');
+      window.setTimeout(() => {
+        button.dataset.state = 'idle';
+        button.setAttribute('aria-label', '复制友链信息');
+        button.setAttribute('title', '复制友链信息');
+      }, 2000);
+    });
   });
+};
 
-  document.addEventListener('click', async (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
+let bitsLightboxController: LightboxController | null = null;
+let bitsLightboxClickBound = false;
+const bitsImagesCache = new WeakMap<HTMLElement, LightboxImage[]>();
 
-    const button = target.closest<HTMLButtonElement>('[data-about-site-info-copy]');
-    if (!button) return;
+const parsePositiveDimension = (value: string | undefined) => {
+  const parsed = Number(value ?? '');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+};
 
-    const text = button.dataset.aboutCopyText ?? '';
-    if (!text) return;
+const toBitLightboxImage = (node: HTMLElement): LightboxImage | null => {
+  const safeSrc = toSafeDocumentImageUrl(node.dataset.bitImageSrc ?? '');
+  if (!safeSrc) return null;
+  const alt = node.dataset.bitImageAlt ?? '';
+  const width = parsePositiveDimension(node.dataset.bitImageWidth);
+  const height = parsePositiveDimension(node.dataset.bitImageHeight);
+  return {
+    src: safeSrc,
+    ...(alt ? { alt } : {}),
+    ...(width ? { width } : {}),
+    ...(height ? { height } : {})
+  };
+};
 
-    const copied = await copyTextToClipboard(text);
-    if (!copied) return;
+const parseBitImages = (card: HTMLElement) => {
+  const cached = bitsImagesCache.get(card);
+  if (cached) return cached;
+  const imageNodes = Array.from(card.querySelectorAll<HTMLElement>('[data-bit-image-item]'));
+  if (imageNodes.length === 0) return null;
+  const sanitized = imageNodes
+    .map(toBitLightboxImage)
+    .filter((item): item is LightboxImage => item !== null);
+  if (sanitized.length === 0) return null;
+  bitsImagesCache.set(card, sanitized);
+  return sanitized;
+};
 
-    button.dataset.state = 'copied';
-    button.setAttribute('aria-label', '已复制友链信息');
-    button.setAttribute('title', '已复制友链信息');
-    window.setTimeout(() => {
-      button.dataset.state = 'idle';
-      button.setAttribute('aria-label', '复制友链信息');
-      button.setAttribute('title', '复制友链信息');
-    }, 2000);
-  });
+const openBitLightbox = (button: HTMLButtonElement, index: number) => {
+  const controller = bitsLightboxController;
+  if (!controller) return;
+  const card = button.closest<HTMLElement>('[data-bit]');
+  if (!card) return;
+  const images = parseBitImages(card);
+  if (!images || images.length === 0) return;
+  controller.open(images, index, { opener: button });
 };
 
 export const initBitsLightbox = (options: LightboxOptions = {}) => {
@@ -611,46 +648,12 @@ export const initBitsLightbox = (options: LightboxOptions = {}) => {
   });
   if (!controller) return;
 
-  const imagesCache = new WeakMap<HTMLElement, LightboxImage[]>();
-  const parsePositiveDimension = (value: string | undefined) => {
-    const parsed = Number(value ?? '');
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
-  };
-  const toBitLightboxImage = (node: HTMLElement): LightboxImage | null => {
-    const safeSrc = toSafeDocumentImageUrl(node.dataset.bitImageSrc ?? '');
-    if (!safeSrc) return null;
-    const alt = node.dataset.bitImageAlt ?? '';
-    const width = parsePositiveDimension(node.dataset.bitImageWidth);
-    const height = parsePositiveDimension(node.dataset.bitImageHeight);
-    return {
-      src: safeSrc,
-      ...(alt ? { alt } : {}),
-      ...(width ? { width } : {}),
-      ...(height ? { height } : {})
-    };
-  };
+  // swup 导航后 dialog 随容器重建，控制器需随之重建；模块级引用保证
+  // 只绑一次的 document 委托监听器始终作用于当前控制器。
+  bitsLightboxController = controller;
 
-  const parseImages = (card: HTMLElement) => {
-    const cached = imagesCache.get(card);
-    if (cached) return cached;
-    const imageNodes = Array.from(card.querySelectorAll<HTMLElement>('[data-bit-image-item]'));
-    if (imageNodes.length === 0) return null;
-    const sanitized = imageNodes
-      .map(toBitLightboxImage)
-      .filter((item): item is LightboxImage => item !== null);
-    if (sanitized.length === 0) return null;
-    imagesCache.set(card, sanitized);
-    return sanitized;
-  };
-
-  const handleOpen = (button: HTMLButtonElement, index: number) => {
-    const card = button.closest<HTMLElement>('[data-bit]');
-    if (!card) return;
-    const images = parseImages(card);
-    if (!images || images.length === 0) return;
-    controller.open(images, index, { opener: button });
-  };
-
+  if (bitsLightboxClickBound) return;
+  bitsLightboxClickBound = true;
   document.addEventListener('click', (event) => {
     const target = event.target as HTMLElement | null;
     if (!target) return;
@@ -659,13 +662,13 @@ export const initBitsLightbox = (options: LightboxOptions = {}) => {
       const button = hiddenTrigger.closest<HTMLButtonElement>('[data-bit-image-button]');
       if (!button) return;
       const hiddenIndex = Number(hiddenTrigger.getAttribute('data-bit-image-open-hidden') ?? '0');
-      handleOpen(button, hiddenIndex);
+      openBitLightbox(button, hiddenIndex);
       return;
     }
     const button = target.closest<HTMLButtonElement>('[data-bit-image-button]');
     if (!button) return;
     const index = Number(button.getAttribute('data-bit-image-index') ?? '0');
-    handleOpen(button, index);
+    openBitLightbox(button, index);
   });
 };
 

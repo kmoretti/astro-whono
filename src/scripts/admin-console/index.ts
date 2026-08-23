@@ -4,6 +4,7 @@ import {
   ADMIN_NAV_IDS,
   getAdminFooterStartYearMax
 } from '@/lib/admin-console/theme-shared';
+import { onPageChange } from '../page-controllers';
 import { createAdminImagePicker } from '../admin-shared/image-picker';
 import {
   bindAdminThemeActionEvents,
@@ -25,7 +26,14 @@ import { createSidebarNavChildren } from './sidebar-nav-children';
 import { createAdminConsoleUiState } from './ui-state';
 import { createValidation } from './validation';
 
-const root = document.querySelector<HTMLElement>('[data-admin-root]');
+// swup 重初始化前清理上一轮的 document/window 级监听(导航守卫)。
+let teardownNavigationGuard: (() => void) | null = null;
+
+const initAdminConsole = () => {
+  teardownNavigationGuard?.();
+  teardownNavigationGuard = null;
+
+  const root = document.querySelector<HTMLElement>('[data-admin-root]');
 
 if (!root) {
   // Current page does not use admin console.
@@ -164,6 +172,8 @@ if (!root) {
       inputHeroImageSrc: controls.inputHeroImageSrc,
       inputHeroImageAlt: controls.inputHeroImageAlt,
       inputCodeLineNumbers: controls.inputCodeLineNumbers,
+      inputBackgroundStarry: controls.inputBackgroundStarry,
+      inputTransitionsSwup: controls.inputTransitionsSwup,
       inputReadingEntry: controls.inputReadingEntry,
       inputSidebarActionsShowRssLink: controls.inputSidebarActionsShowRssLink,
       inputSidebarActionsShowThemeToggle: controls.inputSidebarActionsShowThemeToggle,
@@ -354,7 +364,14 @@ if (!root) {
       controller,
       uiState
     });
-    bindAdminThemeNavigationGuard({ uiState });
+    teardownNavigationGuard = bindAdminThemeNavigationGuard({ uiState });
     controller.start();
   }
+  }
+};
+
+if (typeof window !== 'undefined') {
+  // module 脚本插入 .shell 后首次执行;swup 导航离开/回到本页时由
+  // page-change 事件重新初始化(模块 URL 去重不会重执行)。
+  onPageChange(initAdminConsole);
 }

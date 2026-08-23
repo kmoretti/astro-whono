@@ -59,4 +59,16 @@ describe('admin-console/settings-data', () => {
     }
   });
 
+  it('exposes a starry background toggle in the editable theme settings payload', () => {
+    const payload = getEditableThemeSettingsPayload();
+    expect(payload.settings.ui.background).toBeDefined();
+    expect(typeof payload.settings.ui.background.starry).toBe('boolean');
+  });
+
+  it('exposes a swup transitions toggle in the editable theme settings payload', () => {
+    const payload = getEditableThemeSettingsPayload();
+    expect(payload.settings.ui.transitions).toBeDefined();
+    expect(typeof payload.settings.ui.transitions.swup).toBe('boolean');
+  });
+
 });

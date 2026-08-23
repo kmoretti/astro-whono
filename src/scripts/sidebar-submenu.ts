@@ -1,3 +1,5 @@
+import { onPageChange } from './page-controllers';
+
 const closeSubmenu = (button: HTMLButtonElement, submenu: HTMLElement) => {
   button.setAttribute('aria-expanded', 'false');
   submenu.hidden = true;
@@ -31,8 +33,9 @@ const initSidebarSubmenus = () => {
   });
 };
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initSidebarSubmenus, { once: true });
-} else {
+// swup 导航后重初始化：按钮随 .sidebar（.shell 容器内）替换，
+// 旧监听随旧元素失效，这里对新按钮重做绑定。
+onPageChange(() => {
+  if (!document.querySelector('.sidebar')) return;
   initSidebarSubmenus();
-}
+});

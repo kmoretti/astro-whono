@@ -5,31 +5,7 @@ import {
   createWithBase,
   tokenizeSearchQuery
 } from '../utils/format';
-
-const form = document.querySelector<HTMLFormElement>('[data-bits-search-form]');
-const input = document.getElementById('bits-search') as HTMLInputElement | null;
-const btn = document.getElementById('bits-search-btn') as HTMLButtonElement | null;
-const statusEl = document.getElementById('bits-search-status') as HTMLDivElement | null;
-const liveEl = document.getElementById('bits-search-live') as HTMLParagraphElement | null;
-const browseRoot = document.querySelector<HTMLElement>('[data-bits-browse]');
-const resultsRoot = document.querySelector<HTMLElement>('[data-bits-search-results]');
-const resultsSummaryEl = document.querySelector<HTMLElement>('[data-bits-search-results-summary]');
-const resultsListEl = document.querySelector<HTMLElement>('[data-bits-search-results-list]');
-const clearBtn = document.querySelector<HTMLButtonElement>('[data-bits-search-clear]');
-const yearFilterRoot = document.querySelector<HTMLElement>('[data-bits-year-filter]');
-const yearCursor = document.querySelector<HTMLElement>('[data-bits-year-cursor]');
-const yearButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bits-year-item]'));
-const yearMoreRoot = document.querySelector<HTMLElement>('[data-bits-year-more]');
-const yearMoreTrigger = document.querySelector<HTMLButtonElement>('[data-bits-year-more-trigger]');
-const yearMoreLabel = document.querySelector<HTMLElement>('[data-bits-year-more-label]');
-const yearMenu = document.querySelector<HTMLElement>('[data-bits-year-menu]');
-const yearMenuButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bits-year-menu-item]'));
-const yearSelect = document.querySelector<HTMLSelectElement>('[data-bits-year-select]');
-const yearSelectWrap = yearSelect?.closest<HTMLElement>('.bits-year-select-wrap') ?? null;
-
-const base = import.meta.env.BASE_URL ?? '/';
-const withBase = createWithBase(base);
-const indexUrl = withBase('bits/index.json');
+import { onPageChange } from './page-controllers';
 
 const FILTER_DEBOUNCE_MS = 120;
 const MAX_VISIBLE_RESULTS = 50;
@@ -57,48 +33,14 @@ type IndexItem = {
   } | null;
 };
 
+type ActiveTab = 'local' | 'remote';
+
 const getIndexKey = (item: Pick<IndexItem, 'key' | 'slug'>) => (item.key || item.slug || '').trim();
 const getYearButtonValue = (button: HTMLButtonElement) => {
   const raw = (button.dataset.bitsYear ?? '').trim();
   if (raw === '') return null;
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? parsed : null;
-};
-
-let availableYears = new Set(
-  (yearSelect
-    ? Array.from(yearSelect.options)
-        .map((option) => option.value.trim())
-        .filter(Boolean)
-        .map((value) => Number(value))
-        .filter((year): year is number => Number.isFinite(year))
-    : [...yearButtons, ...yearMenuButtons]
-        .map((button) => getYearButtonValue(button))
-        .filter((year): year is number => year !== null))
-);
-const overflowYears = new Set(
-  yearMenuButtons.map((button) => getYearButtonValue(button)).filter((year): year is number => year !== null)
-);
-const shouldBypassIndexCache = import.meta.env.DEV;
-
-type ActiveTab = 'local' | 'remote';
-let indexHay: Map<string, string> | null = null;
-let remoteIndexItems: IndexItem[] = [];
-let filterRunId = 0;
-let activeYear: number | null = null;
-let activeTab: ActiveTab = 'local';
-let isMoreMenuOpen = false;
-let statusTimer: number | null = null;
-const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
-
-const getTrimmedQuery = () => (input?.value || '').trim();
-const getNormalizedQuery = () => getTrimmedQuery().toLowerCase();
-
-const clearStatusTimer = () => {
-  if (statusTimer !== null) {
-    window.clearTimeout(statusTimer);
-    statusTimer = null;
-  }
 };
 
 const escapeHtml = (value: string) =>
@@ -208,138 +150,12 @@ const getDisplayTags = (tags: string[]) => {
   };
 };
 
-const setVisibleStatus = (text: string) => {
-  if (!statusEl) return;
-  if (statusEl.textContent !== text) {
-    statusEl.textContent = text;
-  }
-};
-
-const setLiveStatus = (text: string) => {
-  if (!liveEl) return;
-  if (liveEl.textContent !== text) {
-    liveEl.textContent = text;
-  }
-};
-
-const setStatus = (
-  text: string,
-  options: {
-    announce?: boolean;
-    autoClearMs?: number;
-    visible?: boolean;
-  } = {}
-) => {
-  clearStatusTimer();
-  const { announce = true, autoClearMs, visible = true } = options;
-  setVisibleStatus(visible ? text : '');
-  setLiveStatus(announce ? text : '');
-  if (text && options.autoClearMs) {
-    statusTimer = window.setTimeout(() => {
-      setVisibleStatus('');
-      setLiveStatus('');
-      statusTimer = null;
-    }, autoClearMs);
-  }
-};
-
 const formatResultsSummary = (count: number, year: number | null) => {
   const summary =
     count > MAX_VISIBLE_RESULTS
       ? `找到 ${count} 条结果，当前显示前 ${MAX_VISIBLE_RESULTS} 条`
       : `找到 ${count} 条结果`;
   return year ? `${year} 年 · ${summary}` : summary;
-};
-
-const isResultsVisible = () => resultsRoot?.hasAttribute('hidden') === false;
-const getFirstResultLink = () => resultsListEl?.querySelector<HTMLAnchorElement>('.bit-search-result__link') ?? null;
-const isOverflowYear = (year: number | null): year is number => year !== null && overflowYears.has(year);
-const getCursorTargetButton = () => {
-  if ((isMoreMenuOpen || isOverflowYear(activeYear)) && yearMoreTrigger) {
-    return yearMoreTrigger;
-  }
-  return yearButtons.find((button) => button.classList.contains('is-active')) ?? yearMoreTrigger ?? null;
-};
-
-const updateYearCursor = () => {
-  if (!yearFilterRoot || !yearCursor) return;
-  const activeButton = getCursorTargetButton();
-  if (!activeButton) return;
-  const rootRect = yearFilterRoot.getBoundingClientRect();
-  const buttonRect = activeButton.getBoundingClientRect();
-  const primaryCursorWidth = yearButtons
-    .map((button) => ({
-      button,
-      year: getYearButtonValue(button)
-    }))
-    .filter((item) => item.year !== null)
-    .reduce((width, item) => Math.max(width, item.button.offsetWidth), activeButton.offsetWidth);
-  const cursorWidth =
-    (isMoreMenuOpen || isOverflowYear(activeYear)) && yearMoreTrigger
-      ? Math.max(yearMoreTrigger.offsetWidth, primaryCursorWidth)
-      : Math.max(activeButton.offsetWidth, primaryCursorWidth);
-  const centeredLeft = buttonRect.left - rootRect.left - (cursorWidth - activeButton.offsetWidth) / 2;
-  const maxLeft = Math.max(rootRect.width - cursorWidth, 0);
-  const cursorLeft = Math.min(Math.max(centeredLeft, 0), maxLeft);
-
-  yearCursor.style.width = `${cursorWidth}px`;
-  yearCursor.style.transform = `translateX(${cursorLeft}px)`;
-};
-
-const setMoreMenuOpen = (open: boolean) => {
-  if (!yearMoreRoot || !yearMoreTrigger || !yearMenu) {
-    isMoreMenuOpen = false;
-    return;
-  }
-  isMoreMenuOpen = open;
-  yearMoreRoot.dataset.open = String(open);
-  yearMoreTrigger.classList.toggle('is-open', open);
-  yearMoreTrigger.setAttribute('aria-expanded', String(open));
-  if (open) {
-    yearMenu.removeAttribute('hidden');
-  } else {
-    yearMenu.setAttribute('hidden', 'true');
-  }
-  window.requestAnimationFrame(updateYearCursor);
-};
-
-const closeMoreMenu = () => {
-  if (!isMoreMenuOpen) return;
-  setMoreMenuOpen(false);
-};
-
-const setActiveYearState = (year: number | null) => {
-  activeYear = year;
-  yearButtons.forEach((button) => {
-    const buttonYear = getYearButtonValue(button);
-    const isActive = buttonYear === year;
-    button.classList.toggle('is-active', isActive);
-    button.setAttribute('aria-pressed', String(isActive));
-  });
-  yearMenu?.querySelectorAll<HTMLButtonElement>('[data-bits-year-menu-item]').forEach((button) => {
-    const buttonYear = getYearButtonValue(button);
-    const isActive = buttonYear === year;
-    button.classList.toggle('is-active', isActive);
-    button.setAttribute('aria-pressed', String(isActive));
-  });
-  if (yearMoreRoot && yearMoreTrigger) {
-    const isMoreActive = isOverflowYear(year);
-    yearMoreRoot.dataset.active = String(isMoreActive);
-    yearMoreTrigger.classList.toggle('is-active', isMoreActive);
-    yearMoreTrigger.setAttribute('aria-label', isMoreActive ? `打开更多年份筛选，当前 ${year} 年` : '打开更多年份筛选');
-  }
-  if (yearMoreLabel) {
-    yearMoreLabel.textContent = isOverflowYear(year) ? String(year) : '更多';
-  }
-  if (yearSelect) {
-    yearSelect.value = year === null ? '' : String(year);
-    yearSelect.dataset.empty = String(year === null);
-  }
-  if (yearSelectWrap) {
-    yearSelectWrap.dataset.empty = String(year === null);
-    yearSelectWrap.dataset.active = String(year !== null);
-  }
-  window.requestAnimationFrame(updateYearCursor);
 };
 
 const getFilterUrl = (query: string, year: number | null) => {
@@ -357,14 +173,6 @@ const getFilterUrl = (query: string, year: number | null) => {
   }
   const search = nextUrl.searchParams.toString();
   return `${nextUrl.pathname}${search ? `?${search}` : ''}`;
-};
-
-const syncUrlState = (query = getTrimmedQuery(), year = activeYear) => {
-  const next = getFilterUrl(query, year);
-  const current = `${window.location.pathname}${window.location.search}`;
-  if (next !== current) {
-    window.history.replaceState({}, '', next);
-  }
 };
 
 const readInitialState = () => {
@@ -386,61 +194,271 @@ const readInitialState = () => {
   };
 };
 
-const showBrowse = () => {
-  browseRoot?.removeAttribute('hidden');
-  resultsRoot?.setAttribute('hidden', 'true');
-  if (resultsListEl) {
-    resultsListEl.innerHTML = '';
-  }
-  if (resultsSummaryEl) {
-    resultsSummaryEl.textContent = '搜索结果';
-  }
+type BitsSearchController = {
+  handleRemoteLoaded: (items: IndexItem[]) => void;
+  handleTabChanged: (tab: ActiveTab) => void;
+  handleOutsidePointerDown: (target: EventTarget | null) => void;
+  closeMoreMenu: () => void;
+  updateYearCursor: () => void;
 };
 
-const getEmptyResultsText = (query: string, year: number | null) => {
-  if (year !== null && query) {
-    return '这个年份下没有匹配内容，试试换个关键词或年份。';
-  }
-  return '未找到相关内容，换个关键词试试。';
-};
+let controller: BitsSearchController | null = null;
 
-const renderResults = (matchedItems: IndexItem[]) => {
-  if (!resultsRoot || !resultsListEl) return;
-
-  const visibleItems = matchedItems.slice(0, MAX_VISIBLE_RESULTS);
-  const summary = formatResultsSummary(matchedItems.length, activeYear);
-  const currentBitsPage = getCurrentBitsPage();
-
-  if (resultsSummaryEl) {
-    resultsSummaryEl.textContent = summary;
+const initBitsSearch = () => {
+  const form = document.querySelector<HTMLFormElement>('[data-bits-search-form]');
+  if (!form) {
+    controller = null;
+    return;
   }
 
-  resultsListEl.innerHTML = visibleItems
-    .map((item) => {
-      const query = getTrimmedQuery();
-      const queryTerms = tokenizeSearchQuery(query);
-      const snippet = getDisplaySnippet(item, queryTerms);
-      const dateLabel = item.dateLabel?.trim() ?? '';
-      const pageHint = item.page && item.page !== currentBitsPage ? `来自第 ${item.page} 页` : '';
-      const { placeText, normalTags } = getDisplayTags(item.tags ?? []);
-      const place = placeText
-        ? `<span class="bit-search-result__tag bit-search-result__tag--place">📍 ${highlightText(placeText, queryTerms)}</span>`
-        : '';
-      const tags = normalTags
-        .slice(0, 3)
-        .map((tag) => `<span class="bit-search-result__tag">#${highlightText(tag.trim(), queryTerms)}</span>`)
-        .join('');
-      const metaTrail = [
-        dateLabel
-          ? `<time class="bit-search-result__date" datetime="${escapeHtml(item.date ?? '')}">${escapeHtml(dateLabel)}</time>`
-          : '',
-        pageHint ? `<span class="bit-search-result__page">${escapeHtml(pageHint)}</span>` : ''
-      ]
-        .filter(Boolean)
-        .join('<span class="bit-search-result__sep" aria-hidden="true">·</span>');
-      const href = item.href ? escapeHtml(item.href) : withBase('bits/');
-      const thumbnail = item.thumbnail
-        ? `
+  const input = document.getElementById('bits-search') as HTMLInputElement | null;
+  const btn = document.getElementById('bits-search-btn') as HTMLButtonElement | null;
+  const statusEl = document.getElementById('bits-search-status') as HTMLDivElement | null;
+  const liveEl = document.getElementById('bits-search-live') as HTMLParagraphElement | null;
+  const browseRoot = document.querySelector<HTMLElement>('[data-bits-browse]');
+  const resultsRoot = document.querySelector<HTMLElement>('[data-bits-search-results]');
+  const resultsSummaryEl = document.querySelector<HTMLElement>('[data-bits-search-results-summary]');
+  const resultsListEl = document.querySelector<HTMLElement>('[data-bits-search-results-list]');
+  const clearBtn = document.querySelector<HTMLButtonElement>('[data-bits-search-clear]');
+  const yearFilterRoot = document.querySelector<HTMLElement>('[data-bits-year-filter]');
+  const yearCursor = document.querySelector<HTMLElement>('[data-bits-year-cursor]');
+  const yearButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bits-year-item]'));
+  const yearMoreRoot = document.querySelector<HTMLElement>('[data-bits-year-more]');
+  const yearMoreTrigger = document.querySelector<HTMLButtonElement>('[data-bits-year-more-trigger]');
+  const yearMoreLabel = document.querySelector<HTMLElement>('[data-bits-year-more-label]');
+  const yearMenu = document.querySelector<HTMLElement>('[data-bits-year-menu]');
+  const yearMenuButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-bits-year-menu-item]'));
+  const yearSelect = document.querySelector<HTMLSelectElement>('[data-bits-year-select]');
+  const yearSelectWrap = yearSelect?.closest<HTMLElement>('.bits-year-select-wrap') ?? null;
+
+  const base = import.meta.env.BASE_URL ?? '/';
+  const withBase = createWithBase(base);
+  const indexUrl = withBase('bits/index.json');
+
+  let availableYears = new Set(
+    (yearSelect
+      ? Array.from(yearSelect.options)
+          .map((option) => option.value.trim())
+          .filter(Boolean)
+          .map((value) => Number(value))
+          .filter((year): year is number => Number.isFinite(year))
+      : [...yearButtons, ...yearMenuButtons]
+          .map((button) => getYearButtonValue(button))
+          .filter((year): year is number => year !== null))
+  );
+  const overflowYears = new Set(
+    yearMenuButtons.map((button) => getYearButtonValue(button)).filter((year): year is number => year !== null)
+  );
+  const shouldBypassIndexCache = import.meta.env.DEV;
+
+  let indexHay: Map<string, string> | null = null;
+  let remoteIndexItems: IndexItem[] = [];
+  let filterRunId = 0;
+  let activeYear: number | null = null;
+  let activeTab: ActiveTab = 'local';
+  let isMoreMenuOpen = false;
+  let statusTimer: number | null = null;
+  const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
+
+  const getTrimmedQuery = () => (input?.value || '').trim();
+  const getNormalizedQuery = () => getTrimmedQuery().toLowerCase();
+
+  const clearStatusTimer = () => {
+    if (statusTimer !== null) {
+      window.clearTimeout(statusTimer);
+      statusTimer = null;
+    }
+  };
+
+  const setVisibleStatus = (text: string) => {
+    if (!statusEl) return;
+    if (statusEl.textContent !== text) {
+      statusEl.textContent = text;
+    }
+  };
+
+  const setLiveStatus = (text: string) => {
+    if (!liveEl) return;
+    if (liveEl.textContent !== text) {
+      liveEl.textContent = text;
+    }
+  };
+
+  const setStatus = (
+    text: string,
+    options: {
+      announce?: boolean;
+      autoClearMs?: number;
+      visible?: boolean;
+    } = {}
+  ) => {
+    clearStatusTimer();
+    const { announce = true, autoClearMs, visible = true } = options;
+    setVisibleStatus(visible ? text : '');
+    setLiveStatus(announce ? text : '');
+    if (text && options.autoClearMs) {
+      statusTimer = window.setTimeout(() => {
+        setVisibleStatus('');
+        setLiveStatus('');
+        statusTimer = null;
+      }, autoClearMs);
+    }
+  };
+
+  const isResultsVisible = () => resultsRoot?.hasAttribute('hidden') === false;
+  const getFirstResultLink = () => resultsListEl?.querySelector<HTMLAnchorElement>('.bit-search-result__link') ?? null;
+  const isOverflowYear = (year: number | null): year is number => year !== null && overflowYears.has(year);
+  const getCursorTargetButton = () => {
+    if ((isMoreMenuOpen || isOverflowYear(activeYear)) && yearMoreTrigger) {
+      return yearMoreTrigger;
+    }
+    return yearButtons.find((button) => button.classList.contains('is-active')) ?? yearMoreTrigger ?? null;
+  };
+
+  const updateYearCursor = () => {
+    if (!yearFilterRoot || !yearCursor) return;
+    const activeButton = getCursorTargetButton();
+    if (!activeButton) return;
+    const rootRect = yearFilterRoot.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    const primaryCursorWidth = yearButtons
+      .map((button) => ({
+        button,
+        year: getYearButtonValue(button)
+      }))
+      .filter((item) => item.year !== null)
+      .reduce((width, item) => Math.max(width, item.button.offsetWidth), activeButton.offsetWidth);
+    const cursorWidth =
+      (isMoreMenuOpen || isOverflowYear(activeYear)) && yearMoreTrigger
+        ? Math.max(yearMoreTrigger.offsetWidth, primaryCursorWidth)
+        : Math.max(activeButton.offsetWidth, primaryCursorWidth);
+    const centeredLeft = buttonRect.left - rootRect.left - (cursorWidth - activeButton.offsetWidth) / 2;
+    const maxLeft = Math.max(rootRect.width - cursorWidth, 0);
+    const cursorLeft = Math.min(Math.max(centeredLeft, 0), maxLeft);
+
+    yearCursor.style.width = `${cursorWidth}px`;
+    yearCursor.style.transform = `translateX(${cursorLeft}px)`;
+  };
+
+  const setMoreMenuOpen = (open: boolean) => {
+    if (!yearMoreRoot || !yearMoreTrigger || !yearMenu) {
+      isMoreMenuOpen = false;
+      return;
+    }
+    isMoreMenuOpen = open;
+    yearMoreRoot.dataset.open = String(open);
+    yearMoreTrigger.classList.toggle('is-open', open);
+    yearMoreTrigger.setAttribute('aria-expanded', String(open));
+    if (open) {
+      yearMenu.removeAttribute('hidden');
+    } else {
+      yearMenu.setAttribute('hidden', 'true');
+    }
+    window.requestAnimationFrame(updateYearCursor);
+  };
+
+  const closeMoreMenu = () => {
+    if (!isMoreMenuOpen) return;
+    setMoreMenuOpen(false);
+  };
+
+  const setActiveYearState = (year: number | null) => {
+    activeYear = year;
+    yearButtons.forEach((button) => {
+      const buttonYear = getYearButtonValue(button);
+      const isActive = buttonYear === year;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+    yearMenu?.querySelectorAll<HTMLButtonElement>('[data-bits-year-menu-item]').forEach((button) => {
+      const buttonYear = getYearButtonValue(button);
+      const isActive = buttonYear === year;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+    if (yearMoreRoot && yearMoreTrigger) {
+      const isMoreActive = isOverflowYear(year);
+      yearMoreRoot.dataset.active = String(isMoreActive);
+      yearMoreTrigger.classList.toggle('is-active', isMoreActive);
+      yearMoreTrigger.setAttribute('aria-label', isMoreActive ? `打开更多年份筛选，当前 ${year} 年` : '打开更多年份筛选');
+    }
+    if (yearMoreLabel) {
+      yearMoreLabel.textContent = isOverflowYear(year) ? String(year) : '更多';
+    }
+    if (yearSelect) {
+      yearSelect.value = year === null ? '' : String(year);
+      yearSelect.dataset.empty = String(year === null);
+    }
+    if (yearSelectWrap) {
+      yearSelectWrap.dataset.empty = String(year === null);
+      yearSelectWrap.dataset.active = String(year !== null);
+    }
+    window.requestAnimationFrame(updateYearCursor);
+  };
+
+  const syncUrlState = (query = getTrimmedQuery(), year = activeYear) => {
+    const next = getFilterUrl(query, year);
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (next !== current) {
+      window.history.replaceState({}, '', next);
+    }
+  };
+
+  const showBrowse = () => {
+    browseRoot?.removeAttribute('hidden');
+    resultsRoot?.setAttribute('hidden', 'true');
+    if (resultsListEl) {
+      resultsListEl.innerHTML = '';
+    }
+    if (resultsSummaryEl) {
+      resultsSummaryEl.textContent = '搜索结果';
+    }
+  };
+
+  const getEmptyResultsText = (query: string, year: number | null) => {
+    if (year !== null && query) {
+      return '这个年份下没有匹配内容，试试换个关键词或年份。';
+    }
+    return '未找到相关内容，换个关键词试试。';
+  };
+
+  const renderResults = (matchedItems: IndexItem[]) => {
+    if (!resultsRoot || !resultsListEl) return;
+
+    const visibleItems = matchedItems.slice(0, MAX_VISIBLE_RESULTS);
+    const summary = formatResultsSummary(matchedItems.length, activeYear);
+    const currentBitsPage = getCurrentBitsPage();
+
+    if (resultsSummaryEl) {
+      resultsSummaryEl.textContent = summary;
+    }
+
+    resultsListEl.innerHTML = visibleItems
+      .map((item) => {
+        const query = getTrimmedQuery();
+        const queryTerms = tokenizeSearchQuery(query);
+        const snippet = getDisplaySnippet(item, queryTerms);
+        const dateLabel = item.dateLabel?.trim() ?? '';
+        const pageHint = item.page && item.page !== currentBitsPage ? `来自第 ${item.page} 页` : '';
+        const { placeText, normalTags } = getDisplayTags(item.tags ?? []);
+        const place = placeText
+          ? `<span class="bit-search-result__tag bit-search-result__tag--place">📍 ${highlightText(placeText, queryTerms)}</span>`
+          : '';
+        const tags = normalTags
+          .slice(0, 3)
+          .map((tag) => `<span class="bit-search-result__tag">#${highlightText(tag.trim(), queryTerms)}</span>`)
+          .join('');
+        const metaTrail = [
+          dateLabel
+            ? `<time class="bit-search-result__date" datetime="${escapeHtml(item.date ?? '')}">${escapeHtml(dateLabel)}</time>`
+            : '',
+          pageHint ? `<span class="bit-search-result__page">${escapeHtml(pageHint)}</span>` : ''
+        ]
+          .filter(Boolean)
+          .join('<span class="bit-search-result__sep" aria-hidden="true">·</span>');
+        const href = item.href ? escapeHtml(item.href) : withBase('bits/');
+        const thumbnail = item.thumbnail
+          ? `
           <div class="bit-search-result__thumb">
             <img
               src="${escapeHtml(item.thumbnail.src)}"
@@ -452,9 +470,9 @@ const renderResults = (matchedItems: IndexItem[]) => {
             />
           </div>
         `
-        : '';
+          : '';
 
-      return `
+        return `
         <article class="bit-card bit-card--search-result">
           <a class="bit-search-result__link" href="${href}">
             <div class="bit-search-result__layout${thumbnail ? ' bit-search-result__layout--media' : ''}">
@@ -474,401 +492,423 @@ const renderResults = (matchedItems: IndexItem[]) => {
           </a>
         </article>
       `;
-    })
-    .join('');
+      })
+      .join('');
 
-  browseRoot?.setAttribute('hidden', 'true');
-  resultsRoot.removeAttribute('hidden');
-};
+    browseRoot?.setAttribute('hidden', 'true');
+    resultsRoot.removeAttribute('hidden');
+  };
 
-const getIndexHay = (item: IndexItem) =>
-  indexHay?.get(getIndexKey(item)) || buildSearchHaystack([item.title, item.description, item.tags, item.text]);
+  const getIndexHay = (item: IndexItem) =>
+    indexHay?.get(getIndexKey(item)) || buildSearchHaystack([item.title, item.description, item.tags, item.text]);
 
-const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null) =>
-  index.filter((item) => {
-    const key = getIndexKey(item);
-    if (!key) return false;
-    if (year !== null && item.year !== year) return false;
-    const hay = getIndexHay(item);
-    return queryTerms.every((term) => hay.includes(term));
-  });
+  const filterIndexItems = (index: IndexItem[], queryTerms: string[], year: number | null) =>
+    index.filter((item) => {
+      const key = getIndexKey(item);
+      if (!key) return false;
+      if (year !== null && item.year !== year) return false;
+      const hay = getIndexHay(item);
+      return queryTerms.every((term) => hay.includes(term));
+    });
 
-const mergeIndexItems = (items: IndexItem[]) => {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    const key = getIndexKey(item);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
+  const mergeIndexItems = (items: IndexItem[]) => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      const key = getIndexKey(item);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
 
-const bindYearMenuButton = (button: HTMLButtonElement) => {
-  button.addEventListener('click', async () => {
-    if (indexLoader.hasFailed()) return;
-    const year = getYearButtonValue(button);
-    if (year === null || activeYear === year) {
+  const bindYearMenuButton = (button: HTMLButtonElement) => {
+    button.addEventListener('click', async () => {
+      if (indexLoader.hasFailed()) return;
+      const year = getYearButtonValue(button);
+      if (year === null || activeYear === year) {
+        closeMoreMenu();
+        return;
+      }
+
+      setActiveYearState(year);
       closeMoreMenu();
-      return;
-    }
+      await applyFilter();
+    });
+  };
 
-    setActiveYearState(year);
+  const refreshAvailableYears = (items: IndexItem[]) => {
+    const nextYears = items
+      .map((item) => item.year)
+      .filter((year): year is number => typeof year === 'number' && Number.isFinite(year));
+    const addedYears = nextYears.filter((year) => !availableYears.has(year));
+    availableYears = new Set([...availableYears, ...nextYears]);
+
+    addedYears.forEach((year) => {
+      if (yearSelect && !Array.from(yearSelect.options).some((option) => option.value === String(year))) {
+        yearSelect.add(new Option(String(year), String(year)));
+      }
+
+      if (yearMenu && !yearMenuButtons.some((button) => getYearButtonValue(button) === year)) {
+        const button = document.createElement('button');
+        button.className = 'bits-year-menu__item';
+        button.type = 'button';
+        button.dataset.bitsYearMenuItem = '';
+        button.dataset.bitsYear = String(year);
+        button.setAttribute('aria-label', `筛选 ${year} 年絮语`);
+        button.innerHTML = `<span class="bits-year-menu__item-label">${year}</span>`;
+        yearMenu.querySelector('.bits-year-menu__list')?.append(button);
+        bindYearMenuButton(button);
+      }
+    });
+  };
+
+  const scheduleApplyFilter = (delay = FILTER_DEBOUNCE_MS) => {
+    filterRunner.schedule(delay);
+  };
+
+  const resetFilters = (options: { focusInput?: boolean } = {}) => {
+    filterRunId += 1;
+    filterRunner.cancel();
     closeMoreMenu();
-    await applyFilter();
-  });
-};
-
-const refreshAvailableYears = (items: IndexItem[]) => {
-  const nextYears = items
-    .map((item) => item.year)
-    .filter((year): year is number => typeof year === 'number' && Number.isFinite(year));
-  const addedYears = nextYears.filter((year) => !availableYears.has(year));
-  availableYears = new Set([...availableYears, ...nextYears]);
-
-  addedYears.forEach((year) => {
-    if (yearSelect && !Array.from(yearSelect.options).some((option) => option.value === String(year))) {
-      yearSelect.add(new Option(String(year), String(year)));
+    if (input) {
+      input.value = '';
     }
-
-    if (yearMenu && !yearMenuButtons.some((button) => getYearButtonValue(button) === year)) {
-      const button = document.createElement('button');
-      button.className = 'bits-year-menu__item';
-      button.type = 'button';
-      button.dataset.bitsYearMenuItem = '';
-      button.dataset.bitsYear = String(year);
-      button.setAttribute('aria-label', `筛选 ${year} 年絮语`);
-      button.innerHTML = `<span class="bits-year-menu__item-label">${year}</span>`;
-      yearMenu.querySelector('.bits-year-menu__list')?.append(button);
-      bindYearMenuButton(button);
-    }
-  });
-};
-
-const scheduleApplyFilter = (delay = FILTER_DEBOUNCE_MS) => {
-  filterRunner.schedule(delay);
-};
-
-const resetFilters = (options: { focusInput?: boolean } = {}) => {
-  filterRunId += 1;
-  filterRunner.cancel();
-  closeMoreMenu();
-  if (input) {
-    input.value = '';
-  }
-  setActiveYearState(null);
-  showBrowse();
-  setStatus('');
-  syncUrlState('', null);
-  if (options.focusInput) {
-    input?.focus();
-  }
-};
-
-const setDegradedMode = () => {
-  if (input) {
-    input.placeholder = '索引加载失败';
-    input.disabled = true;
-    input.setAttribute('aria-disabled', 'true');
-  }
-  if (btn) {
-    btn.disabled = true;
-    btn.setAttribute('aria-disabled', 'true');
-  }
-  yearButtons.forEach((button) => {
-    button.setAttribute('aria-disabled', 'true');
-    button.setAttribute('disabled', 'true');
-  });
-  yearMoreTrigger?.setAttribute('aria-disabled', 'true');
-  yearMoreTrigger?.setAttribute('disabled', 'true');
-  yearMenuButtons.forEach((button) => {
-    button.setAttribute('aria-disabled', 'true');
-    button.setAttribute('disabled', 'true');
-  });
-  if (yearSelect) {
-    yearSelect.disabled = true;
-    yearSelect.setAttribute('aria-disabled', 'true');
-  }
-  yearSelectWrap?.setAttribute('data-disabled', 'true');
-  closeMoreMenu();
-  setStatus('索引加载失败，已禁用搜索');
-  showBrowse();
-};
-
-window.addEventListener('bits:remote-loaded', (event) => {
-  const detail = (event as CustomEvent<{ items?: IndexItem[] }>).detail;
-  remoteIndexItems = Array.isArray(detail?.items) ? detail.items : [];
-  refreshAvailableYears(remoteIndexItems);
-  if (indexHay) {
-    remoteIndexItems.forEach((item) => {
-      const key = getIndexKey(item);
-      if (key && !indexHay?.has(key)) {
-        indexHay?.set(key, buildSearchHaystack([item.title, item.description, item.tags, item.text]));
-      }
-    });
-  }
-  if (input && (getTrimmedQuery() || activeYear !== null)) void applyFilter();
-});
-
-window.addEventListener('bits:tab-changed', ((event: CustomEvent<{ tab: ActiveTab }>) => {
-  activeTab = event.detail.tab;
-  if (input && (getTrimmedQuery() || activeYear !== null)) void applyFilter();
-}) as EventListener);
-
-const indexLoader = createJsonIndexLoader<IndexItem>({
-  url: indexUrl,
-  shouldBypassCache: shouldBypassIndexCache,
-  onPending: () => {
-    setStatus('正在加载索引...', { visible: false });
-  },
-  onResolved: (data) => {
-    indexHay = new Map(
-      data
-        .map((item) => [
-          getIndexKey(item),
-          buildSearchHaystack([item.title, item.description, item.tags, item.text])
-        ] as const)
-        .filter(([key]) => key !== '')
-    );
-    remoteIndexItems.forEach((item) => {
-      const key = getIndexKey(item);
-      if (key && !indexHay?.has(key)) {
-        indexHay?.set(key, buildSearchHaystack([item.title, item.description, item.tags, item.text]));
-      }
-    });
-    setStatus('');
-  },
-  onRejected: () => {
-    setDegradedMode();
-  }
-});
-
-const loadIndex = () => indexLoader.load();
-
-const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
-  if (!input) return;
-  filterRunner.cancel();
-
-  const runId = ++filterRunId;
-  const rawQuery = getTrimmedQuery();
-  const queryTerms = tokenizeSearchQuery(rawQuery);
-  const normalizedQuery = rawQuery.toLowerCase();
-
-  if (rawQuery === '' && activeYear === null) {
+    setActiveYearState(null);
     showBrowse();
     setStatus('');
     syncUrlState('', null);
-    return;
-  }
-
-  const baseIndex = preloadedIndex ?? (await loadIndex());
-  if (runId !== filterRunId || getNormalizedQuery() !== normalizedQuery) {
-    return;
-  }
-  if (!baseIndex || !indexHay) {
-    showBrowse();
-    return;
-  }
-
-  syncUrlState(rawQuery, activeYear);
-
-  const sourceIndex = activeTab === 'remote' ? remoteIndexItems : mergeIndexItems([...baseIndex]);
-  const matchedItems = filterIndexItems(sourceIndex, queryTerms, activeYear);
-  if (matchedItems.length === 0) {
-    showBrowse();
-    if (resultsRoot && resultsListEl) {
-      if (resultsSummaryEl) {
-        resultsSummaryEl.textContent = '无匹配结果';
-      }
-      resultsListEl.innerHTML = `<p class="bits-search-results__empty">${escapeHtml(getEmptyResultsText(rawQuery, activeYear))}</p>`;
-      browseRoot?.setAttribute('hidden', 'true');
-      resultsRoot.removeAttribute('hidden');
+    if (options.focusInput) {
+      input?.focus();
     }
-    setStatus('');
-    return;
-  }
+  };
 
-  renderResults(matchedItems);
-  setStatus('');
-};
+  const setDegradedMode = () => {
+    if (input) {
+      input.placeholder = '索引加载失败';
+      input.disabled = true;
+      input.setAttribute('aria-disabled', 'true');
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.setAttribute('aria-disabled', 'true');
+    }
+    yearButtons.forEach((button) => {
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('disabled', 'true');
+    });
+    yearMoreTrigger?.setAttribute('aria-disabled', 'true');
+    yearMoreTrigger?.setAttribute('disabled', 'true');
+    yearMenuButtons.forEach((button) => {
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('disabled', 'true');
+    });
+    if (yearSelect) {
+      yearSelect.disabled = true;
+      yearSelect.setAttribute('aria-disabled', 'true');
+    }
+    yearSelectWrap?.setAttribute('data-disabled', 'true');
+    closeMoreMenu();
+    setStatus('索引加载失败，已禁用搜索');
+    showBrowse();
+  };
 
-input?.addEventListener('focus', () => {
-  void loadIndex();
-});
-
-input?.addEventListener('input', () => {
-  scheduleApplyFilter();
-});
-
-input?.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    resetFilters({ focusInput: true });
-    return;
-  }
-  if (event.key !== 'ArrowDown' || !isResultsVisible()) return;
-  const firstResultLink = getFirstResultLink();
-  if (!firstResultLink) return;
-  event.preventDefault();
-  firstResultLink.focus();
-});
-
-form?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  void applyFilter();
-});
-
-clearBtn?.addEventListener('click', () => {
-  resetFilters({ focusInput: true });
-});
-
-resultsListEl?.addEventListener('click', (event) => {
-  const target = event.target as HTMLElement | null;
-  const link = target?.closest<HTMLAnchorElement>('a[href]');
-  if (!link) return;
-
-  const nextUrl = new URL(link.href, window.location.href);
-  const currentUrl = new URL(window.location.href);
-  if (nextUrl.pathname !== currentUrl.pathname) {
-    return;
-  }
-
-  event.preventDefault();
-  resetFilters();
-
-  if (!nextUrl.hash) return;
-  const targetEl = document.getElementById(nextUrl.hash.slice(1));
-  if (!targetEl) {
-    window.location.hash = nextUrl.hash;
-    return;
-  }
-
-  const basePath = getFilterUrl('', null);
-  window.history.replaceState({}, '', basePath);
-  window.requestAnimationFrame(() => {
-    window.location.hash = nextUrl.hash;
-    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const indexLoader = createJsonIndexLoader<IndexItem>({
+    url: indexUrl,
+    shouldBypassCache: shouldBypassIndexCache,
+    onPending: () => {
+      setStatus('正在加载索引...', { visible: false });
+    },
+    onResolved: (data) => {
+      indexHay = new Map(
+        data
+          .map((item) => [
+            getIndexKey(item),
+            buildSearchHaystack([item.title, item.description, item.tags, item.text])
+          ] as const)
+          .filter(([key]) => key !== '')
+      );
+      remoteIndexItems.forEach((item) => {
+        const key = getIndexKey(item);
+        if (key && !indexHay?.has(key)) {
+          indexHay?.set(key, buildSearchHaystack([item.title, item.description, item.tags, item.text]));
+        }
+      });
+      setStatus('');
+    },
+    onRejected: () => {
+      setDegradedMode();
+    }
   });
-});
 
-resultsListEl?.addEventListener('keydown', (event) => {
-  if (event.key !== 'ArrowUp') return;
-  const target = event.target as HTMLElement | null;
-  const currentLink = target?.closest<HTMLAnchorElement>('.bit-search-result__link');
-  const firstResultLink = getFirstResultLink();
-  if (!currentLink || !firstResultLink || currentLink !== firstResultLink) return;
-  event.preventDefault();
-  input?.focus();
-});
+  const loadIndex = () => indexLoader.load();
 
-yearButtons.forEach((button) => {
-  button.addEventListener('click', async () => {
-    const year = getYearButtonValue(button);
-    if (button.dataset.bitsYear !== '' && year === null) return;
-    if (indexLoader.hasFailed() || activeYear === year) return;
+  const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
+    if (!input) return;
+    filterRunner.cancel();
+
+    const runId = ++filterRunId;
+    const rawQuery = getTrimmedQuery();
+    const queryTerms = tokenizeSearchQuery(rawQuery);
+    const normalizedQuery = rawQuery.toLowerCase();
+
+    if (rawQuery === '' && activeYear === null) {
+      showBrowse();
+      setStatus('');
+      syncUrlState('', null);
+      return;
+    }
+
+    const baseIndex = preloadedIndex ?? (await loadIndex());
+    if (runId !== filterRunId || getNormalizedQuery() !== normalizedQuery) {
+      return;
+    }
+    if (!baseIndex || !indexHay) {
+      showBrowse();
+      return;
+    }
+
+    syncUrlState(rawQuery, activeYear);
+
+    const sourceIndex = activeTab === 'remote' ? remoteIndexItems : mergeIndexItems([...baseIndex]);
+    const matchedItems = filterIndexItems(sourceIndex, queryTerms, activeYear);
+    if (matchedItems.length === 0) {
+      showBrowse();
+      if (resultsRoot && resultsListEl) {
+        if (resultsSummaryEl) {
+          resultsSummaryEl.textContent = '无匹配结果';
+        }
+        resultsListEl.innerHTML = `<p class="bits-search-results__empty">${escapeHtml(getEmptyResultsText(rawQuery, activeYear))}</p>`;
+        browseRoot?.setAttribute('hidden', 'true');
+        resultsRoot.removeAttribute('hidden');
+      }
+      setStatus('');
+      return;
+    }
+
+    renderResults(matchedItems);
+    setStatus('');
+  };
+
+  input?.addEventListener('focus', () => {
+    void loadIndex();
+  });
+
+  input?.addEventListener('input', () => {
+    scheduleApplyFilter();
+  });
+
+  input?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      resetFilters({ focusInput: true });
+      return;
+    }
+    if (event.key !== 'ArrowDown' || !isResultsVisible()) return;
+    const firstResultLink = getFirstResultLink();
+    if (!firstResultLink) return;
+    event.preventDefault();
+    firstResultLink.focus();
+  });
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void applyFilter();
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    resetFilters({ focusInput: true });
+  });
+
+  resultsListEl?.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const link = target?.closest<HTMLAnchorElement>('a[href]');
+    if (!link) return;
+
+    const nextUrl = new URL(link.href, window.location.href);
+    const currentUrl = new URL(window.location.href);
+    if (nextUrl.pathname !== currentUrl.pathname) {
+      return;
+    }
+
+    event.preventDefault();
+    resetFilters();
+
+    if (!nextUrl.hash) return;
+    const targetEl = document.getElementById(nextUrl.hash.slice(1));
+    if (!targetEl) {
+      window.location.hash = nextUrl.hash;
+      return;
+    }
+
+    const basePath = getFilterUrl('', null);
+    window.history.replaceState({}, '', basePath);
+    window.requestAnimationFrame(() => {
+      window.location.hash = nextUrl.hash;
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  resultsListEl?.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowUp') return;
+    const target = event.target as HTMLElement | null;
+    const currentLink = target?.closest<HTMLAnchorElement>('.bit-search-result__link');
+    const firstResultLink = getFirstResultLink();
+    if (!currentLink || !firstResultLink || currentLink !== firstResultLink) return;
+    event.preventDefault();
+    input?.focus();
+  });
+
+  yearButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const year = getYearButtonValue(button);
+      if (button.dataset.bitsYear !== '' && year === null) return;
+      if (indexLoader.hasFailed() || activeYear === year) return;
+
+      closeMoreMenu();
+      setActiveYearState(year);
+      await applyFilter();
+    });
+  });
+
+  yearMoreTrigger?.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (indexLoader.hasFailed()) return;
+    setMoreMenuOpen(!isMoreMenuOpen);
+  });
+
+  yearMoreTrigger?.addEventListener('keydown', (event) => {
+    if (indexLoader.hasFailed()) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setMoreMenuOpen(true);
+      (yearMenuButtons.find((button) => button.classList.contains('is-active')) ?? yearMenuButtons[0])?.focus();
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMoreMenu();
+      yearMoreTrigger.focus();
+    }
+  });
+
+  yearMenuButtons.forEach(bindYearMenuButton);
+
+  yearMenu?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMoreMenu();
+      yearMoreTrigger?.focus();
+      return;
+    }
+
+    const currentIndex = yearMenuButtons.findIndex((button) => button === document.activeElement);
+    if (currentIndex < 0) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'ArrowDown') {
+      nextIndex = currentIndex >= yearMenuButtons.length - 1 ? 0 : currentIndex + 1;
+    } else if (event.key === 'ArrowUp') {
+      nextIndex = currentIndex <= 0 ? yearMenuButtons.length - 1 : currentIndex - 1;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = yearMenuButtons.length - 1;
+    }
+
+    if (nextIndex === currentIndex) return;
+    event.preventDefault();
+    yearMenuButtons[nextIndex]?.focus();
+  });
+
+  yearSelect?.addEventListener('change', async () => {
+    if (indexLoader.hasFailed()) return;
+
+    const raw = yearSelect.value.trim();
+    const year = raw ? Number(raw) : null;
+    if (raw && !Number.isFinite(year)) return;
+    if (activeYear === year) return;
 
     closeMoreMenu();
     setActiveYearState(year);
     await applyFilter();
   });
-});
 
-yearMoreTrigger?.addEventListener('click', (event) => {
-  event.preventDefault();
-  if (indexLoader.hasFailed()) return;
-  setMoreMenuOpen(!isMoreMenuOpen);
-});
-
-yearMoreTrigger?.addEventListener('keydown', (event) => {
-  if (indexLoader.hasFailed()) return;
-  if (event.key === 'ArrowDown') {
-    event.preventDefault();
-    setMoreMenuOpen(true);
-    (yearMenuButtons.find((button) => button.classList.contains('is-active')) ?? yearMenuButtons[0])?.focus();
-    return;
-  }
-  if (event.key === 'Escape') {
-    event.preventDefault();
+  yearMoreRoot?.addEventListener('focusout', (event) => {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && yearMoreRoot.contains(nextTarget)) {
+      return;
+    }
     closeMoreMenu();
-    yearMoreTrigger.focus();
+  });
+
+  yearFilterRoot?.setAttribute('data-ready', 'true');
+
+  const initialState = readInitialState();
+  if (input && initialState.query) {
+    input.value = initialState.query;
   }
-});
+  setActiveYearState(initialState.year);
+  syncUrlState(initialState.query, initialState.year);
 
-yearMenuButtons.forEach(bindYearMenuButton);
-
-yearMenu?.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    closeMoreMenu();
-    yearMoreTrigger?.focus();
-    return;
-  }
-
-  const currentIndex = yearMenuButtons.findIndex((button) => button === document.activeElement);
-  if (currentIndex < 0) return;
-
-  let nextIndex = currentIndex;
-  if (event.key === 'ArrowDown') {
-    nextIndex = currentIndex >= yearMenuButtons.length - 1 ? 0 : currentIndex + 1;
-  } else if (event.key === 'ArrowUp') {
-    nextIndex = currentIndex <= 0 ? yearMenuButtons.length - 1 : currentIndex - 1;
-  } else if (event.key === 'Home') {
-    nextIndex = 0;
-  } else if (event.key === 'End') {
-    nextIndex = yearMenuButtons.length - 1;
+  if (initialState.query || initialState.year !== null) {
+    void applyFilter();
   }
 
-  if (nextIndex === currentIndex) return;
-  event.preventDefault();
-  yearMenuButtons[nextIndex]?.focus();
-});
+  controller = {
+    handleRemoteLoaded: (items) => {
+      remoteIndexItems = items;
+      refreshAvailableYears(remoteIndexItems);
+      if (indexHay) {
+        remoteIndexItems.forEach((item) => {
+          const key = getIndexKey(item);
+          if (key && !indexHay?.has(key)) {
+            indexHay?.set(key, buildSearchHaystack([item.title, item.description, item.tags, item.text]));
+          }
+        });
+      }
+      if (input && (getTrimmedQuery() || activeYear !== null)) void applyFilter();
+    },
+    handleTabChanged: (tab) => {
+      activeTab = tab;
+      if (input && (getTrimmedQuery() || activeYear !== null)) void applyFilter();
+    },
+    handleOutsidePointerDown: (target) => {
+      if (!isMoreMenuOpen || !yearMoreRoot) return;
+      if (target instanceof Node && yearMoreRoot.contains(target)) return;
+      closeMoreMenu();
+    },
+    closeMoreMenu,
+    updateYearCursor
+  };
+};
 
-yearSelect?.addEventListener('change', async () => {
-  if (indexLoader.hasFailed()) return;
+if (typeof window !== 'undefined') {
+  // window/document 级监听器模块顶层只绑一次,转发给当前页面的搜索控制器,
+  // swup 导航后由 init 重新查询并替换 controller。
+  window.addEventListener('bits:remote-loaded', (event) => {
+    const detail = (event as CustomEvent<{ items?: IndexItem[] }>).detail;
+    const items = Array.isArray(detail?.items) ? detail.items : [];
+    controller?.handleRemoteLoaded(items);
+  });
 
-  const raw = yearSelect.value.trim();
-  const year = raw ? Number(raw) : null;
-  if (raw && !Number.isFinite(year)) return;
-  if (activeYear === year) return;
+  window.addEventListener('bits:tab-changed', ((event: CustomEvent<{ tab: ActiveTab }>) => {
+    controller?.handleTabChanged(event.detail.tab);
+  }) as EventListener);
 
-  closeMoreMenu();
-  setActiveYearState(year);
-  await applyFilter();
-});
+  document.addEventListener('pointerdown', (event) => {
+    controller?.handleOutsidePointerDown(event.target);
+  });
 
-yearMoreRoot?.addEventListener('focusout', (event) => {
-  const nextTarget = event.relatedTarget;
-  if (nextTarget instanceof Node && yearMoreRoot.contains(nextTarget)) {
-    return;
-  }
-  closeMoreMenu();
-});
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    controller?.closeMoreMenu();
+  });
 
-document.addEventListener('pointerdown', (event) => {
-  if (!isMoreMenuOpen || !yearMoreRoot) return;
-  const target = event.target;
-  if (target instanceof Node && yearMoreRoot.contains(target)) return;
-  closeMoreMenu();
-});
+  window.addEventListener('resize', () => {
+    if (!controller) return;
+    controller.closeMoreMenu();
+    controller.updateYearCursor();
+  });
 
-document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  closeMoreMenu();
-});
-
-window.addEventListener('resize', () => {
-  closeMoreMenu();
-  updateYearCursor();
-});
-
-yearFilterRoot?.setAttribute('data-ready', 'true');
-
-const initialState = readInitialState();
-if (input && initialState.query) {
-  input.value = initialState.query;
-}
-setActiveYearState(initialState.year);
-syncUrlState(initialState.query, initialState.year);
-
-if (initialState.query || initialState.year !== null) {
-  void applyFilter();
+  onPageChange(initBitsSearch);
 }

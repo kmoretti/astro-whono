@@ -6,6 +6,7 @@ import {
   createWithBase,
   tokenizeSearchQuery
 } from '../utils/format';
+import { onPageChange } from './page-controllers';
 
 type IndexItem = {
   slug: string;
@@ -21,14 +22,24 @@ type PageItem = {
   slug: string;
 };
 
-const root = document.querySelector<HTMLElement>('[data-entry-filters]');
 const FILTER_DEBOUNCE_MS = 120;
 const HOVER_PREVIEW_CLOSE_DELAY_MS = 48;
 const HOVER_PREVIEW_MEDIA_QUERY = '(hover: hover) and (pointer: fine)';
 
-if (!root) {
-  // Current page does not use entry search / tags.
-} else {
+type EntrySearchController = {
+  handleOutsideClick: (target: Node) => void;
+};
+
+let controller: EntrySearchController | null = null;
+
+const initEntrySearch = () => {
+  const root = document.querySelector<HTMLElement>('[data-entry-filters]');
+  if (!root) {
+    // Current page does not use entry search / tags.
+    controller = null;
+    return;
+  }
+
   const searchRoot = root.querySelector<HTMLElement>('[data-entry-search]');
   const input = searchRoot?.querySelector<HTMLInputElement>('[data-entry-search-input]') ?? null;
   const toggleBtn = searchRoot?.querySelector<HTMLButtonElement>('[data-entry-search-toggle]') ?? null;
@@ -439,16 +450,6 @@ if (!root) {
   searchRoot?.addEventListener('pointerenter', handleHoverPreviewEnter);
   searchRoot?.addEventListener('pointerleave', handleHoverPreviewLeave);
 
-  document.addEventListener('click', (event) => {
-    const target = event.target as Node | null;
-    if (!target) return;
-    if (!isSearchOpen()) return;
-    if (indexLoader.hasFailed()) return;
-    if (searchRoot?.contains(target)) return;
-    if (hasSearchValue()) return;
-    closeSearch();
-  });
-
   tagTrigger?.addEventListener('click', (event) => {
     event.preventDefault();
     openTagDialog();
@@ -480,4 +481,25 @@ if (!root) {
     }
     removePickerParam();
   }
+
+  controller = {
+    handleOutsideClick: (target: Node) => {
+      if (!isSearchOpen()) return;
+      if (indexLoader.hasFailed()) return;
+      if (searchRoot?.contains(target)) return;
+      if (hasSearchValue()) return;
+      closeSearch();
+    }
+  };
+};
+
+if (typeof window !== 'undefined') {
+  // document 级监听器模块顶层只绑一次,转发给当前页面的搜索控制器,
+  // swup 导航后由 init 重新查询并替换 controller。
+  document.addEventListener('click', (event) => {
+    const target = event.target as Node | null;
+    if (target) controller?.handleOutsideClick(target);
+  });
+
+  onPageChange(initEntrySearch);
 }

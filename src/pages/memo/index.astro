@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import UiIcon from '../../components/UiIcon.astro';
 import Lightbox from '../../components/Lightbox.astro';
+import GiscusComments from '../../components/GiscusComments.astro';
 import '../../styles/article.css';
 import '../../styles/memo.css';
 import { getEntry, render } from 'astro:content';
@@ -30,11 +31,8 @@ if (prod && entry.data.draft) {
   throw new Error('Memo entry is marked draft...');
 }
 
-const {
-  settings: {
-    page
-  }
-} = getThemeSettings();
+const { settings } = getThemeSettings();
+const { page } = settings;
 const { headings } = await render(entry);
 const memoTitle = page.memo.title ?? entry.data.title ?? DEFAULT_MEMO_TITLE;
 const memoSubtitle = page.memo.subtitle ?? entry.data.subtitle ?? DEFAULT_MEMO_SUBTITLE;
@@ -68,6 +66,7 @@ const groups = buildMemoTocGroups(headings);
   title={memoTitle}
   description="整理一些值得留存的片刻与回忆。"
   bodyClass="memo-page immersive-page"
+  actionCapabilities={{ comments: settings.comments.enabled, reading: true }}
 >
   {hasMath ? (
     <link
@@ -130,24 +129,7 @@ const groups = buildMemoTocGroups(headings);
     <MemoBodyContent />
   </div>
 
-  <script is:inline>
-    (() => {
-      const mq = window.matchMedia('(max-width: 640px)');
-      const sync = () => {
-        if (mq.matches) {
-          document.querySelectorAll('.memo-toc details[open]').forEach((el) => {
-            el.removeAttribute('open');
-          });
-        } else {
-          document.querySelectorAll('.memo-toc details:not([open])').forEach((el) => {
-            el.setAttribute('open', '');
-          });
-        }
-      };
-      sync();
-      mq.addEventListener('change', sync);
-    })();
-  </script>
+  <GiscusComments />
 
   <Lightbox
     id="lightbox"
@@ -156,19 +138,4 @@ const groups = buildMemoTocGroups(headings);
     enablePan={false}
     enableSwipeDownClose={false}
   />
-
-  <script>
-    import { initArticleLightbox, initCodeCopyButtons } from '../../scripts/lightbox';
-    import { applyMemoHeadingNumbers } from '../../scripts/memo-heading-numbers';
-
-    applyMemoHeadingNumbers(document.querySelector('.memo-content'));
-    initCodeCopyButtons();
-    initArticleLightbox({
-      dialogId: 'lightbox',
-      containerSelector: '.memo-page .content__inner',
-      enableZoom: false,
-      enablePan: false,
-      enableSwipeDownClose: false
-    });
-  </script>
 </BaseLayout>

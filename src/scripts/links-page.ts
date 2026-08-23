@@ -18,11 +18,13 @@ import {
   type NormalizedLinkGroup,
   type NormalizedLinkItem
 } from '../lib/links-data';
+import { onPageChange } from './page-controllers';
 
-const root = document.querySelector<HTMLElement>('[data-links-root]');
-if (!root) {
-  // The module is loaded only by the links route, but keep it harmless if bundled elsewhere.
-} else {
+const initLinksPage = () => {
+  const root = document.querySelector<HTMLElement>('[data-links-root]');
+  // The module is now loaded site-wide via BaseLayout, keep it harmless if bundled elsewhere.
+  if (!root) return;
+
   const statusEl = root.querySelector<HTMLElement>('[data-links-status]');
   const summaryEl = root.querySelector<HTMLElement>('[data-links-summary]');
   const filtersEl = root.querySelector<HTMLElement>('[data-links-filters]');
@@ -418,4 +420,6 @@ if (!root) {
     void fetchData();
   });
   load();
-}
+};
+
+if (typeof window !== 'undefined') onPageChange(initLinksPage);

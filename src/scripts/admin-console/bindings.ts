@@ -349,46 +349,53 @@ export const bindAdminThemeNavigationGuard = ({
   uiState
 }: {
   uiState: AdminThemeUiState;
-}): void => {
-  document.addEventListener(
-    'click',
-    (event) => {
-      if (!uiState.isDirty()) return;
-      if (!(event.target instanceof Element)) return;
+}): (() => void) => {
+  // 捕获阶段的 document click:先于 swup 的链接拦截,脏状态确认逻辑对
+  // 整页导航与 swup 无刷新导航同时生效。
+  const handleDocumentClick = (event: MouseEvent) => {
+    if (!uiState.isDirty()) return;
+    if (!(event.target instanceof Element)) return;
 
-      const anchor = event.target.closest('a[href]');
-      if (!(anchor instanceof HTMLAnchorElement)) return;
+    const anchor = event.target.closest('a[href]');
+    if (!(anchor instanceof HTMLAnchorElement)) return;
 
-      if (
-        !shouldGuardAdminNavigation({
-          isDirty: uiState.isDirty(),
-          currentUrl: window.location.href,
-          nextUrl: anchor.href,
-          button: event.button,
-          metaKey: event.metaKey,
-          ctrlKey: event.ctrlKey,
-          shiftKey: event.shiftKey,
-          altKey: event.altKey,
-          target: anchor.target,
-          download: anchor.hasAttribute('download')
-        })
-      ) {
-        return;
-      }
+    if (
+      !shouldGuardAdminNavigation({
+        isDirty: uiState.isDirty(),
+        currentUrl: window.location.href,
+        nextUrl: anchor.href,
+        button: event.button,
+        metaKey: event.metaKey,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        target: anchor.target,
+        download: anchor.hasAttribute('download')
+      })
+    ) {
+      return;
+    }
 
-      const confirmed = window.confirm('当前有未保存更改，确定要离开此页吗？');
-      if (confirmed) return;
+    const confirmed = window.confirm('当前有未保存更改，确定要离开此页吗？');
+    if (confirmed) return;
 
-      event.preventDefault();
-      event.stopPropagation();
-      uiState.setStatus('warn', '已取消页面切换，请先保存或重置当前更改', { announce: false });
-    },
-    true
-  );
+    event.preventDefault();
+    event.stopPropagation();
+    uiState.setStatus('warn', '已取消页面切换，请先保存或重置当前更改', { announce: false });
+  };
 
-  window.addEventListener('beforeunload', (event) => {
+  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
     if (!uiState.isDirty()) return;
     event.preventDefault();
     Reflect.set(event, 'returnValue', '');
-  });
+  };
+
+  document.addEventListener('click', handleDocumentClick, true);
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
+  // swup 重初始化前由入口调用,避免 document/window 监听跨页面累积。
+  return () => {
+    document.removeEventListener('click', handleDocumentClick, true);
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+  };
 };

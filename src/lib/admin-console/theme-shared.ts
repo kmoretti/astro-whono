@@ -781,6 +781,18 @@ export const canonicalizeAdminThemeSettings = (
       readingMode: {
         showEntry: Boolean(isRecord(ui.readingMode) ? ui.readingMode.showEntry : false)
       },
+      background: {
+        starry: (() => {
+          const rawStarry = isRecord(ui.background) ? ui.background.starry : undefined;
+          return typeof rawStarry === 'boolean' ? rawStarry : true;
+        })()
+      },
+      transitions: {
+        swup: (() => {
+          const rawSwup = isRecord(ui.transitions) ? ui.transitions.swup : undefined;
+          return typeof rawSwup === 'boolean' ? rawSwup : true;
+        })()
+      },
       sidebarActions: {
         showRssLink: typeof rawUiSidebarActions.showRssLink === 'boolean' ? rawUiSidebarActions.showRssLink : true,
         showThemeToggle: typeof rawUiSidebarActions.showThemeToggle === 'boolean'
@@ -875,6 +887,8 @@ export const createAdminWritableThemeSettingsGroups = (
     sidebarActions: { ...settings.ui.sidebarActions },
     articleMeta: { ...settings.ui.articleMeta },
     layout: { ...settings.ui.layout },
+    background: { ...settings.ui.background },
+    transitions: { ...settings.ui.transitions },
     typography: { ...settings.ui.typography }
   }
 });
@@ -1638,6 +1652,8 @@ const fillAdminThemeSettingsSiteCompatibilityDefaults = (
 /* ui.* 分组兼容回填的字段表：新增分组只需在此登记，不再复制合并块。 */
 const UI_COMPATIBILITY_GROUP_FIELDS: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['sidebarActions', ['showRssLink', 'showThemeToggle', 'showAdminEntry']],
+  ['background', ['starry']],
+  ['transitions', ['swup']],
   ['typography', ['readable', 'copy', 'mono', 'brand']]
 ];
 
