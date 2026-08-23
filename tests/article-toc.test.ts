@@ -4,6 +4,7 @@ import { getActiveHeadingId, getScrollBehavior } from '../src/scripts/article-to
 
 const articleLayoutSource = await readFile(new URL('../src/layouts/ArticleLayout.astro', import.meta.url), 'utf8');
 const articleTocSource = await readFile(new URL('../src/scripts/article-toc.ts', import.meta.url), 'utf8');
+const articleCssSource = await readFile(new URL('../src/styles/article.css', import.meta.url), 'utf8');
 
 describe('article toc helpers', () => {
   it('selects the heading nearest the reading offset', () => {
@@ -29,6 +30,11 @@ describe('article toc helpers', () => {
     expect(articleLayoutSource).toContain('aria-controls="article-toc-panel"');
     expect(articleLayoutSource).toContain('<nav id="article-toc-panel"');
     expect(articleLayoutSource).toContain('aria-label="文章目录"');
+  });
+
+  it('keeps the mobile toc panel flush with the viewport edge in both reading modes', () => {
+    expect(articleCssSource).toMatch(/@media \(max-width: 640px\)[\s\S]*?\.article-toc-float__panel\s*\{[\s\S]*?right:\s*0;/);
+    expect(articleCssSource).toMatch(/body\.immersive-page\[data-reading="immersive"\] \.article-toc-float__panel\s*\{[\s\S]*?right:\s*0;/);
   });
 
   it('renders toc links as heading anchors with a false initial current state', () => {
