@@ -53,4 +53,20 @@ const commentsConfig = getComments();
     margin: 0;
     color: var(--muted);
   }
+
+  .giscus-comments__frame {
+    /* 宽度 100% 确保 iframe 撑满容器 */
+    width: 100%;
+    /* 最小占位高度，避免加载前布局跳动 */
+    min-height: 300px;
+  }
+
+  /* giscus iframe 由 giscus 客户端 script 注入，用 :global 选择器穿透 scoped style */
+  :global(.giscus-frame) {
+    width: 100% !important;
+    border: 0;
+    display: block;
+    /* giscus 在 SPA 客服端脚本切换后 iframe 高度可能被低估，设置兜底高度避免过度挤压 */
+    min-height: 420px;
+  }
 </style>
