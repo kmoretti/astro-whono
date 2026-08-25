@@ -288,6 +288,18 @@ export const createValidation = ({
         return () => inputLinksVoteApiBase;
       case 'links.voteEnabled':
         return () => inputLinksVoteEnabled;
+      case 'links.voteApiBase':
+        return () => inputLinksVoteApiBase;
+      case 'links.voteEnabled':
+        return () => inputLinksVoteEnabled;
+      case 'links.voteApiBase':
+        return () => inputLinksVoteApiBase;
+      case 'links.voteEnabled':
+        return () => inputLinksVoteEnabled;
+      case 'links.voteApiBase':
+        return () => inputLinksVoteApiBase;
+      case 'links.voteEnabled':
+        return () => inputLinksVoteEnabled;
       case 'shell.brandTitle':
         return () => inputShellBrandTitle;
       case 'shell.quote':

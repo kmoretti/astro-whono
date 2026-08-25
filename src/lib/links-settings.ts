@@ -11,8 +11,8 @@ export interface LinksSettings {
   ech0PageSize: number;
   ech0MaxPages: number;
   ech0ShowError: boolean;
-  voteApiBase: string;
-  voteEnabled: boolean;
+  voteApiBase: string; // base URL for star-vote API
+  voteEnabled: boolean; // enable vote widget globally
 }
 
 export const DEFAULT_LINKS_SETTINGS: LinksSettings = {

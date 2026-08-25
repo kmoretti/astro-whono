@@ -16,6 +16,7 @@ export type AdminIconName =
   | 'eye'
   | 'funnel'
   | 'grid-tiles'
+  | 'heart'
   | 'info'
   | 'images'
   | 'layers'

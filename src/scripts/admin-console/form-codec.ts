@@ -135,7 +135,7 @@ type FormCodecContext = {
   inputLinksEch0PageSize: HTMLInputElement;
   inputLinksEch0MaxPages: HTMLInputElement;
   inputLinksEch0ShowError: HTMLInputElement;
-  inputLinksVoteApiBase: HTMLInputElement;
+    inputLinksVoteApiBase: HTMLInputElement;
   inputLinksVoteEnabled: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
@@ -833,6 +833,8 @@ export const createFormCodec = ({
     inputLinksEch0PageSize.value = String(settings.links?.ech0PageSize ?? 10);
     inputLinksEch0MaxPages.value = String(settings.links?.ech0MaxPages ?? 3);
     inputLinksEch0ShowError.checked = settings.links?.ech0ShowError !== false;
+    inputLinksVoteApiBase.value = settings.links?.voteApiBase || '';
+    inputLinksVoteEnabled.checked = settings.links?.voteEnabled !== false;
     inputLinksVoteApiBase.value = settings.links?.voteApiBase || '';
     inputLinksVoteEnabled.checked = settings.links?.voteEnabled !== false;
     inputCommentsEnabled.checked = settings.comments?.enabled !== false;
