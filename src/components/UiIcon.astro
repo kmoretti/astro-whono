@@ -25,6 +25,12 @@ import SquareArrowRightExit from '@lucide/astro/icons/square-arrow-right-exit';
 import Sun from '@lucide/astro/icons/sun';
 import SunMoon from '@lucide/astro/icons/sun-moon';
 import Tag from '@lucide/astro/icons/tag';
+import Heart from '@lucide/astro/icons/heart';
+import Cloud from '@lucide/astro/icons/cloud';
+import Twitter from '@lucide/astro/icons/x';
+import Share2 from '@lucide/astro/icons/share-2';
+import QrCode from '@lucide/astro/icons/qr-code';
+import Copyright from '@lucide/astro/icons/copyright';
 
 type UiIconName =
   | 'bold'
@@ -50,7 +56,13 @@ type UiIconName =
   | 'sun'
   | 'sun-moon'
   | 'tag'
-  | 'user-circle';
+  | 'user-circle'
+  | 'heart'
+  | 'cloud'
+  | 'twitter'
+  | 'share-2'
+  | 'qr-code'
+  | 'copyright';
 
 interface Props {
   name: UiIconName;
@@ -92,7 +104,13 @@ const uiIconComponents = {
   sun: Sun,
   'sun-moon': SunMoon,
   tag: Tag,
-  'user-circle': CircleUserRound
+  'user-circle': CircleUserRound,
+  heart: Heart,
+  cloud: Cloud,
+  twitter: Twitter,
+  'share-2': Share2,
+  'qr-code': QrCode,
+  copyright: Copyright
 } as const satisfies Record<UiIconName, AstroComponent>;
 
 const IconComponent = uiIconComponents[name];

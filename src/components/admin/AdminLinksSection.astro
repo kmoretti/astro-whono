@@ -42,6 +42,31 @@ import AdminIcon from './AdminIcon.astro';
 
 <fieldset class="admin-group">
   <legend class="admin-group__legend">
+    <AdminIcon name="activity" class="admin-group__legend-icon" size={14} />
+    <span class="admin-group__legend-copy">
+      <span class="admin-group__legend-zh">絮语点赞投票</span>
+      <span class="admin-group__legend-en">Vote</span>
+    </span>
+  </legend>
+  <div class="admin-grid">
+    <label class="admin-field admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">投票 API 地址</span>
+        <span class="admin-label__hint">（star-vote 服务根地址，仅允许 HTTPS）</span>
+      </span>
+      <input class="admin-field__control" id="links-vote-api-base" type="url" inputmode="url" autocomplete="off" required />
+    </label>
+    <label class="admin-toggle admin-field--full">
+      <span class="admin-label">
+        <span class="admin-label__main">启用点赞投票</span>
+        <span class="admin-label__hint">（在絮语卡片上显示 赞/踩 按钮）</span></span>
+      <span class="admin-toggle__control"><input id="links-vote-enabled" type="checkbox" /></span>
+    </label>
+  </div>
+</fieldset>
+
+<fieldset class="admin-group">
+  <legend class="admin-group__legend">
     <AdminIcon name="link" class="admin-group__legend-icon" size={14} />
     <span class="admin-group__legend-copy">
       <span class="admin-group__legend-zh">友链设置</span>

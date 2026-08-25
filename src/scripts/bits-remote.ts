@@ -183,6 +183,8 @@ const initBitsRemote = async () => {
   const sourceUrl = config.bitsRemoteSourceUrl || '';
   const authorName = config.bitsAuthorName || '远程絮语';
   const authorAvatar = config.bitsAuthorAvatar || '';
+  const voteEnabled = config.bitsVoteEnabled === 'true';
+  const voteApiBase = config.bitsVoteApiBase || '';
 
   const render = async (items: Ech0NormalizedEcho[], seenKeys: Set<string>) => {
     const localKeys = new Set(Array.from((localList ?? remoteList).querySelectorAll<HTMLElement>('[data-bit]:not([data-bit-remote])')).map(getLocalDedupeKey).filter(Boolean));
@@ -203,7 +205,10 @@ const initBitsRemote = async () => {
       article.dataset.bitRemoteTags = item.tagNames.join('|');
       article.dataset.bitRemoteYear = item.createdAt ? String(item.createdAt.getFullYear()) : '';
       const body = await markdown(item.content);
-      article.innerHTML = `<div class="bit-author"><div class="avatar${authorAvatar ? ' avatar--image' : ' is-fallback'}" aria-hidden="true">${authorAvatar ? `<img src="${escapeHtml(authorAvatar)}" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.parentElement?.classList.add('is-fallback'); this.remove();" />` : ''}<span class="avatar-fallback">${escapeHtml(Array.from(authorName)[0] || '远')}</span></div><div class="name">${escapeHtml(authorName)} <span class="bit-remote-source" data-source="ech0">${sourceLabel}</span></div></div><div class="bit-body">${body}</div>${extension(item)}<div class="bit-meta"><div class="bit-tags">${item.tagNames.map((tag) => `<span class="bit-tag bit-tag--normal">#${escapeHtml(tag)}</span>`).join('')}</div><time datetime="${escapeHtml(item.createdAtIso ?? '')}">${escapeHtml(dateLabel(item.createdAt))}</time></div>`;
+      const voteWidget = voteEnabled && voteApiBase
+        ? `<div class="bit-vote" data-bits-vote data-bits-vote-state="loading" aria-label="点赞反馈"><button class="bit-vote__btn bit-vote__btn--up" type="button" data-bits-vote-up aria-label="赞" aria-pressed="false"><svg class="bit-vote__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg><span class="bit-vote__count" data-bits-vote-count-up>0</span></button><button class="bit-vote__btn bit-vote__btn--down" type="button" data-bits-vote-down aria-label="踩" aria-pressed="false"><svg class="bit-vote__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M12 2.65l1.45 1.32C18.6 8.64 22 11.72 22 15.5c0 3.08-2.42 5.5-5.5 5.5-1.74 0-3.41-.81-4.5-2.09-1.09 1.28-2.76 2.09-4.5 2.09C4.42 21 2 18.58 2 15.5c0-3.78 3.4-6.86 8.55-11.54L12 2.65z" fill="currentColor"/></svg><span class="bit-vote__count" data-bits-vote-count-down>0</span></button></div>`
+        : '';
+      article.innerHTML = `<div class="bit-author"><div class="avatar${authorAvatar ? ' avatar--image' : ' is-fallback'}" aria-hidden="true">${authorAvatar ? `<img src="${escapeHtml(authorAvatar)}" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.parentElement?.classList.add('is-fallback'); this.remove();" />` : ''}<span class="avatar-fallback">${escapeHtml(Array.from(authorName)[0] || '远')}</span></div><div class="name">${escapeHtml(authorName)} <span class="bit-remote-source" data-source="ech0">${sourceLabel}</span></div></div><div class="bit-body">${body}</div>${extension(item)}<div class="bit-meta"><div class="bit-tags">${item.tagNames.map((tag) => `<span class="bit-tag bit-tag--normal">#${escapeHtml(tag)}</span>`).join('')}</div><time datetime="${escapeHtml(item.createdAtIso ?? '')}">${escapeHtml(dateLabel(item.createdAt))}</time>${voteWidget}</div>`;
       enhanceRemoteImages(article);
       fragment.append(article);
     }

@@ -12,6 +12,8 @@ import {
   MARKDOWN_MATH_STYLESHEET_ID
 } from '../lib/markdown-math-styles';
 import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '../lib/theme-settings';
+import ArticleCopyright from '../components/ArticleCopyright.astro';
+import ArticleSponsor from '../components/ArticleSponsor.astro';
 import { formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
 
@@ -163,6 +165,13 @@ const { settings } = getThemeSettings();
       </nav>
     </details>
   ) : null}
+  <ArticleCopyright
+    title={entry.data.title}
+    url={new URL(Astro.url.pathname, Astro.site).toString()}
+    author={settings.page.bits.defaultAuthor.name}
+    publishDate={entry.data.date?.toISOString()}
+  />
+  <ArticleSponsor />
   {(prev || next) ? (
     <nav class="prev-next" aria-label="上一篇/下一篇">
       <div class="prev-next__item">

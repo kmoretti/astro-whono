@@ -1,0 +1,147 @@
+---
+import UiIcon from './UiIcon.astro';
+
+interface Props {
+  title: string;
+  url: string;
+  author: string;
+  publishDate?: string | null;
+  licenseHref?: string;
+  licenseLabel?: string;
+  className?: string;
+}
+
+const {
+  title,
+  url,
+  author,
+  publishDate,
+  licenseHref = 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  licenseLabel = 'CC BY-NC-SA 4.0',
+  className = ''
+} = Astro.props as Props;
+
+const shareLinks = {
+  weibo: `http://service.weibo.com/share/share.php?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`,
+  x: `https://x.com/intent/post?text=${encodeURIComponent(title)}%0A${encodeURIComponent(url)}`,
+  bluesky: `https://bsky.app/intent/compose?text=${encodeURIComponent(title + '%0A' + url)}`
+} as const;
+
+const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}`;
+
+const shareConfigJson = JSON.stringify(shareLinks).replace(/</g, '\\u003C');
+const targetUrlJson = JSON.stringify(url).replace(/</g, '\\u003C');
+---
+
+<div class:list={['article-copyright', className]} role="region" aria-label="版权信息">
+  <div class="article-copyright__card">
+    <UiIcon class="article-copyright__watermark" name="copyright" size={64} />
+    <div class="article-copyright__header">
+      <div class="article-copyright__title">{title}</div>
+      <div class="article-copyright__url">{url}</div>
+    </div>
+
+    <div class="article-copyright__meta">
+      <div class="article-copyright__kv">
+        <span class="article-copyright__label">作者</span>
+        <span class="article-copyright__value">{author}</span>
+      </div>
+      {publishDate ? (
+        <div class="article-copyright__kv">
+          <span class="article-copyright__label">发布于</span>
+          <time class="article-copyright__value" datetime={publishDate}>
+            {new Date(publishDate).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </time>
+        </div>
+      ) : null}
+      <div class="article-copyright__kv">
+        <span class="article-copyright__label">许可</span>
+        <a class="article-copyright__value" href={licenseHref} target="_blank" rel="noreferrer noopener">
+          {licenseLabel}
+        </a>
+      </div>
+    </div>
+
+    <div class="article-copyright__actions">
+      <button class="article-copyright__action" type="button" data-action="copy-link" aria-label="复制链接" title="复制链接">
+        <UiIcon class="article-copyright__icon" name="link" ariaLabel="复制链接" />
+      </button>
+      <span class="article-copyright__tooltip" data-tooltip="copy-link" aria-hidden="true">已复制</span>
+      <button class="article-copyright__action" type="button" data-action="qr" aria-label="二维码" title="二维码">
+        <UiIcon class="article-copyright__icon" name="qr-code" ariaLabel="二维码" />
+      </button>
+      <button class="article-copyright__action" type="button" data-action="share-weibo" aria-label="分享到微博" title="分享到微博">
+        <UiIcon class="article-copyright__icon" name="share-2" ariaLabel="分享到微博" />
+      </button>
+      <button class="article-copyright__action" type="button" data-action="share-x" aria-label="分享到 X" title="分享到 X">
+        <UiIcon class="article-copyright__icon" name="twitter" ariaLabel="分享到 X" />
+      </button>
+      <button class="article-copyright__action" type="button" data-action="share-bluesky" aria-label="分享到 Bluesky" title="分享到 Bluesky">
+        <UiIcon class="article-copyright__icon" name="cloud" ariaLabel="分享到 Bluesky" />
+      </button>
+      <img class="article-copyright__qr" src={qrApi} alt="当前文章二维码" width="160" height="160" loading="lazy" decoding="async" />
+    </div>
+  </div>
+</div>
+
+<script is:inline type="application/json" data-share-config set:html={shareConfigJson}></script>
+<script is:inline type="application/json" data-target-url set:html={targetUrlJson}></script>
+
+<script>
+  (function () {
+    interface ShareConfig { weibo: string; x: string; bluesky: string; }
+    type ShareKey = keyof ShareConfig;
+    type ActionKey = 'copy-link' | 'qr' | `share-${ShareKey}`;
+
+    let shareLinks: ShareConfig = { weibo: '', x: '', bluesky: '' };
+    let targetUrl = '';
+
+    const ensureConfig = () => {
+      if (shareLinks.weibo) return;
+      const wrapper = document.querySelector<HTMLElement>('[data-share-config]');
+      const targetEl = document.querySelector<HTMLElement>('[data-target-url]');
+      try {
+        if (wrapper?.textContent) shareLinks = JSON.parse(wrapper.textContent);
+        if (targetEl?.textContent) targetUrl = JSON.parse(targetEl.textContent);
+      } catch {}
+    };
+
+    const openShare = (key: ShareKey) => {
+      const href = shareLinks[key];
+      if (!href) return;
+      window.open(href, '_blank', 'noopener,noreferrer');
+    };
+
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      const btn = target.closest<HTMLButtonElement>('.article-copyright__action[data-action]');
+      if (!btn) return;
+      ensureConfig();
+      const action = btn.dataset.action as ActionKey | undefined;
+      if (!action) return;
+
+      if (action === 'copy-link') {
+        void (async () => {
+          try { await navigator.clipboard.writeText(targetUrl || window.location.href); } catch { /* ignore */ }
+          const container = btn.closest('.article-copyright__actions');
+          const tip = container?.querySelector<HTMLElement>('[data-tooltip="copy-link"]');
+          tip?.classList.add('is-visible');
+          setTimeout(() => tip?.classList.remove('is-visible'), 1200);
+        })();
+        return;
+      }
+
+      if (action === 'qr') {
+        const container = btn.closest('.article-copyright__actions');
+        const qr = container?.querySelector<HTMLElement>('.article-copyright__qr');
+        qr?.classList.toggle('is-visible');
+        return;
+      }
+
+      if (action.startsWith('share-')) {
+        openShare(action.slice('share-'.length) as ShareKey);
+      }
+    });
+  })();
+</script>

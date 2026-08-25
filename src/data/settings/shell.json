@@ -7,41 +7,38 @@
       "label": "随笔",
       "ornament": "·",
       "order": 1,
-      "visible": true
+      "visible": true,
+      "children": []
     },
     {
       "id": "bits",
       "label": "絮语",
       "ornament": "·",
       "order": 2,
-      "visible": true
+      "visible": true,
+      "children": []
     },
     {
       "id": "memo",
       "label": "小记",
       "ornament": "·",
       "order": 3,
-      "visible": true
+      "visible": true,
+      "children": []
     },
     {
       "id": "archive",
       "label": "归档",
       "ornament": "·",
       "order": 4,
-      "visible": true
-    },
-    {
-      "id": "about",
-      "label": "关于",
-      "ornament": "·",
-      "order": 5,
-      "visible": true
+      "visible": true,
+      "children": []
     },
     {
       "id": "links",
       "label": "友链",
       "ornament": "·",
-      "order": 6,
+      "order": 5,
       "visible": true,
       "children": [
         {
@@ -66,6 +63,14 @@
           "order": 3
         }
       ]
+    },
+    {
+      "id": "about",
+      "label": "关于",
+      "ornament": "·",
+      "order": 6,
+      "visible": true,
+      "children": []
     }
   ]
 }

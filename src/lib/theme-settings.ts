@@ -151,6 +151,7 @@ export interface SiteAdminOverviewSettings {
 export type { SiteFaviconSlot } from '../utils/format';
 
 export interface SiteFaviconSettings {
+  ico: string | null;
   svg: string | null;
   png: string | null;
   appleTouchIcon: string | null;
@@ -308,6 +309,7 @@ export interface ThemeSettingsSources {
     footerCopyright: SettingSource;
     adminOverviewPublicVisible: SettingSource;
     adminOverviewHiddenMessage: SettingSource;
+    faviconIco: SettingSource;
     faviconSvg: SettingSource;
     faviconPng: SettingSource;
     faviconAppleTouchIcon: SettingSource;
@@ -365,6 +367,8 @@ export interface ThemeSettingsSources {
     ech0PageSize: SettingSource;
     ech0MaxPages: SettingSource;
     ech0ShowError: SettingSource;
+    voteApiBase: SettingSource;
+    voteEnabled: SettingSource;
   };
   comments: {
     enabled: SettingSource;
@@ -583,6 +587,7 @@ const DEFAULT_SITE: SiteSettings = {
     hiddenMessage: ADMIN_OVERVIEW_HIDDEN_MESSAGE_DEFAULT
   },
   favicon: {
+    ico: null,
     svg: null,
     png: null,
     appleTouchIcon: null
@@ -1463,6 +1468,8 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const ech0PageSize = resolveValue(typeof linksJson?.ech0PageSize === 'number' && Number.isInteger(linksJson.ech0PageSize) ? linksJson.ech0PageSize : undefined, undefined, DEFAULT_LINKS.ech0PageSize);
   const ech0MaxPages = resolveValue(typeof linksJson?.ech0MaxPages === 'number' && Number.isInteger(linksJson.ech0MaxPages) ? linksJson.ech0MaxPages : undefined, undefined, DEFAULT_LINKS.ech0MaxPages);
   const ech0ShowError = resolveValue(typeof linksJson?.ech0ShowError === 'boolean' ? linksJson.ech0ShowError : undefined, undefined, DEFAULT_LINKS.ech0ShowError);
+  const voteApiBase = resolveValue(asRequiredHttpsUrl(linksJson?.voteApiBase), undefined, DEFAULT_LINKS.voteApiBase);
+  const voteEnabled = resolveValue(typeof linksJson?.voteEnabled === 'boolean' ? linksJson.voteEnabled : undefined, undefined, DEFAULT_LINKS.voteEnabled);
 
   const title = resolveValue(
     asNonEmptyString(siteJson?.title),
@@ -1503,6 +1510,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     asSingleLineString(siteAdminOverviewJson?.hiddenMessage, ADMIN_OVERVIEW_HIDDEN_MESSAGE_MAX_LENGTH),
     undefined,
     DEFAULT_SITE.adminOverview.hiddenMessage
+  );
+  const faviconIco = resolveValue<string | null>(
+    asSiteFaviconPath('ico', siteFaviconJson?.ico),
+    undefined,
+    DEFAULT_SITE.favicon.ico
   );
   const faviconSvg = resolveValue<string | null>(
     asSiteFaviconPath('svg', siteFaviconJson?.svg),
@@ -1840,6 +1852,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
           hiddenMessage: adminOverviewHiddenMessage.value
         },
         favicon: {
+          ico: faviconIco.value,
           svg: faviconSvg.value,
           png: faviconPng.value,
           appleTouchIcon: faviconAppleTouchIcon.value
@@ -1912,7 +1925,9 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         ech0Enabled: ech0Enabled.value,
         ech0PageSize: ech0PageSize.value,
         ech0MaxPages: ech0MaxPages.value,
-        ech0ShowError: ech0ShowError.value
+        ech0ShowError: ech0ShowError.value,
+        voteApiBase: voteApiBase.value,
+        voteEnabled: voteEnabled.value
       },
       comments: {
         enabled: commentsEnabled.value,
@@ -1972,6 +1987,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         footerCopyright: footerCopyright.source,
         adminOverviewPublicVisible: adminOverviewPublicVisible.source,
         adminOverviewHiddenMessage: adminOverviewHiddenMessage.source,
+        faviconIco: faviconIco.source,
         faviconSvg: faviconSvg.source,
         faviconPng: faviconPng.source,
         faviconAppleTouchIcon: faviconAppleTouchIcon.source,
@@ -2028,7 +2044,9 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         ech0Enabled: ech0Enabled.source,
         ech0PageSize: ech0PageSize.source,
         ech0MaxPages: ech0MaxPages.source,
-        ech0ShowError: ech0ShowError.source
+        ech0ShowError: ech0ShowError.source,
+        voteApiBase: voteApiBase.source,
+        voteEnabled: voteEnabled.source
       },
       comments: {
         enabled: commentsEnabled.source,
@@ -2203,12 +2221,16 @@ const resolveRenderableFaviconPath = (value: string | null): string | null => {
 };
 
 export const getSiteFaviconLinks = (favicon: SiteFaviconSettings): SiteFaviconLink[] => {
+  const ico = resolveRenderableFaviconPath(favicon.ico);
   const svg = resolveRenderableFaviconPath(favicon.svg);
   const png = resolveRenderableFaviconPath(favicon.png);
   const appleTouchIcon = resolveRenderableFaviconPath(favicon.appleTouchIcon);
 
   const links: SiteFaviconLink[] = [];
-  if (!svg && !png) {
+  if (ico) {
+    links.push({ rel: 'icon', type: 'image/x-icon', sizes: 'any', href: ico });
+  }
+  if (!ico && !svg && !png) {
     links.push(
       { rel: 'icon', type: 'image/svg+xml', sizes: 'any', href: 'favicon.svg' },
       { rel: 'icon', type: 'image/png', sizes: '32x32', href: 'favicon-32x32.png' }

@@ -11,6 +11,8 @@ export interface LinksSettings {
   ech0PageSize: number;
   ech0MaxPages: number;
   ech0ShowError: boolean;
+  voteApiBase: string;
+  voteEnabled: boolean;
 }
 
 export const DEFAULT_LINKS_SETTINGS: LinksSettings = {
@@ -25,5 +27,7 @@ export const DEFAULT_LINKS_SETTINGS: LinksSettings = {
   ech0Enabled: true,
   ech0PageSize: 10,
   ech0MaxPages: 3,
-  ech0ShowError: true
+  ech0ShowError: true,
+  voteApiBase: 'https://vote.081531.xyz/',
+  voteEnabled: true
 };

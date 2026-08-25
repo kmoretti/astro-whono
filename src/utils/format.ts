@@ -126,9 +126,10 @@ export function getBitsAvatarLocalFilePath(value: string): string | null {
   return `public/${value}`;
 }
 
-export type SiteFaviconSlot = 'svg' | 'png' | 'appleTouchIcon';
+export type SiteFaviconSlot = 'ico' | 'svg' | 'png' | 'appleTouchIcon';
 
 const SITE_FAVICON_EXT_RE_BY_SLOT: Record<SiteFaviconSlot, RegExp> = {
+  ico: /\.ico$/i,
   svg: /\.svg$/i,
   png: /\.png$/i,
   appleTouchIcon: /\.png$/i

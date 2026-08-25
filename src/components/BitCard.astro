@@ -13,6 +13,7 @@ const {
 const bitEntry = bit as BitsEntry;
 const base = import.meta.env.BASE_URL ?? '/';
 const { settings } = getThemeSettings();
+const voteConfig = settings.links;
 const card = buildBitsCardViewModel({
   id: bitEntry.id,
   slug: bitEntry.data.slug,
@@ -158,5 +159,17 @@ const getImageFetchPriority = (prioritize: boolean) => (prioritize ? 'high' : un
       </div>
     ) : null}
     <div>{card.dateLabel}</div>
+    {voteConfig.voteEnabled && voteConfig.voteApiBase ? (
+      <div class="bit-vote" data-bits-vote data-bits-vote-state="loading" aria-label="点赞反馈">
+        <button class="bit-vote__btn bit-vote__btn--up" type="button" data-bits-vote-up aria-label="赞" aria-pressed="false">
+          <svg class="bit-vote__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+          <span class="bit-vote__count" data-bits-vote-count-up>0</span>
+        </button>
+        <button class="bit-vote__btn bit-vote__btn--down" type="button" data-bits-vote-down aria-label="踩" aria-pressed="false">
+          <svg class="bit-vote__icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M12 2.65l1.45 1.32C18.6 8.64 22 11.72 22 15.5c0 3.08-2.42 5.5-5.5 5.5-1.74 0-3.41-.81-4.5-2.09-1.09 1.28-2.76 2.09-4.5 2.09C4.42 21 2 18.58 2 15.5c0-3.78 3.4-6.86 8.55-11.54L12 2.65z" fill="currentColor"/></svg>
+          <span class="bit-vote__count" data-bits-vote-count-down>0</span>
+        </button>
+      </div>
+    ) : null}
   </div>
 </article>

@@ -54,8 +54,9 @@ export {
   normalizeAdminSiteFaviconPath
 };
 
-export const ADMIN_SITE_FAVICON_SLOTS = ['svg', 'png', 'appleTouchIcon'] as const satisfies readonly SiteFaviconSlot[];
+export const ADMIN_SITE_FAVICON_SLOTS = ['ico', 'svg', 'png', 'appleTouchIcon'] as const satisfies readonly SiteFaviconSlot[];
 export const ADMIN_SITE_FAVICON_SLOT_LABELS: Record<SiteFaviconSlot, string> = {
+  ico: '站点图标（ICO）',
   svg: '站点图标（SVG）',
   png: '标签页图标（PNG）',
   appleTouchIcon: '触摸图标（PNG）'
@@ -643,6 +644,7 @@ export const canonicalizeAdminThemeSettings = (
         )
       },
       favicon: {
+        ico: canonicalFaviconSlot('ico'),
         svg: canonicalFaviconSlot('svg'),
         png: canonicalFaviconSlot('png'),
         appleTouchIcon: canonicalFaviconSlot('appleTouchIcon')
@@ -760,7 +762,9 @@ export const canonicalizeAdminThemeSettings = (
         1,
         10
       ),
-      ech0ShowError: typeof links.ech0ShowError === 'boolean' ? links.ech0ShowError : DEFAULT_LINKS_SETTINGS.ech0ShowError
+      ech0ShowError: typeof links.ech0ShowError === 'boolean' ? links.ech0ShowError : DEFAULT_LINKS_SETTINGS.ech0ShowError,
+      voteApiBase: canonicalizeAdminLinksUrl(links.voteApiBase, DEFAULT_LINKS_SETTINGS.voteApiBase),
+      voteEnabled: typeof links.voteEnabled === 'boolean' ? links.voteEnabled : DEFAULT_LINKS_SETTINGS.voteEnabled
     },
     comments: {
       enabled: typeof comments.enabled === 'boolean' ? comments.enabled : DEFAULT_COMMENTS_SETTINGS.enabled,
@@ -963,7 +967,7 @@ export const validateAdminThemeSettings = (
     if (slotValue === null) return;
 
     const slotLabel = ADMIN_SITE_FAVICON_SLOT_LABELS[slot];
-    const extHint = slot === 'svg' ? '.svg' : '.png';
+    const extHint = slot === 'svg' ? '.svg' : slot === 'ico' ? '.ico' : '.png';
     if (normalizeAdminSiteFaviconPath(slot, slotValue) === undefined) {
       pushIssue(
         `site.favicon.${slot}`,
@@ -1147,6 +1151,12 @@ export const validateAdminThemeSettings = (
   }
   if (typeof settings.links?.ech0ShowError !== 'boolean') {
     pushIssue('links.ech0ShowError', 'Ech0 错误提示开关必须是布尔值');
+  }
+  if (!settings.links?.voteApiBase || !isAdminAllowedHttpsUrl(settings.links.voteApiBase)) {
+    pushIssue('links.voteApiBase', '点赞投票 API 地址必须是合法的 https:// 地址');
+  }
+  if (typeof settings.links?.voteEnabled !== 'boolean') {
+    pushIssue('links.voteEnabled', '点赞投票启用开关必须是布尔值');
   }
 
   if (!settings.shell.brandTitle) pushIssue('shell.brandTitle', '侧栏站点名不能为空');
@@ -1713,6 +1723,8 @@ const fillAdminThemeSettingsLinksCompatibilityDefaults = (
   ech0PageSize: canonicalLinks.ech0PageSize,
   ech0MaxPages: canonicalLinks.ech0MaxPages,
   ech0ShowError: canonicalLinks.ech0ShowError,
+  voteApiBase: canonicalLinks.voteApiBase,
+  voteEnabled: canonicalLinks.voteEnabled,
   ...rawLinks
 });
 

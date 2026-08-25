@@ -116,6 +116,13 @@ const { footerStartYearMin, footerStartYearMax, socialCustomLimit } = Astro.prop
       <input id="site-favicon-svg" type="hidden" />
       <input id="site-favicon-png" type="hidden" />
       <input id="site-favicon-apple-touch-icon" type="hidden" />
+      <label class="admin-field admin-field--full" style="margin-top: 8px;">
+        <span class="admin-label">
+          <span class="admin-label__main">标签页图标（ICO）</span>
+          <span class="admin-label__hint">（留空使用主题默认；建议 <code>/favicon.ico</code>，需手工放入 public/）</span>
+        </span>
+        <input class="admin-field__control" id="site-favicon-ico" type="text" inputmode="url" autocomplete="off" placeholder="/favicon.ico" />
+      </label>
       <div class="admin-favicon-line">
         <div class="admin-favicon-slot" data-favicon-slot="png">
           <span class="admin-favicon-slot__preview" data-favicon-preview="png">

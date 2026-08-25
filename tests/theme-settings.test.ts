@@ -267,12 +267,14 @@ describe('theme-settings revision semantics', () => {
     const resolved = getThemeSettings();
 
     expect(resolved.settings.site.favicon).toEqual({
+      ico: '/favicon.ico',
       svg: null,
       png: '/images/site/favicon-256x256-0cda5eeb.png',
       appleTouchIcon: '/images/site/apple-touch-icon-256x256-0cda5eeb.png'
     });
     expect(resolved.sources.site.faviconPng).toBe('new');
     expect(getSiteFaviconLinks(resolved.settings.site.favicon)).toEqual([
+      { rel: 'icon', type: 'image/x-icon', sizes: 'any', href: '/favicon.ico' },
       { rel: 'icon', type: 'image/png', sizes: '256x256', href: '/images/site/favicon-256x256-0cda5eeb.png' },
       { rel: 'apple-touch-icon', sizes: '256x256', href: '/images/site/apple-touch-icon-256x256-0cda5eeb.png' }
     ]);
@@ -287,7 +289,7 @@ describe('theme-settings revision semantics', () => {
 
     const resolved = getThemeSettings();
 
-    expect(resolved.settings.site.favicon).toEqual({ svg: null, png: null, appleTouchIcon: null });
+    expect(resolved.settings.site.favicon).toEqual({ ico: null, svg: null, png: null, appleTouchIcon: null });
     expect(resolved.sources.site.faviconPng).toBe('default');
     expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);
     expect(getEditableThemeSettingsState(resolved).ok).toBe(true);
@@ -362,6 +364,7 @@ describe('theme-settings revision semantics', () => {
     process.env.ASTRO_WHONO_INTERNAL_TEST_PROJECT_ROOT = tempRoot;
     try {
       const links = getSiteFaviconLinks({
+        ico: null,
         svg: '/images/site/favicon-a1b2c3d4.svg',
         png: '/images/site/favicon-notdims.png',
         appleTouchIcon: '/images/site/apple-touch-icon-180x180-a1b2c3d4.png'

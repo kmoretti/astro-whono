@@ -50,6 +50,7 @@ export type AdminThemeControls = RequiredElements<{
   inputSiteAdminOverviewPublicVisible: HTMLInputElement | null;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement | null;
   /* svg 槽位暂无上传 UI，隐藏 input 只负责把手工配置的值随表单快照往返。 */
+  inputSiteFaviconIco: HTMLInputElement | null;
   inputSiteFaviconSvg: HTMLInputElement | null;
   inputSiteFaviconPng: HTMLInputElement | null;
   inputSiteFaviconAppleTouchIcon: HTMLInputElement | null;
@@ -123,6 +124,8 @@ export type AdminThemeControls = RequiredElements<{
   inputLinksEch0PageSize: HTMLInputElement | null;
   inputLinksEch0MaxPages: HTMLInputElement | null;
   inputLinksEch0ShowError: HTMLInputElement | null;
+  inputLinksVoteApiBase: HTMLInputElement | null;
+  inputLinksVoteEnabled: HTMLInputElement | null;
   inputArticleMetaShowDate: HTMLInputElement | null;
   inputArticleMetaDateLabel: HTMLInputElement | null;
   inputArticleMetaShowTags: HTMLInputElement | null;
@@ -185,6 +188,7 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputSiteFooterCopyright: byId<HTMLInputElement>('site-footer-copyright'),
     inputSiteAdminOverviewPublicVisible: byId<HTMLInputElement>('site-admin-overview-public-visible'),
     inputSiteAdminOverviewHiddenMessage: byId<HTMLInputElement>('site-admin-overview-hidden-message'),
+    inputSiteFaviconIco: byId<HTMLInputElement>('site-favicon-ico'),
     inputSiteFaviconSvg: byId<HTMLInputElement>('site-favicon-svg'),
     inputSiteFaviconPng: byId<HTMLInputElement>('site-favicon-png'),
     inputSiteFaviconAppleTouchIcon: byId<HTMLInputElement>('site-favicon-apple-touch-icon'),
@@ -259,6 +263,8 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputLinksEch0PageSize: byId<HTMLInputElement>('links-ech0-page-size'),
     inputLinksEch0MaxPages: byId<HTMLInputElement>('links-ech0-max-pages'),
     inputLinksEch0ShowError: byId<HTMLInputElement>('links-ech0-show-error'),
+    inputLinksVoteApiBase: byId<HTMLInputElement>('links-vote-api-base'),
+    inputLinksVoteEnabled: byId<HTMLInputElement>('links-vote-enabled'),
     inputArticleMetaShowDate: byId<HTMLInputElement>('ui-article-meta-show-date'),
     inputArticleMetaDateLabel: byId<HTMLInputElement>('ui-article-meta-date-label'),
     inputArticleMetaShowTags: byId<HTMLInputElement>('ui-article-meta-show-tags'),

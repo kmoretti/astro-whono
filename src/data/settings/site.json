@@ -12,6 +12,7 @@
     "hiddenMessage": "作者暂未公开此页面。"
   },
   "favicon": {
+    "ico": "/favicon.ico",
     "svg": null,
     "png": "/images/site/favicon-256x256-0cda5eeb.png",
     "appleTouchIcon": "/images/site/apple-touch-icon-256x256-0cda5eeb.png"

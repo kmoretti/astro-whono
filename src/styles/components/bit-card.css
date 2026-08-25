@@ -254,6 +254,79 @@
   margin-top: 10px;
   font-size: 12px;
   color: var(--faint);
+  flex-wrap: wrap;
+}
+
+.bit-vote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
+}
+
+.bit-vote[data-bits-vote-state='error'],
+.bit-vote[data-bits-vote-state='loading'] {
+  opacity: 0.6;
+}
+
+.bit-vote__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--faint);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bit-vote__btn:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--faint) 8%, transparent);
+}
+
+.bit-vote__btn:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: 1px;
+}
+
+.bit-vote__btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.bit-vote__btn--up.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.bit-vote__btn--down.is-active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--faint) 16%, transparent);
+}
+
+.bit-vote__icon {
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.bit-vote__count {
+  font-variant-numeric: tabular-nums;
+  min-width: 1em;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .bit-vote {
+    margin-left: 0;
+  }
 }
 
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

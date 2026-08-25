@@ -20,13 +20,23 @@ const stripActivatedNoscriptAssets = (): void => {
 const initSwup = (): void => {
   if (!isEnabled()) return;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // admin 页面包含 module 脚本（管理控制台），module URL 去重导致 swup 替换容器后
+  // 不会重跑初始化；为稳定起见 admin/* 路径直接走原生整页加载。
+  const isAdminPath = (url: string): boolean => {
+    try {
+      return new URL(url, window.location.origin).pathname.startsWith('/admin/');
+    } catch {
+      return false;
+    }
+  };
   const swup = new Swup({
     // 替换容器：主内容壳与聚合菜单（后者按页 SSR 能力按钮需随导航更新）；
     // 星光 canvas 与持久脚本在容器外，动画不中断
     containers: ['.shell', '.global-action-menu'],
     animateHistoryBrowsing: true,
     // 减少动态偏好时禁用过渡动画，仅做内容替换
-    animationSelector: reducedMotion ? false : '[class*="transition-"]'
+    animationSelector: reducedMotion ? false : '[class*="transition-"]',
+    ignoreVisit: (url) => isAdminPath(url)
   });
   swup.use(new SwupScrollPlugin());
   swup.use(new SwupPreloadPlugin());

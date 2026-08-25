@@ -90,6 +90,7 @@ if (!root) {
       inputSiteFooterCopyright: controls.inputSiteFooterCopyright,
       inputSiteAdminOverviewPublicVisible: controls.inputSiteAdminOverviewPublicVisible,
       inputSiteAdminOverviewHiddenMessage: controls.inputSiteAdminOverviewHiddenMessage,
+      inputSiteFaviconIco: controls.inputSiteFaviconIco,
       inputSiteFaviconSvg: controls.inputSiteFaviconSvg,
       inputSiteFaviconPng: controls.inputSiteFaviconPng,
       inputSiteFaviconAppleTouchIcon: controls.inputSiteFaviconAppleTouchIcon,
@@ -161,6 +162,8 @@ if (!root) {
       inputLinksEch0PageSize: controls.inputLinksEch0PageSize,
       inputLinksEch0MaxPages: controls.inputLinksEch0MaxPages,
       inputLinksEch0ShowError: controls.inputLinksEch0ShowError,
+      inputLinksVoteApiBase: controls.inputLinksVoteApiBase,
+      inputLinksVoteEnabled: controls.inputLinksVoteEnabled,
       inputArticleMetaShowDate: controls.inputArticleMetaShowDate,
       inputArticleMetaDateLabel: controls.inputArticleMetaDateLabel,
       inputArticleMetaShowTags: controls.inputArticleMetaShowTags,
@@ -214,6 +217,7 @@ if (!root) {
       inputSiteFooterCopyright: controls.inputSiteFooterCopyright,
       inputSiteAdminOverviewPublicVisible: controls.inputSiteAdminOverviewPublicVisible,
       inputSiteAdminOverviewHiddenMessage: controls.inputSiteAdminOverviewHiddenMessage,
+      inputSiteFaviconIco: controls.inputSiteFaviconIco,
       inputSiteSocialGithub: controls.inputSiteSocialGithub,
       inputSiteSocialQq: controls.inputSiteSocialQq,
       inputSiteSocialEmail: controls.inputSiteSocialEmail,
@@ -253,6 +257,8 @@ if (!root) {
       inputLinksEch0PageSize: controls.inputLinksEch0PageSize,
       inputLinksEch0MaxPages: controls.inputLinksEch0MaxPages,
       inputLinksEch0ShowError: controls.inputLinksEch0ShowError,
+      inputLinksVoteApiBase: controls.inputLinksVoteApiBase,
+      inputLinksVoteEnabled: controls.inputLinksVoteEnabled,
       inputArticleMetaShowDate: controls.inputArticleMetaShowDate,
       inputArticleMetaDateLabel: controls.inputArticleMetaDateLabel,
       inputArticleMetaShowTags: controls.inputArticleMetaShowTags,
@@ -373,5 +379,6 @@ if (!root) {
 if (typeof window !== 'undefined') {
   // module 脚本插入 .shell 后首次执行;swup 导航离开/回到本页时由
   // page-change 事件重新初始化(模块 URL 去重不会重执行)。
+  // 注:swup-init 已对 /admin/ 路径禁用接管,走原生整页加载。
   onPageChange(initAdminConsole);
 }

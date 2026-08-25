@@ -248,6 +248,13 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 
   <div data-bits-browse>
     <p
+      class="sr-only"
+      data-bits-vote-config
+      data-bits-vote-enabled={links.voteEnabled ? 'true' : 'false'}
+      data-bits-vote-api-base={links.voteApiBase}
+      aria-hidden="true"
+    ></p>
+    <p
       class="bits-remote-state"
       data-bits-remote-state
       data-bits-remote-enabled={links.ech0Enabled ? 'true' : 'false'}
@@ -257,6 +264,8 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
       data-bits-remote-show-error={links.ech0ShowError ? 'true' : 'false'}
       data-bits-author-name={page.bits.defaultAuthor.name}
       data-bits-author-avatar={withBase(page.bits.defaultAuthor.avatar)}
+      data-bits-vote-enabled={links.voteEnabled ? 'true' : 'false'}
+      data-bits-vote-api-base={links.voteApiBase}
       role="status"
       aria-live="polite"
     ></p>

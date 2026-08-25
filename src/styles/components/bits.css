@@ -1275,6 +1275,10 @@
     color: var(--faint);
   }
 
+  .bit-meta .bit-vote {
+    order: 3;
+  }
+
 }
 
 @media (min-width: 641px) and (max-width: 900px) {

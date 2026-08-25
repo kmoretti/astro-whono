@@ -149,7 +149,9 @@ describe('admin-console/shared', () => {
       ech0Enabled: DEFAULT_LINKS_SETTINGS.ech0Enabled,
       ech0PageSize: 20,
       ech0MaxPages: DEFAULT_LINKS_SETTINGS.ech0MaxPages,
-      ech0ShowError: DEFAULT_LINKS_SETTINGS.ech0ShowError
+      ech0ShowError: DEFAULT_LINKS_SETTINGS.ech0ShowError,
+      voteApiBase: DEFAULT_LINKS_SETTINGS.voteApiBase,
+      voteEnabled: DEFAULT_LINKS_SETTINGS.voteEnabled
     });
     expect(writable.links).toEqual(canonical.links);
     expect(validateAdminThemeSettings(canonical)).not.toEqual(
@@ -430,6 +432,7 @@ describe('admin-console/shared', () => {
   it('canonicalizes favicon slot paths and keeps invalid inputs for validation', () => {
     const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
     raw.site.favicon = {
+      ico: null,
       svg: null,
       png: ' public/images/site/favicon-64x64-a1b2c3d4.png ',
       appleTouchIcon: 'https://example.com/apple-touch-icon.png'
@@ -438,6 +441,7 @@ describe('admin-console/shared', () => {
     const canonical = canonicalizeAdminThemeSettings(raw);
 
     expect(canonical.site.favicon).toEqual({
+      ico: null,
       svg: null,
       png: '/images/site/favicon-64x64-a1b2c3d4.png',
       appleTouchIcon: 'https://example.com/apple-touch-icon.png'
@@ -451,6 +455,7 @@ describe('admin-console/shared', () => {
   it('validates favicon file existence through localFileExists', () => {
     const settings = structuredClone(getEditableThemeSettingsPayload().settings);
     settings.site.favicon = {
+      ico: null,
       svg: null,
       png: '/images/site/favicon-64x64-a1b2c3d4.png',
       appleTouchIcon: null

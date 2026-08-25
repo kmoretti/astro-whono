@@ -63,6 +63,7 @@ type FormCodecContext = {
   inputSiteFooterCopyright: HTMLInputElement;
   inputSiteAdminOverviewPublicVisible: HTMLInputElement;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement;
+  inputSiteFaviconIco: HTMLInputElement;
   inputSiteFaviconSvg: HTMLInputElement;
   inputSiteFaviconPng: HTMLInputElement;
   inputSiteFaviconAppleTouchIcon: HTMLInputElement;
@@ -134,6 +135,8 @@ type FormCodecContext = {
   inputLinksEch0PageSize: HTMLInputElement;
   inputLinksEch0MaxPages: HTMLInputElement;
   inputLinksEch0ShowError: HTMLInputElement;
+  inputLinksVoteApiBase: HTMLInputElement;
+  inputLinksVoteEnabled: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
   inputArticleMetaShowTags: HTMLInputElement;
@@ -230,6 +233,7 @@ export const createFormCodec = ({
   inputSiteFooterCopyright,
   inputSiteAdminOverviewPublicVisible,
   inputSiteAdminOverviewHiddenMessage,
+  inputSiteFaviconIco,
   inputSiteFaviconSvg,
   inputSiteFaviconPng,
   inputSiteFaviconAppleTouchIcon,
@@ -301,6 +305,8 @@ export const createFormCodec = ({
   inputLinksEch0PageSize,
   inputLinksEch0MaxPages,
   inputLinksEch0ShowError,
+  inputLinksVoteApiBase,
+  inputLinksVoteEnabled,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
   inputArticleMetaShowTags,
@@ -594,6 +600,7 @@ export const createFormCodec = ({
           )
         },
         favicon: {
+          ico: normalizeSiteFaviconInput('ico', inputSiteFaviconIco.value),
           svg: normalizeSiteFaviconInput('svg', inputSiteFaviconSvg.value),
           png: normalizeSiteFaviconInput('png', inputSiteFaviconPng.value),
           appleTouchIcon: normalizeSiteFaviconInput('appleTouchIcon', inputSiteFaviconAppleTouchIcon.value)
@@ -686,7 +693,9 @@ export const createFormCodec = ({
         ech0Enabled: Boolean(inputLinksEch0Enabled.checked),
         ech0PageSize: Number.parseInt(inputLinksEch0PageSize.value, 10),
         ech0MaxPages: Number.parseInt(inputLinksEch0MaxPages.value, 10),
-        ech0ShowError: Boolean(inputLinksEch0ShowError.checked)
+        ech0ShowError: Boolean(inputLinksEch0ShowError.checked),
+        voteApiBase: inputLinksVoteApiBase.value.trim(),
+        voteEnabled: Boolean(inputLinksVoteEnabled.checked)
       },
       comments: {
         enabled: Boolean(inputCommentsEnabled.checked),
@@ -749,6 +758,7 @@ export const createFormCodec = ({
     inputSiteAdminOverviewHiddenMessage.value =
       settings.site.adminOverview?.hiddenMessage || ADMIN_OVERVIEW_HIDDEN_MESSAGE_DEFAULT;
     syncAdminOverviewControls();
+    inputSiteFaviconIco.value = settings.site.favicon?.ico || '';
     inputSiteFaviconSvg.value = settings.site.favicon?.svg || '';
     inputSiteFaviconPng.value = settings.site.favicon?.png || '';
     inputSiteFaviconAppleTouchIcon.value = settings.site.favicon?.appleTouchIcon || '';
@@ -823,6 +833,8 @@ export const createFormCodec = ({
     inputLinksEch0PageSize.value = String(settings.links?.ech0PageSize ?? 10);
     inputLinksEch0MaxPages.value = String(settings.links?.ech0MaxPages ?? 3);
     inputLinksEch0ShowError.checked = settings.links?.ech0ShowError !== false;
+    inputLinksVoteApiBase.value = settings.links?.voteApiBase || '';
+    inputLinksVoteEnabled.checked = settings.links?.voteEnabled !== false;
     inputCommentsEnabled.checked = settings.comments?.enabled !== false;
     inputCommentsRepo.value = settings.comments?.repo || '';
     inputCommentsRepoId.value = settings.comments?.repoId || '';

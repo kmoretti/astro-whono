@@ -25,6 +25,7 @@ type ValidationContext = {
   inputSiteFooterCopyright: HTMLInputElement;
   inputSiteAdminOverviewPublicVisible: HTMLInputElement;
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement;
+  inputSiteFaviconIco: HTMLInputElement;
   inputSiteSocialGithub: HTMLInputElement;
   inputSiteSocialQq: HTMLInputElement;
   inputSiteSocialEmail: HTMLInputElement;
@@ -64,6 +65,8 @@ type ValidationContext = {
   inputLinksEch0PageSize: HTMLInputElement;
   inputLinksEch0MaxPages: HTMLInputElement;
   inputLinksEch0ShowError: HTMLInputElement;
+  inputLinksVoteApiBase: HTMLInputElement;
+  inputLinksVoteEnabled: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
   inputArticleMetaShowTags: HTMLInputElement;
@@ -109,6 +112,7 @@ export const createValidation = ({
   inputSiteFooterCopyright,
   inputSiteAdminOverviewPublicVisible,
   inputSiteAdminOverviewHiddenMessage,
+  inputSiteFaviconIco,
   inputSiteSocialGithub,
   inputSiteSocialQq,
   inputSiteSocialEmail,
@@ -148,6 +152,8 @@ export const createValidation = ({
   inputLinksEch0PageSize,
   inputLinksEch0MaxPages,
   inputLinksEch0ShowError,
+  inputLinksVoteApiBase,
+  inputLinksVoteEnabled,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
   inputArticleMetaShowTags,
@@ -234,6 +240,8 @@ export const createValidation = ({
       case 'site.adminOverview.hiddenMessage':
         return () => inputSiteAdminOverviewHiddenMessage;
       /* favicon input 均为隐藏元素，错误改聚焦站点图标区域的可见按钮；svg 无独立控件，借用 png 上传按钮定位。 */
+      case 'site.favicon.ico':
+        return () => inputSiteFaviconIco;
       case 'site.favicon.svg':
         return () => form.querySelector<HTMLElement>('[data-favicon-upload="png"]');
       case 'site.favicon.png':
@@ -276,6 +284,10 @@ export const createValidation = ({
         return () => inputLinksEch0MaxPages;
       case 'links.ech0ShowError':
         return () => inputLinksEch0ShowError;
+      case 'links.voteApiBase':
+        return () => inputLinksVoteApiBase;
+      case 'links.voteEnabled':
+        return () => inputLinksVoteEnabled;
       case 'shell.brandTitle':
         return () => inputShellBrandTitle;
       case 'shell.quote':

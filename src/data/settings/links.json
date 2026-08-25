@@ -10,5 +10,7 @@
   "ech0Enabled": true,
   "ech0PageSize": 10,
   "ech0MaxPages": 3,
-  "ech0ShowError": true
+  "ech0ShowError": true,
+  "voteApiBase": "https://vote.081531.xyz/",
+  "voteEnabled": true
 }
