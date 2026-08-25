@@ -81,10 +81,11 @@ describe('theme-settings revision semantics', () => {
           id: 'links',
           label: '友链',
           visible: true,
-          order: 6,
+          order: 5,
           children: expect.arrayContaining([
             expect.objectContaining({ id: 'index', href: '/links/' }),
-            expect.objectContaining({ id: 'exchange', href: '/links/exchange/' })
+            expect.objectContaining({ id: 'exchange', href: '/links/exchange/' }),
+            expect.objectContaining({ id: 'fcircle', href: '/fcircle/' })
           ])
         })
       ])
@@ -156,6 +157,9 @@ describe('theme-settings revision semantics', () => {
     const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
     const pageJson = JSON.parse(await readFile(pagePath, 'utf8')) as Record<string, any>;
     shellJson.nav = shellJson.nav.filter((item: { id: string }) => item.id !== 'links');
+    shellJson.nav.forEach((item: { id: string; order: number }) => {
+      if (item.id === 'about') item.order = 6;
+    });
     delete pageJson.links;
     await Promise.all([
       writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8'),
@@ -170,7 +174,7 @@ describe('theme-settings revision semantics', () => {
     );
     expect(resolved.settings.page.links).toEqual({ title: '友链', subtitle: null });
     expect(payload.settings.shell.nav).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: 'links', order: 6 })])
+      expect.arrayContaining([expect.objectContaining({ id: 'links', order: 5 })])
     );
     expect(payload.settings.page.links).toEqual({ title: '友链', subtitle: null });
     expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);

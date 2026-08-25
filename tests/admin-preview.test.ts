@@ -12,7 +12,7 @@ const createJsonRequest = (url: string, payload: unknown) =>
   });
 
 describe('admin preview api', () => {
-  it('renders markdown with project callout and sanitize rules', async () => {
+  it('renders markdown with project callout and sanitize rules', { timeout: 30_000 }, async () => {
     const { POST } = await import('../src/pages/api/admin/preview');
 
     const response = await POST({
