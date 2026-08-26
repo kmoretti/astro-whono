@@ -1,5 +1,4 @@
 ---
-import type { SidebarNavId } from '../../lib/theme-settings';
 import AdminDiagnosticPanel from './AdminDiagnosticPanel.astro';
 import AdminHomeSection from './AdminHomeSection.astro';
 import AdminLinksSection from './AdminLinksSection.astro';
@@ -16,7 +15,6 @@ interface Props {
   aboutUmamiBaseUrl: string;
   memoSubtitlePlaceholder: string;
   memoTitlePlaceholder: string;
-  navIdOrder: readonly SidebarNavId[];
   pageSubtitleMaxLength: number;
   pageTitleMaxLength: number;
   settingsEndpoint: string;
@@ -31,7 +29,6 @@ const {
   aboutUmamiBaseUrl,
   memoSubtitlePlaceholder,
   memoTitlePlaceholder,
-  navIdOrder,
   pageSubtitleMaxLength,
   pageTitleMaxLength,
   settingsEndpoint,
@@ -61,7 +58,7 @@ const {
       socialCustomLimit={socialCustomLimit}
     />
 
-    <AdminSidebarSection navIdOrder={navIdOrder} />
+    <AdminSidebarSection />
 
     <AdminHomeSection homeIntroMaxLength={homeIntroMaxLength} />
 

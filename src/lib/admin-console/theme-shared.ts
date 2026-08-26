@@ -4,6 +4,7 @@ import type {
   HomeIntroLinkKey,
   PageId,
   SidebarDividerVariant,
+  SidebarNavItem,
   SidebarNavId,
   SiteSocialIconKey,
   SiteSocialPresetId,
@@ -63,6 +64,25 @@ export const ADMIN_SITE_FAVICON_SLOT_LABELS: Record<SiteFaviconSlot, string> = {
 };
 
 export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about', 'links'] as const satisfies readonly SidebarNavId[];
+
+/* 内置一级导航 id 集合：theme 与 admin 共用同一份内置项判断，自定义导航项不得占用这些 id。
+   本模块是客户端安全的（不携带 site.config.mjs 等 Node 依赖），导航编辑器/预览等浏览器脚本也从这里取用。 */
+export const SIDEBAR_NAV_BUILTIN_ID_SET: ReadonlySet<string> = new Set(ADMIN_NAV_IDS);
+const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
+  essay: '/essay/',
+  bits: '/bits/',
+  memo: '/memo/',
+  archive: '/archive/',
+  about: '/about/',
+  links: '/links/'
+};
+
+export const getSidebarHref = (id: SidebarNavId): string => SIDEBAR_HREFS[id];
+
+/* 一级导航链接地址：自定义项取显式 href，内置项按 id 从注册表推导（内置项忽略显式 href）。 */
+export const getSidebarNavItemHref = (item: Pick<SidebarNavItem, 'id' | 'href'>): string =>
+  item.href ?? getSidebarHref(item.id as SidebarNavId);
+
 export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about', 'links'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
@@ -131,6 +151,12 @@ export const ADMIN_NAV_ORDER_MAX = 999;
 export const ADMIN_NAV_CHILD_ID_MAX_LENGTH = 80;
 export const ADMIN_NAV_CHILD_LABEL_MAX_LENGTH = 80;
 export const ADMIN_NAV_CHILD_HREF_MAX_LENGTH = 500;
+export const ADMIN_NAV_CUSTOM_ID_MAX_LENGTH = 80;
+export const ADMIN_NAV_CUSTOM_LABEL_MAX_LENGTH = 80;
+export const ADMIN_NAV_CUSTOM_HREF_MAX_LENGTH = ADMIN_NAV_CHILD_HREF_MAX_LENGTH;
+
+/* 自定义一级导航 id：小写字母开头，仅允许小写字母、数字与连字符（kebab-case），且不得占用内置 id。 */
+export const ADMIN_NAV_CUSTOM_ID_RE = /^[a-z][a-z0-9-]*$/;
 
 type AdminSocialOrderScope = 'preset' | 'custom';
 type AdminSocialOrderInput = {
@@ -138,7 +164,7 @@ type AdminSocialOrderInput = {
   order: number;
 };
 type AdminNavOrderInput = {
-  key: SidebarNavId;
+  key: string;
   order: number;
 };
 
@@ -150,7 +176,7 @@ export type AdminSocialOrderIssue = {
 };
 export type AdminNavOrderIssue = {
   type: 'range' | 'duplicate';
-  key: SidebarNavId;
+  key: string;
   order: number;
 };
 
@@ -237,6 +263,18 @@ export const getAdminFooterStartYearMax = (): number => new Date().getFullYear()
 
 export const isAdminNavId = (value: string): value is SidebarNavId =>
   (ADMIN_NAV_IDS as readonly string[]).includes(value);
+
+/* 自定义一级导航 id：kebab-case、长度受限，且不得与内置导航 id 冲突。 */
+export const isAdminNavCustomId = (value: string): boolean =>
+  !isAdminNavId(value) && value.length <= ADMIN_NAV_CUSTOM_ID_MAX_LENGTH && ADMIN_NAV_CUSTOM_ID_RE.test(value);
+
+/* 自定义一级导航 href：站内绝对路径（排除 // 协议相对地址）或 https:// 外链。 */
+export const isAdminNavCustomHref = (value: string): boolean =>
+  /^\/(?!\/)/.test(value) || /^https:\/\//i.test(value);
+
+/* 自定义一级导航显示名称：非空且长度受限。 */
+export const isAdminNavCustomLabel = (value: string): boolean =>
+  value.length > 0 && value.length <= ADMIN_NAV_CUSTOM_LABEL_MAX_LENGTH;
 
 export const isAdminHeroPresetId = (value: string): value is HeroPresetId =>
   ADMIN_HERO_PRESET_SET.has(value as HeroPresetId);
@@ -555,13 +593,13 @@ export const canonicalizeAdminThemeSettings = (
     .map(({ __index: _ignored, ...item }) => item);
 
   const normalizedNav = (Array.isArray(shell.nav) ? shell.nav : [])
-    .map((item) => {
+    .map((item, index) => {
       const record = isRecord(item) ? item : null;
       if (!record) return null;
       const id = normalizeTrimmed(record.id);
-      if (!isAdminNavId(id)) return null;
+      if (!id) return null;
       const children = (Array.isArray(record.children) ? record.children : [])
-        .flatMap((child, index) => {
+        .flatMap((child, childIndex) => {
           if (!isRecord(child)) return [];
           const childId = normalizeSingleLine(child.id, '');
           const label = normalizeSingleLine(child.label, '');
@@ -572,15 +610,27 @@ export const canonicalizeAdminThemeSettings = (
             label,
             href,
             visible: Boolean(child.visible),
-            order: parseOrder(child.order as string | number | null | undefined, index + 1)
+            order: parseOrder(child.order as string | number | null | undefined, childIndex + 1)
           }];
         })
         .sort((a, b) => a.order - b.order);
+      if (isAdminNavId(id)) {
+        return {
+          id,
+          label: normalizeTrimmed(record.label),
+          ornament: normalizeNavOrnament(record.ornament),
+          order: parseOrder(record.order as string | number | null | undefined, ADMIN_NAV_IDS.indexOf(id) + 1),
+          visible: Boolean(record.visible),
+          children
+        };
+      }
+      /* 自定义一级导航：保留归一化后的 href/label 原样交给写校验判定，非法项由保存流程拒绝而非静默丢弃。 */
       return {
         id,
         label: normalizeTrimmed(record.label),
+        href: normalizeTrimmed(record.href),
         ornament: normalizeNavOrnament(record.ornament),
-        order: parseOrder(record.order as string | number | null | undefined, ADMIN_NAV_IDS.indexOf(id) + 1),
+        order: parseOrder(record.order as string | number | null | undefined, index + 1),
         visible: Boolean(record.visible),
         children
       };
@@ -588,7 +638,7 @@ export const canonicalizeAdminThemeSettings = (
     .filter((item): item is EditableThemeSettings['shell']['nav'][number] => item !== null)
     .sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
-      return ADMIN_NAV_IDS.indexOf(a.id) - ADMIN_NAV_IDS.indexOf(b.id);
+      return (ADMIN_NAV_IDS as readonly string[]).indexOf(a.id) - (ADMIN_NAV_IDS as readonly string[]).indexOf(b.id);
     });
 
   const heroImageSrc = (() => {
@@ -1400,37 +1450,52 @@ export const validateAdminThemeSettings = (
   }
 
   const nav = Array.isArray(settings.shell.nav) ? settings.shell.nav : [];
-  if (nav.length !== ADMIN_NAV_IDS.length) {
-    pushIssue('shell.nav', 'Sidebar 导航项数量必须与既有导航一致');
+  const missingNavIds = (ADMIN_NAV_IDS as readonly string[]).filter(
+    (id) => !nav.some((item) => item.id === id)
+  );
+  if (missingNavIds.length > 0) {
+    pushIssue('shell.nav', `Sidebar 缺少内置导航项：${missingNavIds.join('、')}`);
   }
 
-  const seenIds = new Set<SidebarNavId>();
+  const seenIds = new Set<string>();
   const seenChildIds = new Set<string>();
-  const navOrderIssues = new Map<SidebarNavId, 'range' | 'duplicate'>();
+  const navOrderIssues = new Map<string, 'range' | 'duplicate'>();
   getAdminNavOrderIssues(
-    nav.flatMap((item) =>
-      ADMIN_NAV_IDS.includes(item.id)
-        ? [
-            {
-              key: item.id as SidebarNavId,
-              order: item.order
-            }
-          ]
-        : []
-    )
+    nav.map((item) => ({
+      key: item.id,
+      order: item.order
+    }))
   ).forEach((issue) => {
     navOrderIssues.set(issue.key, issue.type);
   });
 
   nav.forEach((item, index) => {
-    const navId = ADMIN_NAV_IDS.includes(item.id) ? item.id : null;
-    const basePath = navId ? `shell.nav.${navId}` : `shell.nav[${index}]`;
-    if (!navId) {
-      pushIssue(`${basePath}.id`, `存在非法导航项 ID：${item.id}`);
-    } else if (seenIds.has(navId)) {
-      pushIssue(`${basePath}.id`, `导航项 ID 重复：${navId}`);
+    const navId = isAdminNavId(item.id) ? item.id : null;
+    const navKey = navId ?? (isAdminNavCustomId(item.id) ? item.id : null);
+    const basePath = navKey ? `shell.nav.${navKey}` : `shell.nav[${index}]`;
+    if (seenIds.has(item.id)) {
+      pushIssue(`${basePath}.id`, `导航项 ID 重复：${item.id}`);
     }
-    if (navId) seenIds.add(navId);
+    seenIds.add(item.id);
+
+    if (!navId) {
+      /* 自定义一级导航：id 必须是合法 kebab-case 且不与内置导航冲突。 */
+      if (!isAdminNavCustomId(item.id)) {
+        pushIssue(
+          `${basePath}.id`,
+          `自定义导航项 ID 必须是 kebab-case（不超过 ${ADMIN_NAV_CUSTOM_ID_MAX_LENGTH} 个字符）且不与内置导航冲突：${item.id}`
+        );
+      }
+      const customHref = item.href ?? '';
+      if (!isAdminNavCustomHref(customHref)) {
+        pushIssue(`${basePath}.href`, '自定义导航项路径必须是站内绝对路径或 https:// 地址');
+      } else if (customHref.length > ADMIN_NAV_CUSTOM_HREF_MAX_LENGTH) {
+        pushIssue(`${basePath}.href`, `自定义导航项路径不能超过 ${ADMIN_NAV_CUSTOM_HREF_MAX_LENGTH} 个字符`);
+      }
+      if (item.label && !isAdminNavCustomLabel(item.label)) {
+        pushIssue(`${basePath}.label`, `自定义导航项显示名称不能超过 ${ADMIN_NAV_CUSTOM_LABEL_MAX_LENGTH} 个字符`);
+      }
+    }
 
     if (!item.label) {
       pushIssue(`${basePath}.label`, `导航项 ${item.id} 的显示名称不能为空`);
@@ -1450,7 +1515,7 @@ export const validateAdminThemeSettings = (
       item.order > ADMIN_NAV_ORDER_MAX
     ) {
       pushIssue(`${basePath}.order`, `导航项 ${item.id} 的位置排序必须为 ${ADMIN_NAV_ORDER_MIN}-${ADMIN_NAV_ORDER_MAX} 的整数`);
-    } else if (navId && navOrderIssues.get(navId) === 'duplicate') {
+    } else if (navOrderIssues.get(item.id) === 'duplicate') {
       pushIssue(`${basePath}.order`, `位置排序不能重复：${item.order}`);
     }
     if (typeof item.visible !== 'boolean') {

@@ -11,7 +11,7 @@ import {
   isAdminRoutePathActive
 } from '../lib/admin-console/routes';
 import { createWithBase } from '../utils/format';
-import { getSidebarHref, getThemeSettings, type SidebarNavId } from '../lib/theme-settings';
+import { getThemeSettings, getSidebarNavItemHref, SIDEBAR_NAV_BUILTIN_ID_SET, type SidebarNavId } from '../lib/theme-settings';
 
 const {
   siteTitle = 'Whono',
@@ -39,9 +39,11 @@ const { settings } = getThemeSettings();
 const quote = settings.shell.quote;
 const nav = settings.shell.nav
   .filter((item) => item.visible)
+  /* 防御性兜底：非内置项缺少显式 href 时无法解析链接地址，整条目不渲染。 */
+  .filter((item) => Boolean(item.href) || SIDEBAR_NAV_BUILTIN_ID_SET.has(item.id))
   .sort((a, b) => a.order - b.order)
   .map((item) => {
-    const href = withBase(getSidebarHref(item.id));
+    const href = withBase(getSidebarNavItemHref(item));
     return {
       id: item.id,
       label: item.label,

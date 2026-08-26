@@ -1,9 +1,8 @@
-import type {
-  SidebarNavId,
-  SiteSocialPresetId
-} from '@/lib/theme-settings';
+import type { SiteSocialPresetId } from '@/lib/theme-settings';
 import { validateAdminThemeSettings } from '@/lib/admin-console/theme-shared';
 import { type EditableSettings } from './form-codec';
+
+type NavTreeGroupRef = string | number;
 
 export type ValidationIssue = {
   message: string;
@@ -89,14 +88,31 @@ type ValidationContext = {
   ) => () => HTMLElement | null;
   getCustomVisibilityTarget: (index: number) => () => HTMLElement | null;
   getNavFieldTarget: (
-    id: SidebarNavId,
-    field: 'label' | 'ornament' | 'order' | 'visible'
+    ref: NavTreeGroupRef,
+    field: 'id' | 'label' | 'ornament' | 'href' | 'visible'
+  ) => () => HTMLElement | null;
+  getNavChildFieldTarget: (
+    ref: NavTreeGroupRef,
+    childIndex: number,
+    field: 'id' | 'label' | 'href' | 'visible'
   ) => () => HTMLElement | null;
   getFirstNavLabelTarget: () => HTMLElement | null;
 };
 
 const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|iconKey|order|visible))?$/;
-const NAV_PATH_RE = /^shell\.nav(?:(?:\.([a-z]+))|\[(\d+)\])(?:\.(id|label|ornament|order|visible))?$/;
+/* 一级导航 ref：内置/自定义 id（kebab-case）或分组序号；子级路径携带 children[i]。 */
+const NAV_ITEM_PATH_RE = /^shell\.nav(?:\.([a-z][a-z0-9-]*)|\[(\d+)\])\.(id|label|ornament|href|visible|order)$/;
+const NAV_CHILD_PATH_RE = /^shell\.nav(?:\.([a-z][a-z0-9-]*)|\[(\d+)\])\.children\[(\d+)\](?:\.(id|label|href|visible|order))?$/;
+const NAV_BASE_PATH_RE = /^shell\.nav(?:\.([a-z][a-z0-9-]*)|\[(\d+)\])?$/;
+
+const parseNavGroupRef = (idSegment: string | undefined, indexSegment: string | undefined): NavTreeGroupRef | null => {
+  if (idSegment) return idSegment;
+  if (indexSegment) {
+    const index = Number.parseInt(indexSegment, 10);
+    if (Number.isInteger(index)) return index;
+  }
+  return null;
+};
 const PAGE_TITLE_INPUT_KEYS = ['essay', 'archive', 'bits', 'memo', 'about', 'links'] as const;
 
 export const createValidation = ({
@@ -173,6 +189,7 @@ export const createValidation = ({
   getCustomFieldTarget,
   getCustomVisibilityTarget,
   getNavFieldTarget,
+  getNavChildFieldTarget,
   getFirstNavLabelTarget
 }: ValidationContext) => {
   const createIssue = (message: string, focusTarget?: () => HTMLElement | null): ValidationIssue =>
@@ -387,17 +404,26 @@ export const createValidation = ({
       }
     }
 
-    const navMatch = path.match(NAV_PATH_RE);
-    if (navMatch) {
-      const navId = navMatch[1] as SidebarNavId | undefined;
-      const field = navMatch[3];
-      if (!navId) return getFirstNavLabelTarget;
-      if (!field || field === 'id' || field === 'label') return getNavFieldTarget(navId, 'label');
-      if (field === 'ornament' || field === 'order' || field === 'visible') {
-        return getNavFieldTarget(navId, field);
-      }
-      return getFirstNavLabelTarget;
+    const navChildMatch = path.match(NAV_CHILD_PATH_RE);
+    if (navChildMatch) {
+      const ref = parseNavGroupRef(navChildMatch[1], navChildMatch[2]);
+      const childIndex = Number.parseInt(navChildMatch[3] ?? '', 10);
+      if (ref === null || !Number.isInteger(childIndex)) return getFirstNavLabelTarget;
+      const field = (navChildMatch[4] as 'id' | 'label' | 'href' | 'visible' | 'order' | undefined) ?? 'label';
+      return getNavChildFieldTarget(ref, childIndex, field === 'order' ? 'label' : field);
     }
+
+    const navMatch = path.match(NAV_ITEM_PATH_RE);
+    if (navMatch) {
+      const ref = parseNavGroupRef(navMatch[1], navMatch[2]);
+      if (ref === null) return getFirstNavLabelTarget;
+      const field = navMatch[3] as 'id' | 'label' | 'ornament' | 'href' | 'visible' | 'order';
+      /* order 已无手动输入，order 问题统一退到名称输入。 */
+      if (field === 'order') return getNavFieldTarget(ref, 'label');
+      return getNavFieldTarget(ref, field);
+    }
+
+    if (NAV_BASE_PATH_RE.test(path)) return getFirstNavLabelTarget;
 
     return undefined;
   };

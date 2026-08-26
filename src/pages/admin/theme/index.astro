@@ -1,4 +1,5 @@
 ---
+import type { SidebarNavItem } from '../../../lib/theme-settings';
 import AdminLayout from '../../../components/admin/AdminLayout.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
@@ -55,6 +56,21 @@ const loadThemeDevState = async () => {
     about: '关于',
     links: '友链'
   } as const;
+  /* bootstrap 兜底：保留已保存的自定义一级导航，仅为缺失的内置项补默认值。 */
+  const buildBootstrapNav = (nav: SidebarNavItem[]): SidebarNavItem[] => {
+    const existingIds = new Set(nav.map((item) => item.id));
+    const fallbackNav = navIdOrder
+      .filter((id) => !existingIds.has(id))
+      .map((id) => ({
+        id,
+        label: navLabelFallback[id],
+        ornament: ADMIN_NAV_ORNAMENT_DEFAULT,
+        visible: true,
+        order: navIdOrder.indexOf(id) + 1,
+        children: []
+      }));
+    return [...nav, ...fallbackNav].sort((a, b) => a.order - b.order);
+  };
   const footerStartYearMin = ADMIN_FOOTER_START_YEAR_MIN;
   const footerStartYearMax = getAdminFooterStartYearMax();
   const homeIntroMaxLength = ADMIN_HOME_INTRO_MAX_LENGTH;
@@ -71,37 +87,20 @@ const loadThemeDevState = async () => {
     ? initialState.payload.settings.page.about.umami.baseUrl
     : DEFAULT_ABOUT_UMAMI_SETTINGS.baseUrl;
   const bootstrapState = initialState.ok
-    ? (() => {
-        const initialNavMap = new Map(
-          initialState.payload.settings.shell.nav.map((item) => [item.id, item])
-        );
-
-        return {
-          ok: true as const,
-          payload: {
-            revision: initialState.payload.revision,
-            settings: {
-              ...initialState.payload.settings,
-              shell: {
-                ...initialState.payload.settings.shell,
-                nav: navIdOrder.map((id, index) => {
-                  const current = initialNavMap.get(id);
-                  if (current) return current;
-                  return {
-                    id,
-                    label: navLabelFallback[id],
-                    ornament: ADMIN_NAV_ORNAMENT_DEFAULT,
-                    visible: true,
-                    order: index + 1,
-                    children: []
-                  };
-                })
-              }
-            },
-            sources: initialState.payload.sources
-          }
-        };
-      })()
+    ? {
+        ok: true as const,
+        payload: {
+          revision: initialState.payload.revision,
+          settings: {
+            ...initialState.payload.settings,
+            shell: {
+              ...initialState.payload.settings.shell,
+              nav: buildBootstrapNav(initialState.payload.settings.shell.nav)
+            }
+          },
+          sources: initialState.payload.sources
+        }
+      }
     : initialState;
 
   return {
@@ -118,7 +117,6 @@ const loadThemeDevState = async () => {
     aboutUmamiBaseUrl,
     memoSubtitlePlaceholder,
     memoTitlePlaceholder,
-    navIdOrder,
     pageSubtitleMaxLength,
     pageTitleMaxLength,
     settingsEndpoint,
@@ -154,7 +152,6 @@ const AdminImagePicker = adminDevState?.AdminImagePicker;
           aboutUmamiBaseUrl={adminDevState.aboutUmamiBaseUrl}
           memoSubtitlePlaceholder={adminDevState.memoSubtitlePlaceholder}
           memoTitlePlaceholder={adminDevState.memoTitlePlaceholder}
-          navIdOrder={adminDevState.navIdOrder}
           pageSubtitleMaxLength={adminDevState.pageSubtitleMaxLength}
           pageTitleMaxLength={adminDevState.pageTitleMaxLength}
           settingsEndpoint={adminDevState.settingsEndpoint}

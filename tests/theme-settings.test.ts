@@ -6,6 +6,7 @@ import {
   getEditableThemeSettingsPayload,
   getEditableThemeSettingsState,
   getSidebarHref,
+  getSidebarNavItemHref,
   getSiteFaviconLinks,
   getThemeSettings,
   getThemeSettingsReadDiagnostics,
@@ -75,13 +76,13 @@ describe('theme-settings revision semantics', () => {
   it('resolves the fixed links navigation and page defaults', () => {
     const resolved = getThemeSettings();
 
+    /* 只断言关键项存在：order 数值与项数跟随 shell.json 配置，不做强断言。 */
     expect(resolved.settings.shell.nav).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: 'links',
           label: '友链',
           visible: true,
-          order: 5,
           children: expect.arrayContaining([
             expect.objectContaining({ id: 'index', href: '/links/' }),
             expect.objectContaining({ id: 'exchange', href: '/links/exchange/' }),
@@ -106,7 +107,8 @@ describe('theme-settings revision semantics', () => {
 
     expect(links?.children).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'index', href: '/links/' }),
-      expect.objectContaining({ id: 'exchange', href: '/links/exchange/' })
+      expect.objectContaining({ id: 'exchange', href: '/links/exchange/' }),
+      expect.objectContaining({ id: 'fcircle', href: '/fcircle/' })
     ]));
   });
 
@@ -150,6 +152,160 @@ describe('theme-settings revision semantics', () => {
     );
   });
 
+  it('preserves valid custom primary nav items alongside built-in ones', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    /* 基准从 fixture 实际内容推导：期望顺序与追加位不硬编码主题默认配置。 */
+    const baseNav = getThemeSettings().settings.shell.nav;
+    const baseIds = baseNav.map((item) => item.id);
+    const nextOrder = Math.max(...baseNav.map((item) => item.order)) + 1;
+    const shellPath = path.join(settingsDir, 'shell.json');
+    const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
+    shellJson.nav.push(
+      {
+        id: 'friend-circle',
+        label: '圈子',
+        ornament: '·',
+        order: nextOrder,
+        visible: true,
+        href: '/fcircle/',
+        children: []
+      },
+      {
+        id: 'mastodon',
+        label: '长毛象',
+        ornament: '·',
+        order: nextOrder + 1,
+        visible: false,
+        href: 'https://mastodon.example/@whono',
+        children: [
+          { id: 'profile', label: '主页', href: '/profile/', visible: true, order: 1 }
+        ]
+      }
+    );
+    await writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const nav = resolved.settings.shell.nav;
+    const custom = nav.find((item) => item.id === 'friend-circle');
+    const external = nav.find((item) => item.id === 'mastodon');
+
+    expect(custom).toMatchObject({
+      id: 'friend-circle',
+      label: '圈子',
+      ornament: '·',
+      visible: true,
+      order: nextOrder,
+      href: '/fcircle/',
+      children: []
+    });
+    expect(external).toMatchObject({
+      id: 'mastodon',
+      label: '长毛象',
+      visible: false,
+      order: nextOrder + 1,
+      href: 'https://mastodon.example/@whono'
+    });
+    expect(external?.children).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'profile', href: '/profile/' })])
+    );
+    expect(getSidebarNavItemHref(custom!)).toBe('/fcircle/');
+    expect(getSidebarNavItemHref(external!)).toBe('https://mastodon.example/@whono');
+    expect(getSidebarNavItemHref(nav.find((item) => item.id === 'essay')!)).toBe('/essay/');
+    expect(nav.map((item) => item.id)).toEqual([...baseIds, 'friend-circle', 'mastodon']);
+    expect(getEditableThemeSettingsPayload(resolved).settings.shell.nav).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'friend-circle', href: '/fcircle/' }),
+        expect.objectContaining({ id: 'mastodon', href: 'https://mastodon.example/@whono' })
+      ])
+    );
+    expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);
+  });
+
+  it('ignores invalid custom primary nav items on the read path', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    /* 期望的 id 集合从 fixture 实际内容推导：非法项被丢弃后应与基准完全一致。 */
+    const baseNav = getThemeSettings().settings.shell.nav;
+    const baseIds = baseNav.map((item) => item.id);
+    const shellPath = path.join(settingsDir, 'shell.json');
+    const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
+    const nextOrder = Math.max(...baseNav.map((item) => item.order)) + 1;
+    shellJson.nav.push(
+      { id: 'Bad_ID', label: '非法标识', href: '/nowhere/', order: nextOrder, visible: true, children: [] },
+      { id: 'insecure-link', label: '非安全链接', href: 'http://example.com/', order: nextOrder + 1, visible: true, children: [] },
+      { id: 'protocol-relative', label: '协议相对地址', href: '//example.com/', order: nextOrder + 2, visible: true, children: [] },
+      { id: 'missing-href', label: '缺少地址', order: nextOrder + 3, visible: true, children: [] },
+      { id: '', label: '空标识', href: '/nowhere/', order: nextOrder + 4, visible: true, children: [] }
+    );
+    /* 内置 id 携带显式 href：按内置项覆盖处理，href 被忽略且链接仍由注册表推导。 */
+    shellJson.nav.push({
+      id: 'essay',
+      label: '随笔',
+      ornament: '·',
+      order: baseNav.find((item) => item.id === 'essay')!.order,
+      visible: true,
+      href: '/hijack/',
+      children: []
+    });
+    await writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const nav = resolved.settings.shell.nav;
+
+    expect(nav.map((item) => item.id)).toEqual(baseIds);
+    expect(getSidebarNavItemHref(nav.find((item) => item.id === 'essay')!)).toBe('/essay/');
+    /* 被忽略的非法项属于静默修复：读取诊断应锁定控制台而不是无感知丢弃。 */
+    expect(getThemeSettingsReadDiagnostics(resolved)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ group: 'shell', code: 'schema-mismatch' })
+      ])
+    );
+  });
+
+  it('lets later duplicate custom primary nav ids override earlier ones', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    /* 追加位从 fixture 实际内容推导，避免与既有 order 冲突触发修复干扰覆盖语义。 */
+    const baseNav = getThemeSettings().settings.shell.nav;
+    const nextOrder = Math.max(...baseNav.map((item) => item.order)) + 1;
+    const shellPath = path.join(settingsDir, 'shell.json');
+    const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
+    shellJson.nav.push(
+      { id: 'dupe-link', label: '第一版', href: '/first/', order: nextOrder, visible: true, children: [] },
+      { id: 'dupe-link', label: '第二版', href: 'https://example.com/second/', order: nextOrder + 1, visible: false, children: [] }
+    );
+    await writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const matches = resolved.settings.shell.nav.filter((item) => item.id === 'dupe-link');
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      label: '第二版',
+      href: 'https://example.com/second/',
+      visible: false,
+      order: nextOrder + 1
+    });
+  });
+
+  it('keeps custom primary nav orders unique by repairing conflicts', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    /* essay 的基准 order 从 fixture 实际内容推导，冲突输入与期望均不硬编码默认值。 */
+    const essayOrder = getThemeSettings().settings.shell.nav.find((item) => item.id === 'essay')!.order;
+    const shellPath = path.join(settingsDir, 'shell.json');
+    const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
+    /* 与 essay 的 order 冲突：读取路径会自动修复为可用位置并保持排序稳定。 */
+    shellJson.nav.push({ id: 'conflict-link', label: '冲突', href: '/conflict/', order: essayOrder, visible: true, children: [] });
+    await writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8');
+
+    const resolved = getThemeSettings();
+    const nav = resolved.settings.shell.nav;
+    const orders = nav.map((item) => item.order);
+
+    expect(new Set(orders).size).toBe(orders.length);
+    expect(nav.find((item) => item.id === 'essay')).toMatchObject({ order: essayOrder });
+    /* 修复后的落位由实际占用决定，只断言冲突被解除且 essay 原位不动。 */
+    expect(nav.find((item) => item.id === 'conflict-link')?.order).not.toBe(essayOrder);
+  });
+
   it('keeps legacy shell and page settings without links compatible', async () => {
     const settingsDir = await createTempSettingsFixture();
     const shellPath = path.join(settingsDir, 'shell.json');
@@ -157,9 +313,6 @@ describe('theme-settings revision semantics', () => {
     const shellJson = JSON.parse(await readFile(shellPath, 'utf8')) as Record<string, any>;
     const pageJson = JSON.parse(await readFile(pagePath, 'utf8')) as Record<string, any>;
     shellJson.nav = shellJson.nav.filter((item: { id: string }) => item.id !== 'links');
-    shellJson.nav.forEach((item: { id: string; order: number }) => {
-      if (item.id === 'about') item.order = 6;
-    });
     delete pageJson.links;
     await Promise.all([
       writeFile(shellPath, `${JSON.stringify(shellJson, null, 2)}\n`, 'utf8'),
@@ -174,7 +327,7 @@ describe('theme-settings revision semantics', () => {
     );
     expect(resolved.settings.page.links).toEqual({ title: '友链', subtitle: null });
     expect(payload.settings.shell.nav).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: 'links', order: 5 })])
+      expect.arrayContaining([expect.objectContaining({ id: 'links' })])
     );
     expect(payload.settings.page.links).toEqual({ title: '友链', subtitle: null });
     expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);

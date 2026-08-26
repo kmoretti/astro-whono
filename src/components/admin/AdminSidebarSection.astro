@@ -2,18 +2,7 @@
 import AdminHelpTip from './AdminHelpTip.astro';
 import AdminIcon from './AdminIcon.astro';
 import UiIcon from '../UiIcon.astro';
-import type { SidebarNavId } from '../../lib/theme-settings';
-import {
-  ADMIN_NAV_ORNAMENT_DEFAULT,
-  ADMIN_NAV_ORNAMENT_MAX_LENGTH,
-  ADMIN_SIDEBAR_DIVIDER_OPTIONS
-} from '../../lib/admin-console/theme-shared';
-
-interface Props {
-  navIdOrder: readonly SidebarNavId[];
-}
-
-const { navIdOrder } = Astro.props;
+import { ADMIN_NAV_ORNAMENT_DEFAULT, ADMIN_SIDEBAR_DIVIDER_OPTIONS } from '../../lib/admin-console/theme-shared';
 ---
 
 <fieldset class="admin-group">
@@ -135,101 +124,14 @@ const { navIdOrder } = Astro.props;
         <AdminHelpTip
           id="admin-nav-ornament-hint"
           label="侧栏导航后缀说明"
-          text={`后缀支持短文本/符号；留空隐藏，输入 ${ADMIN_NAV_ORNAMENT_DEFAULT} 还原默认。`}
+          text={`后缀支持短文本/符号；留空隐藏，输入 ${ADMIN_NAV_ORNAMENT_DEFAULT} 还原默认。拖拽 ≡ 手柄调整顺序，子导航可拖入其他分组。`}
         />
       </p>
-      <div class="admin-nav-grid admin-nav-grid--compact">
-        <div class="admin-nav-header" aria-hidden="true">
-          <span>排序</span>
-          <span>页面 ID</span>
-          <span>导航名称</span>
-          <span>导航后缀</span>
-          <span>是否展示</span>
-        </div>
-        {
-          navIdOrder.map((id, index) => (
-            <div class="admin-row admin-row--interactive admin-row--table admin-nav-row" data-nav-id={id}>
-              <label class="admin-field admin-nav-field admin-nav-field--order">
-                <span class="admin-nav-cell-label">排序</span>
-                <span class="sr-only">{id} 排序</span>
-                <span class="admin-social-order-frame admin-nav-order-frame">
-                  <span class="admin-social-order-frame__mark" aria-hidden="true">[</span>
-                  <input
-                    class="admin-field__control"
-                    data-nav-field="order"
-                    name={`shell-nav-${id}-order`}
-                    type="number"
-                    min="1"
-                    step="1"
-                    inputmode="numeric"
-                    value={index + 1}
-                  />
-                  <span class="admin-social-order-frame__mark" aria-hidden="true">]</span>
-                </span>
-              </label>
-              <p class="admin-nav-id">
-                <span class="admin-nav-cell-label">页面 ID</span>
-                <span class="admin-nav-id__text">{id}</span>
-              </p>
-              <label class="admin-field admin-nav-field admin-nav-field--name">
-                <span class="admin-nav-cell-label">导航名称</span>
-                <span class="sr-only">{id} 导航名称</span>
-                <input
-                  class="admin-field__control admin-field__control--soft"
-                  data-nav-field="label"
-                  name={`shell-nav-${id}-label`}
-                  type="text"
-                  autocomplete="off"
-                />
-              </label>
-              <label class="admin-field admin-nav-field admin-nav-field--ornament">
-                <span class="admin-nav-cell-label">导航后缀</span>
-                <span class="sr-only">{id} 导航后缀，留空表示不显示</span>
-                <input
-                  class="admin-field__control admin-field__control--soft"
-                  data-nav-field="ornament"
-                  name={`shell-nav-${id}-ornament`}
-                  type="text"
-                  autocomplete="off"
-                  maxlength={ADMIN_NAV_ORNAMENT_MAX_LENGTH}
-                  aria-describedby="admin-nav-ornament-hint"
-                />
-              </label>
-              <label class="admin-toggle">
-                <span class="admin-nav-cell-label">是否展示</span>
-                <span class="admin-toggle__control">
-                  <input
-                    data-nav-field="visible"
-                    name={`shell-nav-${id}-visible`}
-                    type="checkbox"
-                    aria-label={`${id} 是否显示`}
-                  />
-                </span>
-              </label>
-            </div>
-          ))
-        }
-      </div>
-    </div>
-    <div class="admin-nav-children-panel">
-      <div class="admin-social-panel__head">
-        <p class="admin-subtitle admin-subtitle--compact">
-          <span class="admin-subtitle__main">多级导航</span>
-          <span class="admin-subtitle__hint">（仅支持一级 + 二级）</span>
-        </p>
-        <button id="shell-nav-child-add" class="admin-btn admin-btn--ghost admin-btn--compact" type="button">
-          新增子导航
+      <div id="shell-nav-editor" class="admin-nav-editor" data-nav-editor></div>
+      <div class="admin-nav-editor__foot">
+        <button id="shell-nav-add" class="admin-btn admin-btn--ghost admin-btn--compact" type="button">
+          添加一级导航
         </button>
-      </div>
-      <div id="shell-nav-child-list" class="admin-nav-child-list">
-        <div class="admin-nav-child-header" aria-hidden="true">
-          <span>所属一级导航</span>
-          <span>导航名称</span>
-          <span>站内路径</span>
-          <span>排序</span>
-          <span>展示</span>
-          <span>操作</span>
-        </div>
       </div>
     </div>
   </div>

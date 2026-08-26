@@ -33,6 +33,8 @@ import {
   ADMIN_HOME_INTRO_LINK_KEY_SET,
   ADMIN_HOME_INTRO_LINK_LIMIT,
   ADMIN_LOCALE_RE,
+  ADMIN_NAV_CUSTOM_HREF_MAX_LENGTH,
+  ADMIN_NAV_CUSTOM_LABEL_MAX_LENGTH,
   ADMIN_NAV_IDS,
   ADMIN_NAV_ORDER_MAX,
   ADMIN_NAV_ORDER_MIN,
@@ -44,6 +46,7 @@ import {
   ADMIN_SOCIAL_ORDER_MAX,
   ADMIN_SOCIAL_ORDER_MIN,
   ADMIN_SOCIAL_PRESET_IDS,
+  SIDEBAR_NAV_BUILTIN_ID_SET,
   canonicalizeAdminThemeSettings,
   createAdminWritableThemeSettingsGroups,
   fillAdminThemeSettingsGroupCompatibilityDefaults,
@@ -54,6 +57,8 @@ import {
   getAdminSocialOrderIssues,
   ADMIN_SIDEBAR_DIVIDER_DEFAULT,
   ADMIN_TYPOGRAPHY_DEFAULT,
+  isAdminNavCustomHref,
+  isAdminNavCustomId,
   isAdminNavOrderValue,
   isAdminSocialOrderValue,
   isAdminSidebarDividerVariant,
@@ -86,12 +91,14 @@ export type SiteSocialIconKey =
   | 'linkedin'
   | 'website';
 
+/* 一级导航项：内置项 id 取 SidebarNavId 且 href 由 id 推导；自定义项 id 为 kebab-case 字符串，必须显式携带 href。 */
 export interface SidebarNavItem {
-  id: SidebarNavId;
+  id: string;
   label: string;
   ornament: string | null;
   visible: boolean;
   order: number;
+  href?: string;
   children: SidebarNavChild[];
 }
 
@@ -542,7 +549,7 @@ const LEGACY_NAV: SidebarNavItem[] = [
     ]
   }
 ];
-const LEGACY_NAV_ORDER = new Map<SidebarNavId, number>(LEGACY_NAV.map((item) => [item.id, item.order]));
+const LEGACY_NAV_ORDER = new Map<string, number>(LEGACY_NAV.map((item) => [item.id, item.order]));
 
 const cloneNavItems = (items: readonly SidebarNavItem[]): SidebarNavItem[] =>
   items.map((item) => ({ ...item, children: item.children.map((child) => ({ ...child })) }));
@@ -707,7 +714,6 @@ const DEFAULT_UI: UiSettings = {
   }
 };
 
-const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['essay', 'bits', 'memo', 'archive', 'about', 'links']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_HOSTS = ['github.com'];
 const QQ_HOSTS = ['qm.qq.com'];
@@ -721,15 +727,6 @@ const PRESET_SOCIAL_ITEMS: readonly {
   { id: 'qq', label: 'QQ', iconKey: 'qq' },
   { id: 'email', label: 'Email', iconKey: 'email' }
 ];
-
-const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
-  essay: '/essay/',
-  bits: '/bits/',
-  memo: '/memo/',
-  archive: '/archive/',
-  about: '/about/',
-  links: '/links/'
-};
 
 let cachedSettings: ThemeSettingsResolved | null = null;
 const shouldCacheThemeSettings = import.meta.env.PROD;
@@ -878,7 +875,7 @@ const asBoolean = (value: unknown): boolean | undefined =>
 
 const asNavId = (value: unknown): SidebarNavId | undefined => {
   if (typeof value !== 'string') return undefined;
-  return NAV_IDS.has(value as SidebarNavId) ? (value as SidebarNavId) : undefined;
+  return SIDEBAR_NAV_BUILTIN_ID_SET.has(value) ? (value as SidebarNavId) : undefined;
 };
 
 const asHeroPresetId = (value: unknown): HeroPresetId | undefined => {
@@ -1117,7 +1114,7 @@ const claimAvailableOrder = (
 const sortSidebarNavItems = (items: readonly SidebarNavItem[]): SidebarNavItem[] =>
   [...items].sort((a, b) => {
     if (a.order !== b.order) return a.order - b.order;
-    return ADMIN_NAV_IDS.indexOf(a.id) - ADMIN_NAV_IDS.indexOf(b.id);
+    return (ADMIN_NAV_IDS as readonly string[]).indexOf(a.id) - (ADMIN_NAV_IDS as readonly string[]).indexOf(b.id);
   });
 
 const normalizeSidebarNavItems = (items: readonly SidebarNavItem[]): SidebarNavItem[] => {
@@ -1139,7 +1136,7 @@ const normalizeSidebarNavItems = (items: readonly SidebarNavItem[]): SidebarNavI
     order: claimAvailableOrder(
       usedOrders,
       item.order,
-      LEGACY_NAV_ORDER.get(item.id) ?? ADMIN_NAV_IDS.indexOf(item.id) + 1,
+      LEGACY_NAV_ORDER.get(item.id) ?? (ADMIN_NAV_IDS as readonly string[]).indexOf(item.id) + 1,
       isAdminNavOrderValue,
       ADMIN_NAV_ORDER_MIN,
       ADMIN_NAV_ORDER_MAX
@@ -1200,28 +1197,9 @@ const normalizeSocialOrderState = (
   };
 };
 
-const parseSidebarNav = (value: unknown): SidebarNavItem[] | undefined => {
-  if (!Array.isArray(value)) return undefined;
-
-  const merged = new Map<SidebarNavId, SidebarNavItem>(
-    LEGACY_NAV.map((item) => [item.id, { ...item }])
-  );
-  let hasOverride = false;
-
-  for (const row of value) {
-    if (!isRecord(row)) continue;
-    const id = asNavId(row.id);
-    if (!id) continue;
-    const current = merged.get(id);
-    if (!current) continue;
-
-    const label = asNonEmptyString(row.label) ?? current.label;
-    const ornament = asNullableSingleLineString(row.ornament, ADMIN_NAV_ORNAMENT_MAX_LENGTH);
-    const visible = asBoolean(row.visible) ?? current.visible;
-    const rawOrder = asInteger(row.order);
-    const order = rawOrder !== undefined && isAdminNavOrderValue(rawOrder) ? rawOrder : current.order;
-    const children = Array.isArray(row.children)
-      ? row.children.flatMap((child, index) => {
+const parseSidebarNavChildren = (value: unknown): SidebarNavChild[] =>
+  Array.isArray(value)
+    ? value.flatMap((child, index) => {
         if (!isRecord(child)) return [];
         const childId = asSingleLineString(child.id, 64);
         const childLabel = asSingleLineString(child.label, 80);
@@ -1235,15 +1213,65 @@ const parseSidebarNav = (value: unknown): SidebarNavItem[] | undefined => {
           order: asInteger(child.order) ?? index + 1
         }];
       }).sort((a, b) => a.order - b.order)
-      : current.children;
+    : [];
 
-    merged.set(id, {
-      id,
-      label,
-      ornament: ornament === undefined ? current.ornament : ornament,
-      visible,
-      order,
-      children
+const parseSidebarNav = (value: unknown): SidebarNavItem[] | undefined => {
+  if (!Array.isArray(value)) return undefined;
+
+  const merged = new Map<string, SidebarNavItem>(
+    LEGACY_NAV.map((item) => [item.id, { ...item }])
+  );
+  let hasOverride = false;
+
+  for (const row of value) {
+    if (!isRecord(row)) continue;
+    const id = asNavId(row.id);
+    if (id) {
+      const current = merged.get(id);
+      if (!current) continue;
+
+      const label = asNonEmptyString(row.label) ?? current.label;
+      const ornament = asNullableSingleLineString(row.ornament, ADMIN_NAV_ORNAMENT_MAX_LENGTH);
+      const visible = asBoolean(row.visible) ?? current.visible;
+      const rawOrder = asInteger(row.order);
+      const order = rawOrder !== undefined && isAdminNavOrderValue(rawOrder) ? rawOrder : current.order;
+      const children = Array.isArray(row.children) ? parseSidebarNavChildren(row.children) : current.children;
+
+      merged.set(id, {
+        id,
+        label,
+        ornament: ornament === undefined ? current.ornament : ornament,
+        visible,
+        order,
+        children
+      });
+      hasOverride = true;
+      continue;
+    }
+
+    /* 自定义一级导航：id/label/href 全部合法才保留（缺 href 等非法项按既有策略忽略），重复 id 后者覆盖前者。 */
+    const customId = asString(row.id);
+    const customLabel = asSingleLineString(row.label, ADMIN_NAV_CUSTOM_LABEL_MAX_LENGTH);
+    const customHref = asString(row.href);
+    if (
+      !customId ||
+      !customLabel ||
+      !customHref ||
+      !isAdminNavCustomId(customId) ||
+      !isAdminNavCustomHref(customHref) ||
+      customHref.length > ADMIN_NAV_CUSTOM_HREF_MAX_LENGTH
+    ) continue;
+
+    const ornament = asNullableSingleLineString(row.ornament, ADMIN_NAV_ORNAMENT_MAX_LENGTH);
+    const rawOrder = asInteger(row.order);
+    merged.set(customId, {
+      id: customId,
+      label: customLabel,
+      ornament: ornament ?? ADMIN_NAV_ORNAMENT_DEFAULT,
+      visible: asBoolean(row.visible) ?? true,
+      order: rawOrder !== undefined && isAdminNavOrderValue(rawOrder) ? rawOrder : ADMIN_NAV_IDS.length + 1,
+      href: customHref,
+      children: parseSidebarNavChildren(row.children)
     });
     hasOverride = true;
   }
@@ -2254,4 +2282,5 @@ export const getSiteFaviconLinks = (favicon: SiteFaviconSettings): SiteFaviconLi
   return links;
 };
 
-export const getSidebarHref = (id: SidebarNavId): string => SIDEBAR_HREFS[id];
+/* 导航 href 辅助函数迁移至客户端安全的 theme-shared（浏览器脚本也会用到），此处转发导出保持既有引用不变。 */
+export { getSidebarHref, getSidebarNavItemHref, SIDEBAR_NAV_BUILTIN_ID_SET } from './admin-console/theme-shared';

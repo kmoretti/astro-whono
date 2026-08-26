@@ -115,7 +115,8 @@
   min-width: 0;
 }
 
-.admin-sidebar-layout > .admin-nav-children-panel {
+/* 统一树形导航编辑器横向铺满整行，便于展示分组与嵌套子导航。 */
+.admin-sidebar-layout > .admin-subgroup--sidebar-nav {
   grid-column: 1 / -1;
 }
 

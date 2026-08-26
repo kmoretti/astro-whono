@@ -1,9 +1,5 @@
-import type { SidebarNavId } from '@/lib/theme-settings';
 import { ADMIN_SETTINGS_API_PATH } from '@/lib/admin-console/admin-api-paths';
-import {
-  ADMIN_NAV_IDS,
-  getAdminFooterStartYearMax
-} from '@/lib/admin-console/theme-shared';
+import { getAdminFooterStartYearMax } from '@/lib/admin-console/theme-shared';
 import { onPageChange } from '../page-controllers';
 import { createAdminImagePicker } from '../admin-shared/image-picker';
 import {
@@ -21,8 +17,9 @@ import { createAdminThemeController } from './controller';
 import { createAdminFaviconUploads } from './favicon-uploads';
 import { createFormCodec } from './form-codec';
 import { createAdminThemeImageFields } from './image-fields';
+import { createNavTreeEditor } from './nav-tree-editor';
+import { createNavTreePreview } from './nav-tree-preview';
 import { createSocialLinks } from './social-links';
-import { createSidebarNavChildren } from './sidebar-nav-children';
 import { createAdminConsoleUiState } from './ui-state';
 import { createValidation } from './validation';
 
@@ -45,12 +42,23 @@ if (!root) {
   } else {
     const endpoint = root.getAttribute('data-settings-endpoint') || ADMIN_SETTINGS_API_PATH;
     const footerStartYearMax = getAdminFooterStartYearMax();
-    const getNavRows = (): HTMLElement[] => queryAll<HTMLElement>(root, '[data-nav-id]');
-    const navChildren = createSidebarNavChildren({
-      list: query<HTMLElement>(root, '#shell-nav-child-list')!,
-      addButton: query<HTMLButtonElement>(root, '#shell-nav-child-add')!,
+    const navEditorRoot = query<HTMLElement>(root, '#shell-nav-editor')!;
+    const navTreeEditor = createNavTreeEditor({
+      root: navEditorRoot,
+      addNavButton: query<HTMLButtonElement>(root, '#shell-nav-add')!,
       query
     });
+
+    /* Task 4：未保存的导航草稿实时预览到开发态侧边栏的公共导航面板
+       （面板仅在 dev 且非页面级侧栏时渲染，缺席时静默跳过）。 */
+    const navPreviewPanel = document.querySelector<HTMLElement>('[data-admin-nav-panel="public"]');
+    const navTreePreview = navPreviewPanel
+      ? createNavTreePreview({
+          editorRoot: navEditorRoot,
+          panel: navPreviewPanel,
+          collect: navTreeEditor.collect
+        })
+      : null;
 
     const socialLinks = createSocialLinks({
       query,
@@ -68,9 +76,12 @@ if (!root) {
     const formCodec = createFormCodec({
       footerStartYearMax,
       query,
-      getNavRows,
-      getNavChildDrafts: navChildren.collect,
-      renderNavChildDrafts: navChildren.render,
+      getNavItems: navTreeEditor.collect,
+      /* 编辑器重渲染（初始载入/重置/保存后回灌）后同步侧栏预览。 */
+      renderNavItems: (items) => {
+        navTreeEditor.render(items);
+        navTreePreview?.sync();
+      },
       getCustomRows: socialLinks.getCustomRows,
       getCustomRowLabelInput: socialLinks.getCustomRowLabelInput,
       defaultCustomSocialIconKey: socialLinks.defaultCustomSocialIconKey,
@@ -191,19 +202,6 @@ if (!root) {
       inputTypographyBrand: controls.inputTypographyBrand
     });
 
-    const getNavFieldTarget = (
-      id: SidebarNavId,
-      field: 'label' | 'ornament' | 'order' | 'visible'
-    ): (() => HTMLElement | null) => () => {
-      const row = query<HTMLElement>(root, `[data-nav-id="${id}"]`);
-      return row ? query<HTMLElement>(row, `[data-nav-field="${field}"]`) : null;
-    };
-
-    const getFirstNavLabelTarget = (): HTMLElement | null => {
-      const firstNavId = ADMIN_NAV_IDS[0];
-      return firstNavId ? getNavFieldTarget(firstNavId, 'label')() : null;
-    };
-
     const validation = createValidation({
       form: controls.form,
       queryAll,
@@ -277,8 +275,9 @@ if (!root) {
       getPresetFieldTarget: socialLinks.getPresetFieldTarget,
       getCustomFieldTarget: socialLinks.getCustomFieldTarget,
       getCustomVisibilityTarget: socialLinks.getCustomVisibilityTarget,
-      getNavFieldTarget,
-      getFirstNavLabelTarget
+      getNavFieldTarget: navTreeEditor.getNavFieldTarget,
+      getNavChildFieldTarget: navTreeEditor.getNavChildFieldTarget,
+      getFirstNavLabelTarget: navTreeEditor.getFirstNavLabelTarget
     });
 
     const statusTargets = [controls.statusEl, controls.statusInlineEl]
@@ -350,6 +349,10 @@ if (!root) {
       finalizeAppliedSettings,
       syncEditableDerivedControls
     });
+
+    // 树形导航编辑器结构变化（增删/移动/跨父级拖拽）不冒泡原生 input/change，
+    // 经 onChange 钩子触发脏状态刷新；文本输入仍走表单级 input/change 冒泡。
+    navTreeEditor.setOnChange(controller.refreshDirty);
 
     bindAdminThemeFieldEvents({
       controls,

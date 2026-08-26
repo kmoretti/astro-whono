@@ -7,6 +7,9 @@ import {
   fillAdminThemeSettingsCompatibilityDefaults,
   getAdminNavOrderIssues,
   getAdminSocialOrderIssues,
+  isAdminNavCustomLabel,
+  isAdminNavCustomHref,
+  isAdminNavCustomId,
   normalizeAdminLinksUrl,
   validateAdminThemeSettings
 } from '../src/lib/admin-console/shared';
@@ -74,6 +77,166 @@ describe('admin-console/shared', () => {
       { type: 'duplicate', key: 'bits', order: 1 },
       { type: 'range', key: 'memo', order: 0 }
     ]);
+  });
+
+  it('validates custom primary nav ids, hrefs, and labels', () => {
+    expect(isAdminNavCustomId('friend-circle')).toBe(true);
+    expect(isAdminNavCustomId('a')).toBe(true);
+    expect(isAdminNavCustomId('custom2-link')).toBe(true);
+    expect(isAdminNavCustomId('a'.repeat(80))).toBe(true);
+    /* 内置导航 id 不得被自定义项占用。 */
+    expect(isAdminNavCustomId('essay')).toBe(false);
+    expect(isAdminNavCustomId('links')).toBe(false);
+    expect(isAdminNavCustomId('Bad_ID')).toBe(false);
+    expect(isAdminNavCustomId('1abc')).toBe(false);
+    expect(isAdminNavCustomId('-abc')).toBe(false);
+    expect(isAdminNavCustomId('')).toBe(false);
+    expect(isAdminNavCustomId('a'.repeat(81))).toBe(false);
+
+    expect(isAdminNavCustomHref('/friends/')).toBe(true);
+    expect(isAdminNavCustomHref('/')).toBe(true);
+    expect(isAdminNavCustomHref('https://example.com/@whono')).toBe(true);
+    expect(isAdminNavCustomHref('HTTPS://example.com')).toBe(true);
+    expect(isAdminNavCustomHref('//example.com/')).toBe(false);
+    expect(isAdminNavCustomHref('http://example.com/')).toBe(false);
+    expect(isAdminNavCustomHref('friends')).toBe(false);
+    expect(isAdminNavCustomHref('')).toBe(false);
+
+    expect(isAdminNavCustomLabel('友链')).toBe(true);
+    expect(isAdminNavCustomLabel('a'.repeat(80))).toBe(true);
+    expect(isAdminNavCustomLabel('')).toBe(false);
+    expect(isAdminNavCustomLabel('a'.repeat(81))).toBe(false);
+  });
+
+  it('accepts a valid custom primary nav item when validating theme settings', () => {
+    const settings = getEditableThemeSettingsPayload().settings;
+    settings.shell.nav.push({
+      id: 'friend-circle',
+      label: '圈子',
+      ornament: '·',
+      order: 7,
+      visible: true,
+      href: '/fcircle/',
+      children: []
+    });
+
+    const paths = validateAdminThemeSettings(settings).map((issue) => issue.path);
+
+    expect(paths).not.toContain('shell.nav.friend-circle');
+    expect(paths).not.toContain('shell.nav.friend-circle.id');
+    expect(paths).not.toContain('shell.nav.friend-circle.href');
+    expect(paths).not.toContain('shell.nav.friend-circle.label');
+  });
+
+  it('rejects invalid custom primary nav items when validating theme settings', () => {
+    const settings = getEditableThemeSettingsPayload().settings;
+    settings.shell.nav.push(
+      {
+        id: 'Bad_ID',
+        label: '非法标识',
+        ornament: '·',
+        order: 7,
+        visible: true,
+        href: 'http://example.com/',
+        children: []
+      },
+      {
+        id: 'missing-href',
+        label: '缺少地址',
+        ornament: '·',
+        order: 8,
+        visible: true,
+        children: []
+      },
+      {
+        id: 'long-href',
+        label: '超长地址',
+        ornament: '·',
+        order: 9,
+        visible: true,
+        href: `https://example.com/${'a'.repeat(500)}`,
+        children: []
+      },
+      {
+        id: 'long-label',
+        label: 'x'.repeat(81),
+        ornament: '·',
+        order: 10,
+        visible: true,
+        href: '/long-label/',
+        children: []
+      }
+    );
+
+    const paths = validateAdminThemeSettings(settings).map((issue) => issue.path);
+
+    /* 非法 id 的 basePath 回退到数组下标，用弱匹配避免硬编码位置。 */
+    expect(paths).toEqual(expect.arrayContaining([expect.stringMatching(/^shell\.nav\[\d+\]\.id$/)]));
+    expect(paths).toEqual(expect.arrayContaining([expect.stringMatching(/^shell\.nav\[\d+\]\.href$/)]));
+    expect(paths).toContain('shell.nav.missing-href.href');
+    expect(paths).toContain('shell.nav.long-href.href');
+    expect(paths).toContain('shell.nav.long-label.label');
+  });
+
+  it('rejects duplicate custom primary nav ids when validating theme settings', () => {
+    const settings = getEditableThemeSettingsPayload().settings;
+    settings.shell.nav.push(
+      {
+        id: 'dupe-link',
+        label: '第一版',
+        ornament: '·',
+        order: 7,
+        visible: true,
+        href: '/first/',
+        children: []
+      },
+      {
+        id: 'dupe-link',
+        label: '第二版',
+        ornament: '·',
+        order: 8,
+        visible: true,
+        href: '/second/',
+        children: []
+      }
+    );
+
+    const paths = validateAdminThemeSettings(settings).map((issue) => issue.path);
+
+    expect(paths).toContain('shell.nav.dupe-link.id');
+  });
+
+  it('canonicalizes custom primary nav items and keeps them writable', () => {
+    const raw = structuredClone(getEditableThemeSettingsPayload().settings) as Record<string, any>;
+    raw.shell.nav.push({
+      id: 'friend-circle',
+      label: '  圈子  ',
+      ornament: '·',
+      order: '7',
+      visible: true,
+      href: ' /fcircle/ ',
+      children: []
+    });
+
+    const canonical = canonicalizeAdminThemeSettings(raw);
+    const writable = createAdminWritableThemeSettingsGroups(canonical);
+
+    expect(canonical.shell.nav).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'friend-circle',
+          label: '圈子',
+          href: '/fcircle/',
+          order: 7,
+          visible: true
+        })
+      ])
+    );
+    expect(writable.shell.nav).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'friend-circle', label: '圈子', href: '/fcircle/' })
+      ])
+    );
   });
 
   it('accepts only HTTPS URLs for friend-link settings', () => {

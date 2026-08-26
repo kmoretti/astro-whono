@@ -1,7 +1,6 @@
 import type {
   HomeIntroLinkKey,
   SidebarDividerVariant,
-  SidebarNavId,
   SiteSocialIconKey,
   SiteSocialPresetId,
   ThemeFontId,
@@ -16,15 +15,12 @@ import {
   ADMIN_HOME_INTRO_LINK_DEFAULT,
   ADMIN_HOME_INTRO_LINK_LIMIT,
   ADMIN_HOME_INTRO_LINK_OPTIONS,
-  ADMIN_NAV_IDS,
-  ADMIN_NAV_ORNAMENT_DEFAULT,
   ADMIN_OVERVIEW_HIDDEN_MESSAGE_DEFAULT,
   ADMIN_SIDEBAR_DIVIDER_DEFAULT,
   ADMIN_SOCIAL_PRESET_ORDER_DEFAULT,
   ADMIN_TYPOGRAPHY_DEFAULT,
   canonicalizeAdminThemeSettings,
   isAdminHomeIntroLinkKey,
-  isAdminNavId,
   isAdminTypographyFontId,
   normalizeAdminSocialIconKey
 } from '@/lib/admin-console/theme-shared';
@@ -32,8 +28,6 @@ import {
 export type EditableSettings = ThemeSettingsEditablePayload['settings'];
 export type EditableCustomSocialItem = EditableSettings['site']['socialLinks']['custom'][number];
 export type EditableNavItem = EditableSettings['shell']['nav'][number];
-export type EditableNavChild = EditableNavItem['children'][number];
-export type SidebarNavChildDraft = { parentId: SidebarNavId; child: EditableNavChild };
 export type SocialPresetOrder = Record<SiteSocialPresetId, number>;
 
 type Query = <T extends Element>(parent: ParentNode, selector: string) => T | null;
@@ -41,9 +35,9 @@ type Query = <T extends Element>(parent: ParentNode, selector: string) => T | nu
 type FormCodecContext = {
   footerStartYearMax: number;
   query: Query;
-  getNavRows: () => HTMLElement[];
-  getNavChildDrafts: () => SidebarNavChildDraft[];
-  renderNavChildDrafts: (drafts: SidebarNavChildDraft[]) => void;
+  /* 统一树形导航编辑器：顺序由编辑器 DOM 显示顺序决定（order 已按 1..N 重写）。 */
+  getNavItems: () => EditableNavItem[];
+  renderNavItems: (items: readonly EditableNavItem[]) => void;
   getCustomRows: () => HTMLElement[];
   getCustomRowLabelInput: (row: Element | null) => HTMLInputElement | null;
   defaultCustomSocialIconKey: SiteSocialIconKey;
@@ -211,9 +205,8 @@ const normalizeSiteFaviconInput = (slot: SiteFaviconSlot, value: unknown): strin
 export const createFormCodec = ({
   footerStartYearMax,
   query,
-  getNavRows,
-  getNavChildDrafts,
-  renderNavChildDrafts,
+  getNavItems,
+  renderNavItems,
   getCustomRows,
   getCustomRowLabelInput,
   defaultCustomSocialIconKey,
@@ -538,29 +531,10 @@ export const createFormCodec = ({
     });
 
   const collectSettings = (): EditableSettings => {
-    const navChildren = new Map<SidebarNavId, EditableNavItem['children']>();
-    getNavChildDrafts().forEach(({ parentId, child }) => {
-      const children = navChildren.get(parentId) ?? [];
-      children.push({ ...child });
-      navChildren.set(parentId, children);
-    });
-    const nav = getNavRows().map((row, index): EditableNavItem => {
-      const idRaw = row.getAttribute('data-nav-id')?.trim() ?? '';
-      const id = isAdminNavId(idRaw) ? idRaw : ADMIN_NAV_IDS[index] ?? 'essay';
-      const labelInput = query<HTMLInputElement>(row, '[data-nav-field="label"]');
-      const ornamentInput = query<HTMLInputElement>(row, '[data-nav-field="ornament"]');
-      const orderInput = query<HTMLInputElement>(row, '[data-nav-field="order"]');
-      const visibleInput = query<HTMLInputElement>(row, '[data-nav-field="visible"]');
-      const fallbackOrder = index + 1;
-      return {
-        id,
-        label: labelInput?.value.trim() || '',
-        ornament: ornamentInput ? normalizeOptionalSingleLine(ornamentInput.value) : ADMIN_NAV_ORNAMENT_DEFAULT,
-        order: parseOrder(orderInput?.value || '', fallbackOrder),
-        visible: Boolean(visibleInput?.checked),
-        children: (navChildren.get(id) ?? []).map((child) => ({ ...child }))
-      };
-    });
+    const nav = getNavItems().map((item): EditableNavItem => ({
+      ...item,
+      children: item.children.map((child) => ({ ...child }))
+    }));
 
     const custom = getCustomRows().map((row, index): EditableCustomSocialItem => {
       const idInput = query<HTMLInputElement>(row, '[data-social-custom-field="id"]');
@@ -872,25 +846,12 @@ export const createFormCodec = ({
     refreshFooterPreview();
     refreshArticleMetaPreview();
 
-    const navMap = new Map<SidebarNavId, EditableNavItem>(settings.shell.nav.map((item) => [item.id, item]));
-    renderNavChildDrafts(
-      settings.shell.nav.flatMap((item) =>
-        item.children.map((child) => ({ parentId: item.id, child: { ...child } }))
-      )
+    renderNavItems(
+      settings.shell.nav.map((item): EditableNavItem => ({
+        ...item,
+        children: item.children.map((child) => ({ ...child }))
+      }))
     );
-    getNavRows().forEach((row, index) => {
-      const rawId = row.getAttribute('data-nav-id')?.trim() ?? '';
-      const id = isAdminNavId(rawId) ? rawId : ADMIN_NAV_IDS[index] ?? 'essay';
-      const current = navMap.get(id);
-      const labelInput = query<HTMLInputElement>(row, '[data-nav-field="label"]');
-      const ornamentInput = query<HTMLInputElement>(row, '[data-nav-field="ornament"]');
-      const orderInput = query<HTMLInputElement>(row, '[data-nav-field="order"]');
-      const visibleInput = query<HTMLInputElement>(row, '[data-nav-field="visible"]');
-      if (labelInput) labelInput.value = current?.label?.trim() || '';
-      if (ornamentInput) ornamentInput.value = current?.ornament ?? '';
-      if (orderInput) orderInput.value = String(current?.order ?? (index + 1));
-      if (visibleInput) visibleInput.checked = Boolean(current?.visible);
-    });
   };
 
   return {
